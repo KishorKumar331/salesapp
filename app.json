@@ -1,11 +1,11 @@
 {
   "expo": {
-    "name": "jrnative",
-    "slug": "jrnative",
+    "name": "SalesApp",
+    "slug": "SalesApp",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "jrnative",
+    "scheme": "salesapp",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
