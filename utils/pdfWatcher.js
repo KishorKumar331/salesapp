@@ -13,19 +13,10 @@ export const forceRefreshTemplate = () => {
 export const getTemplateWithCacheBust = () => {
   console.log('🔄 Loading template, refresh counter:', refreshCounter);
   
-  // Clear require cache to force fresh import
-  const modulePath = '../components/pdf/winterFellPdf';
-  const resolvedPath = require.resolve(modulePath);
-  
-  // Delete from cache
-  if (require.cache[resolvedPath]) {
-    delete require.cache[resolvedPath];
-    console.log('🗑️ Cleared cache for:', resolvedPath);
-  }
-  
-  // Fresh import
-  const { TemplateJourneyRouters } = require(modulePath);
-  console.log('✅ Template loaded fresh');
+  // React Native doesn't support require.resolve()
+  // Just import fresh - Metro bundler handles caching differently
+  const { TemplateJourneyRouters } = require('../components/pdf/winterFellPdf');
+  console.log('✅ Template loaded, counter:', refreshCounter);
   return TemplateJourneyRouters;
 };
 
