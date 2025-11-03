@@ -1,0 +1,18 @@
+{
+  "extends": "expo/tsconfig.base",
+  "compilerOptions": {
+    "strict": true,
+    "paths": {
+      "@/*": [
+        "./*"
+      ]
+    }
+  },
+  "include": [
+    "**/*.ts",
+    "**/*.tsx",
+    ".expo/types/**/*.ts",
+    "expo-env.d.ts",
+    "nativewind-env.d.ts"
+, "app/(auth)/_layout.jsx", "app/modal.jsx", "app/index.jsx", "app/_layout.jsx", "app/(tabs)/newLeadForm.jsx", "components/form/quotationForm/QuotationScreen.jsx", "app/(tabs)/_layout.jsx", "utils/userProfile.js", "components/Navbar.jsx", "components/form/SmoothQuotationWrapper.jsx", "components/form/SimpleQuotationWrapper.jsx", "app/(tabs)/index.jsx", "components/ui/DatePicker.jsx", "components/form/IntegratedQuotationForm.jsx", "components/form/CostCalculator.jsx", "components/form/BasicDetails.jsx", "components/form/HotelsSection.jsx", "components/form/FlightSection.jsx", "components/form/ItinerarySectionNew.jsx", "app/(tabs)/followUps.jsx", "components/ui/cards/FollowUpCards.jsx", "components/ui/QuotationListModal.jsx"  ]
+}
