@@ -298,6 +298,15 @@
 // };
 
 export const TemplateJourneyRouters = (data) => {
+  // Extract user data from the data object
+  const user = data.user || {};
+  const userPhone = user?.phone || '8368045646';
+  const companyName = user?.CompanyName || 'Winterfell Holidays';
+  const companyEmail = user?.email || '';
+  const companyAddress = user?.address || '';
+  
+  console.log("📄 PDF Template - User Data:", user);
+  
   const ClientName = data.ClientName || data["Client-Name"] || "Rahul";
   const Itinerary = data.Itinerary || [];
   const DetailedItinerary = data.Itinearies || [];
@@ -353,9 +362,9 @@ export const TemplateJourneyRouters = (data) => {
         .itinerary-table { width: 100%; border-collapse: collapse; font-size: 14px; margin-bottom: 0; }
         .itinerary-table td { padding: 12px 15px; border: 1px solid #ddd; background: #fff; }
         .HotelPage { word-break: break-word; width: 55rem; display: flex; justify-content: space-between; background-position: top; background-repeat: no-repeat; background-size: cover; }
-        .hotelUni { color: #ffffff; background-color: white; display: flex; margin-bottom: 1rem; }
+        .hotelUni { color: #ffffff; display: flex; margin-bottom: 1rem; }
         .hotelUniRight { margin-left: 3rem; font-size: 1.4rem; font-family: "Glacial Indifference", Verdana, sans-serif; color: #000; }
-        .itinearyDiv { background-color: white; word-break: break-word; font-size: 1.2rem; padding: 2rem; }
+        .itinearyDiv { word-break: break-word; font-size: 1.2rem; padding: 2rem; }
         .itinearyDiv ul { color: #000; }
         .itinearyDiv li { color: black; margin: 0.5rem 0; }
         .DaywiseItinearyDiv, .DaywiseItinearyDivReverse { display: flex; justify-content: space-between; color: #000; align-items: center; width: 100%; padding: 1rem; box-sizing: border-box; }
@@ -372,11 +381,13 @@ export const TemplateJourneyRouters = (data) => {
         <div class="page1">
             <div style="text-align: center;">
                 <div style="background-color: #000; padding: 2rem; margin: 10rem auto 3rem; font-size: 4.5rem; width: min-content; text-align: center;">
-                    WINTERFELL HOLIDAYS
+                    ${companyName.toUpperCase()}
                 </div>
                 <div style="font-size: 1.5rem; color: #000;">
                     Designed For Dreamers<br>Built For Travellers
                 </div>
+                ${companyEmail ? `<div style="font-size: 1.2rem; color: #000; margin-top: 1rem;">${companyEmail}</div>` : ''}
+                ${companyAddress ? `<div style="font-size: 1.2rem; color: #000; margin-top: 0.5rem;">${companyAddress}</div>` : ''}
             </div>
         </div>
 
@@ -420,7 +431,8 @@ export const TemplateJourneyRouters = (data) => {
                     <div class="scenic-image">
                         <img style="width: 100%; height: 100%; object-fit: cover;" 
                              src="https://media.istockphoto.com/id/1526986072/photo/airplane-flying-over-tropical-sea-at-sunset.jpg?s=612x612&w=0&k=20&c=Ccvg3BqlqsWTT0Mt0CvHlbwCuRjPAIWaCLMKSl3PCks=" 
-                             alt="Scenic View" />
+                             alt="Scenic View" 
+                             onerror="this.style.display='none'" />
                     </div>
                 </div>
             </div>
@@ -437,7 +449,8 @@ export const TemplateJourneyRouters = (data) => {
                         <div style="width: 23rem; height: 19rem; border-radius: 12px; border: 2px solid; overflow: hidden;">
                             <img style="width: 100%; height: 100%; object-fit: cover;" 
                                  src="${h.ImageUrl || 'https://cf.bstatic.com/xdata/images/hotel/max1024x768/403723109.jpg?k=31c45730620eccd00d1cbf2493d3b3eea89e8dceaeb59bf2f6b9eed606efe63f&o='}" 
-                                 alt="Hotel" />
+                                 alt="Hotel" 
+                                 onerror="this.style.display='none'" />
                         </div>
                         <div class="hotelUniRight">
                             <h4 style="color: #4a90e2;">${h.Nights || 1} Night(s) Stay at ${h.City || ''}</h4>
@@ -458,7 +471,7 @@ export const TemplateJourneyRouters = (data) => {
         <!-- Detailed Itinerary -->
         ${DetailedItinerary && DetailedItinerary.length > 0 ? `
         <div class="page-break">
-            <div class="itinearypage" style="position: relative; background: #fff;">
+            <div class="itinearypage" style="position: relative">
                 <div class="page3">
                     <div class="page-head">Detailed Itinerary</div>
                     <div class="itinearyDiv">
@@ -473,10 +486,10 @@ export const TemplateJourneyRouters = (data) => {
                                 </p>
                             </div>
                             <div class="DaywiseItinearyDivRight">
-                                <img src="${it?.ImageUrl }" 
-                                     crossOrigin="anonymous" 
+                                <img src="${it.ImageUrl || 'https://via.placeholder.com/200'}" 
                                      style="width: 14rem; height: 14rem; border-radius: 50%; object-fit: cover; object-position: center;" 
-                                     alt="${it.ImageUrl}" />
+                                     alt="${it.Title || it.Activity || 'Activity Image'}" 
+                                     onerror="this.style.display='none'" />
                             </div>
                         </div>
                         ${index < DetailedItinerary.length - 1 ? '<hr style="margin: 2rem 0; border: 1px solid #ddd;">' : ''}
