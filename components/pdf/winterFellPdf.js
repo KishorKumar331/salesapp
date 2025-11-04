@@ -356,7 +356,14 @@ export const TemplateJourneyRouters = (data) => {
         background-size: 167%;
         position: relative;
         color: #fff;
-      }        .page3 { width: 55rem; height: fit-content; min-height: 78rem; display: flex; flex-direction: column; background-position: top; background-repeat: no-repeat; background-size: cover; position: relative; }
+      }        .page3 { width: 54.85rem;
+        height: 78rem;
+        background-image: url('https://www.shutterstock.com/image-vector/black-white-landscape-panorama-mountains-260nw-1981188578.jpg');
+        background-position: center bottom -123px;
+        background-repeat: no-repeat;
+        background-size: contain;
+        position: relative;
+        color: #fff; }
         .page-head { background-color: #000; color: white; font-size: 1.6rem; padding: 1rem 0; text-align: center; }
         .package-table { width: 100%; border-collapse: collapse; font-size: 20px; margin-bottom: 50px; }
         .package-table th { background: #f5f5f5; padding: 20px 25px; border: 1px solid #ddd; font-weight: 600; text-align: left; width: 35%; }
@@ -424,7 +431,7 @@ export const TemplateJourneyRouters = (data) => {
 
         <!-- Day Wise Itinerary -->
         <div class="page-break">
-            <div class="page1">
+            <div class="page3">
                 <div class="page-head">Day Wise Itinerary</div>
                 <div style="padding: 0; position: relative;">
                     <table style="color: #000; font-size: 20px;" class="itinerary-table">
@@ -449,7 +456,7 @@ export const TemplateJourneyRouters = (data) => {
         <!-- Accommodation -->
         ${Hotels && Hotels.length > 0 ? `
         <div class="page-break">
-            <div class="HotelPage" style="color: black; flex-direction: column;">
+            <div class="page3" style="color: black; flex-direction: column;">
                 <div>
                     <div class="page-head">Accommodation</div>
                     ${Hotels.map((h, index) => `
