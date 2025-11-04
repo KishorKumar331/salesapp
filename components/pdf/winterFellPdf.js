@@ -298,45 +298,45 @@
 // };
 
 export const TemplateJourneyRouters = (data) => {
-  // Extract user data from the data object
-  const user = data.user || {};
-  const userPhone = user?.phone || '8368045646';
-  const companyName = user?.CompanyName || 'Winterfell Holidays';
-  const companyEmail = user?.email || '';
-  const companyAddress = user?.address || '';
-  
-  console.log("📄 PDF Template - User Data:", user);
-  
-  const ClientName = data.ClientName || data["Client-Name"] || "Rahul";
-  const Itinerary = data.Itinerary || [];
-  const DetailedItinerary = data.Itinearies || [];
-  const {
-    DestinationName = "Bali",
-    NoOfPax = 2,
-    TravelDate = "2026-11-10",
-    Days = 5,
-    Nights = 4,
-    Costs = { TotalCost: 40000 },
-    Hotels = [
-      { Name: "The Anathera Resort", RoomType: "Deluxe Room with Pool View", Meals: ["Breakfast"], CheckInDate: "10th Nov", CheckOutDate: "15th Nov", ImageUrl: "https://d30j33t1r58ioz.cloudfront.net/static/sample-hotel.jpg" },
-      { Name: "Aeera Villa Canggu", RoomType: "One Bedroom Villa with Private Pool", Meals: ["Breakfast"], CheckInDate: "15th Nov", CheckOutDate: "18th Nov", ImageUrl: "https://d30j33t1r58ioz.cloudfront.net/static/sample-hotel2.jpg" }
-    ],
-    Inclusions = [],
-    Exclusions = [],
-  } = data;
+    // Extract user data from the data object
+    const user = data.user || {};
+    const userPhone = user?.phone || '8368045646';
+    const companyName = user?.CompanyName || 'Winterfell Holidays';
+    const companyEmail = user?.email || '';
+    const companyAddress = user?.address || '';
 
-  const formatDate = (date) =>
-    date
-      ? new Date(date).toLocaleDateString("en-GB", {
-        day: "2-digit",
-        month: "short",
-        year: "numeric",
-      })
-      : "-";
+    console.log("📄 PDF Template - User Data:", user);
 
-  const bg = "https://d30j33t1r58ioz.cloudfront.net/static/mountain-bg-light.jpg";
+    const ClientName = data.ClientName || data["Client-Name"] || "Rahul";
+    const Itinerary = data.Itinerary || [];
+    const DetailedItinerary = data.Itinearies || [];
+    const {
+        DestinationName = "Bali",
+        NoOfPax = 2,
+        TravelDate = "2026-11-10",
+        Days = 5,
+        Nights = 4,
+        Costs = { TotalCost: 40000 },
+        Hotels = [
+            { Name: "The Anathera Resort", RoomType: "Deluxe Room with Pool View", Meals: ["Breakfast"], CheckInDate: "10th Nov", CheckOutDate: "15th Nov", ImageUrl: "https://d30j33t1r58ioz.cloudfront.net/static/sample-hotel.jpg" },
+            { Name: "Aeera Villa Canggu", RoomType: "One Bedroom Villa with Private Pool", Meals: ["Breakfast"], CheckInDate: "15th Nov", CheckOutDate: "18th Nov", ImageUrl: "https://d30j33t1r58ioz.cloudfront.net/static/sample-hotel2.jpg" }
+        ],
+        Inclusions = [],
+        Exclusions = [],
+    } = data;
 
-  return `<!DOCTYPE html>
+    const formatDate = (date) =>
+        date
+            ? new Date(date).toLocaleDateString("en-GB", {
+                day: "2-digit",
+                month: "short",
+                year: "numeric",
+            })
+            : "-";
+
+    const bg = "https://d30j33t1r58ioz.cloudfront.net/static/mountain-bg-light.jpg";
+
+    return `<!DOCTYPE html>
 <html>
 <head>
     <meta charset="utf-8" />
@@ -357,13 +357,15 @@ export const TemplateJourneyRouters = (data) => {
         position: relative;
         color: #fff;
       }        .page3 { width: 54.85rem;
-        height: 78rem;
+
         background-image: url('https://www.shutterstock.com/image-vector/black-white-landscape-panorama-mountains-260nw-1981188578.jpg');
         background-position: center bottom -123px;
         background-repeat: no-repeat;
         background-size: contain;
         position: relative;
-        color: #fff; }
+        color: #fff;
+                 width: 55rem; height: fit-content; min-height: 78rem; position: relative; }
+
         .page-head { background-color: #000; color: white; font-size: 1.6rem; padding: 1rem 0; text-align: center; }
         .package-table { width: 100%; border-collapse: collapse; font-size: 20px; margin-bottom: 50px; }
         .package-table th { background: #f5f5f5; padding: 20px 25px; border: 1px solid #ddd; font-weight: 600; text-align: left; width: 35%; }
