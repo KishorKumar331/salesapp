@@ -344,11 +344,19 @@ export const TemplateJourneyRouters = (data) => {
     <style>
         @page { size: A4; margin: 12mm; }
         html, body { margin: 0; padding: 0; }
-        body { background: #e8e8e8; font-family: Verdana, Arial, sans-serif; }
+        body { background: #f7faf9; font-family: Verdana, Arial, sans-serif; }
         .page-break { page-break-before: always; }
         .pre.size-a4 { width: 55rem; margin: 0 auto; color: #fff; }
-        .page1 { width: 54.85rem; height: 78rem; border: 1px solid; background-position: top; background-repeat: no-repeat; background-size: cover; position: relative; color: #fff; }
-        .page3 { width: 55rem; height: fit-content; min-height: 78rem; display: flex; flex-direction: column; background-position: top; background-repeat: no-repeat; background-size: cover; position: relative; }
+  .page1 {
+        width: 54.85rem;
+        height: 78rem;
+        background-image: url('https://www.shutterstock.com/image-vector/black-white-landscape-panorama-mountains-260nw-1981188578.jpg');
+        background-position: center bottom -70px;
+        background-repeat: no-repeat;
+        background-size: 167%;
+        position: relative;
+        color: #fff;
+      }        .page3 { width: 55rem; height: fit-content; min-height: 78rem; display: flex; flex-direction: column; background-position: top; background-repeat: no-repeat; background-size: cover; position: relative; }
         .page-head { background-color: #000; color: white; font-size: 1.6rem; padding: 1rem 0; text-align: center; }
         .package-table { width: 100%; border-collapse: collapse; font-size: 20px; margin-bottom: 50px; }
         .package-table th { background: #f5f5f5; padding: 20px 25px; border: 1px solid #ddd; font-weight: 600; text-align: left; width: 35%; }
