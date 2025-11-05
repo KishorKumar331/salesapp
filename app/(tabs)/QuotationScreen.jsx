@@ -15,8 +15,8 @@
 //   const [pdfHtml, setPdfHtml] = useState(null);
 //   const [showPdfModal, setShowPdfModal] = useState(false);
 //   const [refreshKey, setRefreshKey] = useState(0);
-  
-  
+
+
 //   const leadData = params.leadData ? JSON.parse(params.leadData) : null;
 // const followUpData = params.followUpData ? JSON.parse(params.followUpData) : null;
 
@@ -24,16 +24,16 @@
 //   if (isPrinting) return; // Prevent double submit
 //   setIsPrinting(true);
 //   console.log(leadData)
-  
+
 //   try {
 //     console.log("📝 Submitting quotation data...", data);
-    
+
 //     // 1. First POST request to create quotation
 //     const res = await axios.post(
 //       "https://0rq0f90i05.execute-api.ap-south-1.amazonaws.com/salesapp/lead-managment/quotations", 
 //       data
 //     );
-    
+
 //     console.log("✅ Quotation created:", {
 //   ...leadData
 //     });
@@ -49,18 +49,18 @@
 //     };
 
 //     console.log("🔄 Updating quote with:", updateData);
-    
+
 //     // 3. Make PUT request to update quote
 //     const updateRes = await axios.put(
 //       'https://0rq0f90i05.execute-api.ap-south-1.amazonaws.com/salesapp/lead-managment/create-quote',
 //       updateData
 //     );
-    
+
 //     console.log("✅ Quote updated successfully:", updateRes.data);
 
 //     // 4. Clear draft after successful update
 //     await clearQuotationDraft(data.TripId);
-    
+
 //     // 5. Show success message to user
 //     Alert.alert("Success", "Quotation created and updated successfully!");
 //             router.replace('/(tabs)');
@@ -70,7 +70,7 @@
 //       error: error.message,
 //       response: error.response?.data
 //     });
-    
+
 //     Alert.alert(
 //       "Error", 
 //       error.response?.data?.message || "Failed to process quotation. Please try again."
@@ -147,11 +147,13 @@ import IntegratedQuotationForm from "@/components/form/IntegratedQuotationForm";
 import { clearQuotationDraft } from "@/storage/quotationDrafts";
 import PdfPreviewModal from "@/components/pdf/PdfPreviewModal";
 import { getInstantHtmlPreview } from "../../utils/pdfUtils";
+import { useUserProfile } from "@/hooks/useUserProfile";
 import axios from "axios";
 
 const QuotationScreen = () => {
   const router = useRouter();
   const params = useLocalSearchParams();
+  const { user, loading: userLoading } = useUserProfile();
   const [isPrinting, setIsPrinting] = useState(false);
   const [pdfUri, setPdfUri] = useState(null);
   const [pdfHtml, setPdfHtml] = useState(null);
@@ -160,7 +162,9 @@ const QuotationScreen = () => {
 
   const leadData = params.leadData ? JSON.parse(params.leadData) : null;
   const followUpData = params.FollowleadData ? JSON.parse(params.FollowleadData) : null;
-console.log(followUpData,'lllllll')
+  console.log(followUpData, 'lllllll')
+  console.log("👤 User data:", user);
+
   const handleFormSubmit = async (data) => {
     if (isPrinting) return;
     setIsPrinting(true);
@@ -168,14 +172,20 @@ console.log(followUpData,'lllllll')
     try {
       console.log("📝 Generating HTML preview...", data);
 
-      // 1️⃣ Generate instant HTML preview
-      const result = getInstantHtmlPreview(data);
+      // 1️⃣ Merge user data with form data
+      const dataWithUser = {
+        ...data,
+        user
+      };
+
+      // 2️⃣ Generate instant HTML preview with user data
+      const result = getInstantHtmlPreview(dataWithUser);
       setPdfHtml(result.html);
       setPdfUri(null); // No PDF yet, only HTML
       setShowPdfModal(true);
       setRefreshKey((prev) => prev + 1);
 
-      console.log("✅ HTML preview ready");
+      console.log("✅ HTML preview ready with user data");
       setIsPrinting(false);
 
       // Note: Actual submission will happen when user closes the preview
@@ -189,7 +199,7 @@ console.log(followUpData,'lllllll')
 
   const handlePreviewClose = async () => {
     setShowPdfModal(false);
-    
+
     // Optional: Submit after preview is closed
     // Uncomment if you want to auto-submit after preview
     /*

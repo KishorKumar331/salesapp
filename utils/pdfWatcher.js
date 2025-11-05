@@ -2,10 +2,12 @@
 // Simple cache busting for React Native
 
 let refreshCounter = 0;
+let cachedTemplate = null;
 
-// Force refresh by incrementing counter
+// Force refresh by incrementing counter and clearing cache
 export const forceRefreshTemplate = () => {
   refreshCounter++;
+  cachedTemplate = null; // Clear the cache
   console.log('🔄 Template refresh forced, counter:', refreshCounter);
 };
 
@@ -13,19 +15,12 @@ export const forceRefreshTemplate = () => {
 export const getTemplateWithCacheBust = () => {
   console.log('🔄 Loading template, refresh counter:', refreshCounter);
   
-  // Clear require cache to force fresh import
-  const modulePath = '../components/pdf/winterFellPdf';
-  const resolvedPath = require.resolve(modulePath);
+  // In React Native, Metro bundler aggressively caches modules
+  // The only way to get fresh content is to reload the app or use Fast Refresh
+  // For development, just return the template - Fast Refresh will update it
+  const { TemplateJourneyRouters } = require('../components/pdf/winterFellPdf');
   
-  // Delete from cache
-  if (require.cache[resolvedPath]) {
-    delete require.cache[resolvedPath];
-    console.log('🗑️ Cleared cache for:', resolvedPath);
-  }
-  
-  // Fresh import
-  const { TemplateJourneyRouters } = require(modulePath);
-  console.log('✅ Template loaded fresh');
+  console.log('✅ Template loaded, counter:', refreshCounter);
   return TemplateJourneyRouters;
 };
 
