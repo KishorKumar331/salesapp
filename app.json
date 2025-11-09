@@ -1,11 +1,11 @@
 {
   "expo": {
-    "name": "testapp",
-    "slug": "testapp",
+    "name": "SalesApp",
+    "slug": "SalesApp",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "testapp",
+    "scheme": "salesapp",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
