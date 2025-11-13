@@ -58,7 +58,7 @@ const [leadData,setLeadData]=useState([]);
 
       <FlatList
         data={leadData}
-        keyExtractor={(item) => item.id}
+        keyExtractor={(item, index) => item.TripId?.toString() || `lead-${index}`}
         renderItem={({ item }) => <FollowUpCards data={item} />}
         contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 24 }}
         showsVerticalScrollIndicator={false}
