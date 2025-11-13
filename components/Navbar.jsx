@@ -48,6 +48,14 @@ export default function Navbar({
 
         {!showSearch && !showBack && <View className="flex-1" />}
 
+        {/* Add New Lead Button */}
+        <TouchableOpacity 
+          onPress={() => router.push("/(tabs)/newLeadForm")}
+          className="bg-white/20 rounded-full p-3 mr-3"
+        >
+          <Ionicons name="add" size={24} color="white" />
+        </TouchableOpacity>
+
         {showNotifications && (
           <TouchableOpacity 
             onPress={async () => {

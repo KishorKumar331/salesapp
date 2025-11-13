@@ -9,12 +9,7 @@ import { useFocusEffect } from "@react-navigation/native"; // ✅ correct import
 export default function FollowUpPage() {
   const { user, loading } = useUserProfile();
 const [leadData,setLeadData]=useState([]);
-console.log(leadData)
-  const followUpData = [
-    { id: "1", name: "Vikash Singh" },
-    { id: "2", name: "Priya Sharma" },
-    { id: "3", name: "Amit Patel" },
-  ];
+
 
   // 🔁 Refetch every time tab gains focus (or remounts)
   useFocusEffect(

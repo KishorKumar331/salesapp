@@ -14,9 +14,8 @@ export default function TabLayout() {
           backgroundColor: "white",
           borderTopWidth: 1,
           borderTopColor: "#f3f4f6",
-          height: 90,
-          paddingBottom: 20,
-          paddingTop: 10,
+          height: 100,
+          paddingBottom: 10,
         },
         tabBarLabelStyle: {
           fontSize: 12,
@@ -39,22 +38,8 @@ export default function TabLayout() {
           ),
         }}
       />
-      <Tabs.Screen
-      
-        name="explore"
-        options={{
-          unmountOnBlur: true,
-          title: "Explore",
-          tabBarIcon: ({ color, focused }) => (
-            <Ionicons 
-              name={focused ? "search" : "search-outline"} 
-              size={24} 
-              color={color} 
-            />
-          ),
-        }}
-      />
-      <Tabs.Screen
+   
+      {/* <Tabs.Screen
         name="newLeadForm"
         options={{
           unmountOnBlur: true,
@@ -66,12 +51,26 @@ export default function TabLayout() {
           ),
          
         }}
-      />
+      /> */}
       <Tabs.Screen
         name="followUps"
         options={{
           unmountOnBlur: true,
           title: "Follow Ups",
+          tabBarIcon: ({ color, focused }) => (
+            <Ionicons 
+              name={focused ? "people" : "people-outline"} 
+              size={24} 
+              color={color} 
+            />
+          ),
+        }}
+      />  
+        <Tabs.Screen
+        name="convertedPage"
+        options={{
+          unmountOnBlur: true,
+          title: "Converted",
           tabBarIcon: ({ color, focused }) => (
             <Ionicons 
               name={focused ? "people" : "people-outline"} 
@@ -93,6 +92,21 @@ export default function TabLayout() {
               color={color} 
             />
           ),
+        }}
+      />
+      
+      {/* Hidden screens - not shown in tab bar */}
+      <Tabs.Screen
+        name="QuotationScreen"
+        options={{
+          href: null, // This hides the screen from tab bar
+        }}
+      />
+      
+      <Tabs.Screen
+        name="newLeadForm"
+        options={{
+          href: null, // This hides the screen from tab bar
         }}
       />
     </Tabs>
