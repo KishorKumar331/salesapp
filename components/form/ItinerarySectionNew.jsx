@@ -5,6 +5,7 @@ import {
   TextInput,
   TouchableOpacity,
   StyleSheet,
+  Image,
 } from "react-native";
 import { useFormContext, Controller, useFieldArray } from "react-hook-form";
 import { Ionicons } from "@expo/vector-icons";
@@ -20,6 +21,7 @@ console.log(activity)
     watch,
     formState: { errors },
     getValues,
+    setValue,
   } = useFormContext();
 
   const { fields, append, remove } = useFieldArray({
@@ -65,20 +67,11 @@ console.log(activity)
   };
 
   const handleActivitySelect = (activity, index) => {
-    const currentItinerary = [...fields];
-    const updatedDay = {
-      ...currentItinerary[index],
-      Title: activity.Title || currentItinerary[index]?.Title || `Day ${index + 1} Itinerary`,
-      Description: activity.Description || currentItinerary[index]?.Description || "",
-      ImageUrl: activity.ImageUrl || currentItinerary[index]?.ImageUrl || "",
-      Activity: activity.Title || currentItinerary[index]?.Activity || ""
-    };
-    
-    // Update the form with the selected activity data
-    const updatedItinerary = [...control._formValues.Itinearies];
-    updatedItinerary[index] = updatedDay;
-    control._formValues.Itinearies = updatedItinerary;
-    control._formState.dirtyFields[`Itinearies.${index}`] = true;
+    // Use setValue to properly update form fields
+    setValue(`Itinearies.${index}.Title`, activity.Title || `Day ${index + 1} Itinerary`);
+    setValue(`Itinearies.${index}.Description`, activity.Description || "");
+    setValue(`Itinearies.${index}.ImageUrl`, activity.ImageUrl || "");
+    setValue(`Itinearies.${index}.Activity`, activity.Title || "");
     
     // Trigger re-render
     forceUpdate({});
@@ -236,6 +229,24 @@ console.log(activity)
               </TouchableOpacity>
             )}
           </View>
+   
+            <Controller
+              control={control}
+              name={`Itinearies.${index}.ImageUrl`}
+              render={({ field: { onChange, value } }) => (
+                <View>
+                 
+                  {value ? (
+                    <Image
+                      source={{ uri: value }}
+                      style={{ width: 290, height: 180, marginTop: 8, borderRadius: 8 ,marginBottom:18}}
+                      resizeMode="cover"
+                    />
+                  ) : null}
+                </View>
+              )}
+            />
+   
 
           {/* Date Picker */}
           <FormField label="Date">
@@ -353,6 +364,7 @@ console.log(activity)
               )}
             />
           </FormField>
+       
         </View>
       ))}
 

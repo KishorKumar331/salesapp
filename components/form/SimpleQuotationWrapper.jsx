@@ -89,7 +89,6 @@ const SimpleQuotationWrapper = ({
           >
             {header}
             <View style={{ flex: 1 }}>
-              {/* 🚫 no value / onChange props; sections read/write via RHF context */}
               <Component />
             </View>
           </ScrollView>
@@ -99,7 +98,7 @@ const SimpleQuotationWrapper = ({
             style={{
               flexDirection: 'row',
               justifyContent: 'space-between',
-              padding: 16,
+              padding: 6,
               backgroundColor: 'white',
               borderTopWidth: 1,
               borderTopColor: '#f3f4f6',
@@ -123,39 +122,11 @@ const SimpleQuotationWrapper = ({
               </Text>
             </TouchableOpacity>
 
-              {/* Primary button now submits on last step */}
-            <TouchableOpacity
-              onPress={handlePrimary}
-              style={{
-                backgroundColor: '#7c3aed',
-                paddingVertical: 14,
-                paddingHorizontal: 24,
-                borderRadius: 12,
-                minWidth: 100,
-                alignItems: 'center',
-                shadowColor: '#7c3aed',
-                shadowOffset: { width: 0, height: 2 },
-                shadowOpacity: 0.2,
-                shadowRadius: 4,
-                elevation: 3,
-              }}
-            >
-              <Text style={{ color: 'white', fontWeight: '600', fontSize: 16 }}>
-                {currentSection === sections.length - 1 ? 'Submit' : 'Next'}
-              </Text>
-            </TouchableOpacity>
-          </View>
-
-          {footer && <View style={{ padding: 16, paddingTop: 0 }}>{footer}</View>}
-        </KeyboardAvoidingView>
-      </View>
-
-      {/* Right Sidebar Navigation */}
-      <View
+    <View
         style={{
           position: 'absolute',
-          right: 16,
-          top: '50%',
+          right: '47%',
+          top: '170%',
           transform: [{ translateY: -((sections.length * 12 + 80) / 2) }],
           alignItems: 'center',
         }}
@@ -178,6 +149,35 @@ const SimpleQuotationWrapper = ({
           </Text>
         </View>
       </View>
+
+            <TouchableOpacity
+              onPress={handlePrimary}
+              style={{
+                backgroundColor: '#7c3aed',
+                paddingVertical: 14,
+                paddingHorizontal: 12,
+                borderRadius: 12,
+                minWidth: 100,
+                alignItems: 'center',
+                shadowColor: '#7c3aed',
+                shadowOffset: { width: 0, height: 2 },
+                shadowOpacity: 0.2,
+                shadowRadius: 4,
+                elevation: 3,
+              }}
+            >
+              <Text style={{ color: 'white', fontWeight: '600', fontSize: 14 }}>
+                {currentSection === sections.length - 1 ? 'Submit' : 'Next'}
+              </Text>
+            </TouchableOpacity>
+          </View>
+
+          {footer && <View style={{ padding: 16, paddingTop: 0 }}>{footer}</View>}
+        </KeyboardAvoidingView>
+      </View>
+
+      {/* Right Sidebar Navigation */}
+  
     </View>
   );
 };

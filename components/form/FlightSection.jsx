@@ -155,7 +155,6 @@ const FlightSection = () => {
               <Controller
                 control={control}
                 name="OutboundFlight.from"
-                rules={{ required: 'Departure city is required' }}
                 render={({ field: { onChange, value } }) => (
                   <TextInput
                     style={[styles.input, errors?.OutboundFlight?.from && styles.errorInput]}
@@ -176,7 +175,6 @@ const FlightSection = () => {
               <Controller
                 control={control}
                 name="OutboundFlight.to"
-                rules={{ required: 'Arrival city is required' }}
                 render={({ field: { onChange, value } }) => (
                   <TextInput
                     style={[styles.input, errors?.OutboundFlight?.to && styles.errorInput]}

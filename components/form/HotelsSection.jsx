@@ -233,7 +233,7 @@ const HotelsSection = () => {
                         const dateKey = generateDateKey(date);
                         setValue(`Hotels.${index}.CheckInDateKey`, dateKey);
                       }}
-                      placeholder="Select check-in date"
+                      placeholder="check-in"
                       style={styles.datePickerStyle}
                     />
                   )}
@@ -254,7 +254,7 @@ const HotelsSection = () => {
                         const dateKey = generateDateKey(date);
                         setValue(`Hotels.${index}.CheckOutDateKey`, dateKey);
                       }}
-                      placeholder="Select check-out date"
+                      placeholder="check-out "
                       style={styles.datePickerStyle}
                     />
                   )}
