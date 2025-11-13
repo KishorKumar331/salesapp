@@ -80,15 +80,7 @@ export default function TabLayout() {
             />
           ),
         }}
-      />
-      <Tabs.Screen
-        name="QuotationScreen"
-        options={{
-          href: null, 
-          title: "Create Quotation",
-        }}
-      />
-   
+      />  
       <Tabs.Screen
         name="profile"
         options={{
