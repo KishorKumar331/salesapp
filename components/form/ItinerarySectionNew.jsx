@@ -347,24 +347,7 @@ console.log(activity)
             />
           </FormField>
 
-          {/* Image URL */}
-          <FormField label="Image URL">
-            <Controller
-              control={control}
-              name={`Itinearies.${index}.ImageUrl`}
-              render={({ field: { onChange, value } }) => (
-                <TextInput
-                  style={styles.input}
-                  placeholder="https://example.com/image.jpg"
-                  value={value}
-                  onChangeText={onChange}
-                  placeholderTextColor="#9ca3af"
-                  keyboardType="url"
-                />
-              )}
-            />
-          </FormField>
-       
+    
         </View>
       ))}
 
