@@ -38,7 +38,11 @@ export const TemplateJourneyRouters = (data) => {
             : "-";
 
     const bg = "https://d30j33t1r58ioz.cloudfront.net/static/mountain-bg-light.jpg";
-
+const chunkSize = 3;
+const chunks = [];
+for (let i = 0; i < DetailedItinerary.length; i += chunkSize) {
+    chunks.push(DetailedItinerary.slice(i, i + chunkSize));
+}
     return `<!DOCTYPE html>
 <html>
 <head>
@@ -71,16 +75,14 @@ export const TemplateJourneyRouters = (data) => {
         position: relative;
         color: #fff;
       }       
-    .page3 { width: 54.85rem;
-    height: fit-content;
-        min-height: 70rem;
-        background-image: url('https://www.shutterstock.com/image-vector/black-white-landscape-panorama-mountains-260nw-1981188578.jpg');
-        background-position: center bottom;
-        background-repeat: no-repeat;
-        background-size: contain;
-        position: relative;
-        color: #fff;
-        }
+  .page3 {
+    width: 54.85rem;
+    min-height: 78rem;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between; /* MAGIC FIX */
+}
         .page-head { background-color: #000; color: white; font-size: 1.6rem; padding: 1rem 0; text-align: center; }
         .package-table { width: 100%; border-collapse: collapse; font-size: 20px; margin-bottom: 50px; }
         .package-table th { background: #f5f5f5; padding: 20px 25px; border: 1px solid #ddd; font-weight: 600; text-align: left; width: 35%; }
@@ -105,6 +107,27 @@ export const TemplateJourneyRouters = (data) => {
         .dayheader { color: #4a90e2; font-family: "Glacial Indifference", Verdana, sans-serif; text-transform: uppercase; font-weight: bold; }
         .dayDetailsitineary { color: #000; font-family: "Glacial Indifference", Arial, sans-serif; }
         .scenic-image { width: 100%; height: 100%; object-fit: cover; border-radius: 8px; }
+        .page {
+  width: 54.85rem;
+  height: 78rem; /* A4 fixed height */
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  page-break-after: always;
+}
+.bottom-img {
+  width: 100%;
+  height: 380px;
+  object-fit: cover;
+  object-position: bottom;
+}
+.content-area {
+  padding: 2rem;
+  flex: 1;
+  overflow: hidden;
+}
+
     </style>
 </head>
 <body>
@@ -195,57 +218,60 @@ export const TemplateJourneyRouters = (data) => {
         </div>
         ` : ''}
 
-     <!-- Detailed Itinerary -->
-${DetailedItinerary?.length > 0 ? `
-<div class="page-break">
-    <div class="page3">
-        <div class="page-head">Detailed Itinerary</div>
+<!-- Detailed Itinerary (Chunked Pages) -->
+${chunks.length > 0 ? `
+    ${chunks.map((chunk, pageIndex) => `
+    
+        <div class="page">
+        
+            <div class="page-head">Detailed Itinerary</div>
 
-        <div class="itinearyDiv">
+            <div class="content-area">
+                ${chunk.map((it, index) => {
 
-            ${DetailedItinerary.map((it, index) => {
+                    const day = (pageIndex * chunkSize) + (index + 1);
+                    const title = it.Title || it.Activity || "Activity Details";
+                    const desc = (it.Description || "")
+                        .replace(/<br\s*\/?>/gi, " ")
+                        .replace(/<[^>]*>/g, "")
+                        .trim();
+                    const img = it.ImageUrl || "https://via.placeholder.com/200";
 
-        const dayTitle = it.Title || it.Activity || "Activity Details";
-        const cleanDesc = (it.Description || "")
-            .replace(/<br\s*\/?>/gi, " ")
-            .replace(/<[^>]*>/g, "")
-            .trim();
+                    return `
+                        <div style="display:flex; align-items:center; margin-bottom:2rem; gap:1.5rem;">
+                            
+                            <div style="flex:1;">
+                                <div style="font-size:1.4rem; font-weight:bold; color:#4a90e2;">
+                                    Day ${day} – ${title}
+                                </div>
+                                <div style="font-size:1rem; color:#000; margin-top:0.5rem;">
+                                    ${desc}
+                                </div>
+                            </div>
 
-        const imageUrl = it.ImageUrl ||
-            "https://d30j33t1r58ioz.cloudfront.net/static/placeholder-img.jpg";
+                            <div>
+                                <img src="${img}" 
+                                     style="width:140px; height:140px; border-radius:50%; object-fit:cover;" 
+                                     onerror="this.style.display='none'" />
+                            </div>
+                        </div>
 
-        const isEven = (index + 1) % 2 === 0;
+                        <hr style="border:1px solid #eee; margin:1.5rem 0;" />
+                    `;
+                }).join("")}
+            </div>
 
-        return `
-                <div class="${isEven ? "DaywiseItinearyDiv" : "DaywiseItinearyDivReverse"}">
-                    
-                    <div class="DaywiseItinearyDivleft">
-                        <span class="dayheader">Day ${index + 1} - ${dayTitle}</span>
-                        <p class="dayDetailsitineary">${cleanDesc}</p>
-                    </div>
+            <!-- FIXED BOTTOM IMAGE -->
+            <div class="bottom-img">
 
-                    <div class="DaywiseItinearyDivRight">
-                        <img src="${imageUrl}" 
-                            alt="${dayTitle}"
-                            style="width: 14rem; height: 14rem; border-radius: 50%; object-fit: cover; object-position:center;"
-                            onerror="this.style.display='none'"
-                        />
-                    </div>
-
-                </div>
-
-                ${index < DetailedItinerary.length - 1
-                ? `<hr style="margin: 2rem 0; border: 1px solid #ccc;">`
-                : ""}
-
-                ${(index + 1) % 3 === 0 ? `<div class="page-break"></div>` : ""}
-                `;
-
-    }).join("")}
+            
+            <img style="width:100%; height:100%; object-fit:cover; object-position: bottom;"
+                 src="https://www.shutterstock.com/image-vector/black-white-landscape-panorama-mountains-260nw-1981188578.jpg" />
+            </div>
 
         </div>
-    </div>
-</div>
+
+    `).join("")}
 ` : ""}
 
 
