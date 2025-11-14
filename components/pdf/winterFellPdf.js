@@ -148,7 +148,7 @@ export const TemplateJourneyRouters = (data) => {
 
         <!-- Day Wise Itinerary -->
         <div class="page-break">
-            <div class="page3">
+            <div class="page1">
                 <div class="page-head">Day Wise Itinerary</div>
                 <div style="padding: 0; position: relative;">
                     <table style="color: #000; font-size: 20px;" class="itinerary-table">
@@ -160,12 +160,7 @@ export const TemplateJourneyRouters = (data) => {
                         </tr>
                         `).join('')}
                     </table>
-                    <div class="scenic-image">
-                        <img style="width: 100%; height: 100%; object-fit: cover;" 
-                             src="https://media.istockphoto.com/id/1526986072/photo/airplane-flying-over-tropical-sea-at-sunset.jpg?s=612x612&w=0&k=20&c=Ccvg3BqlqsWTT0Mt0CvHlbwCuRjPAIWaCLMKSl3PCks=" 
-                             alt="Scenic View" 
-                             onerror="this.style.display='none'" />
-                    </div>
+               
                 </div>
             </div>
         </div>
@@ -173,7 +168,7 @@ export const TemplateJourneyRouters = (data) => {
         <!-- Accommodation -->
         ${Hotels && Hotels.length > 0 ? `
         <div class="page-break">
-            <div class="page3" style="color: black; flex-direction: column;">
+            <div class="page1" style="color: black; flex-direction: column;">
                 <div>
                     <div class="page-head">Accommodation</div>
                     ${Hotels.map((h, index) => `
@@ -200,42 +195,63 @@ export const TemplateJourneyRouters = (data) => {
         </div>
         ` : ''}
 
-        <!-- Detailed Itinerary -->
-        ${DetailedItinerary && DetailedItinerary.length > 0 ? `
-        <div class="page-break">
-            <div class="itinearypage" style="position: relative">
-                <div class="page3">
-                    <div class="page-head">Detailed Itinerary</div>
-                    <div class="itinearyDiv">
-                        ${DetailedItinerary.map((it, index) => `
-                        <div class="${((index + 1) % 2 === 0) ? 'DaywiseItinearyDiv' : 'DaywiseItinearyDivReverse'}">
-                            <div class="DaywiseItinearyDivleft">
-                                <div style="display: flex; justify-content: space-between;">
-                                    <span class="dayheader">Day ${index + 1} - ${it.Title || it.Activity || ''}</span>
-                                </div>
-                                <p class="dayDetailsitineary">
-                                    ${it.Description ? it.Description.replace(/<br\s*\/?>/gi, ' ').replace(/<p>/gi, '').replace(/<\/p>/gi, '') : ''}
-                                </p>
-                            </div>
-                            <div class="DaywiseItinearyDivRight">
-                                <img src="${it.ImageUrl || 'https://via.placeholder.com/200'}" 
-                                     style="width: 14rem; height: 14rem; border-radius: 50%; object-fit: cover; object-position: center;" 
-                                     alt="${it.Title || it.Activity || 'Activity Image'}" 
-                                     onerror="this.style.display='none'" />
-                            </div>
-                        </div>
-                        ${index < DetailedItinerary.length - 1 ? '<hr style="margin: 2rem 0; border: 1px solid #ddd;">' : ''}
-                        `).join('')}
+     <!-- Detailed Itinerary -->
+${DetailedItinerary?.length > 0 ? `
+<div class="page-break">
+    <div class="page3">
+        <div class="page-head">Detailed Itinerary</div>
+
+        <div class="itinearyDiv">
+
+            ${DetailedItinerary.map((it, index) => {
+
+        const dayTitle = it.Title || it.Activity || "Activity Details";
+        const cleanDesc = (it.Description || "")
+            .replace(/<br\s*\/?>/gi, " ")
+            .replace(/<[^>]*>/g, "")
+            .trim();
+
+        const imageUrl = it.ImageUrl ||
+            "https://d30j33t1r58ioz.cloudfront.net/static/placeholder-img.jpg";
+
+        const isEven = (index + 1) % 2 === 0;
+
+        return `
+                <div class="${isEven ? "DaywiseItinearyDiv" : "DaywiseItinearyDivReverse"}">
+                    
+                    <div class="DaywiseItinearyDivleft">
+                        <span class="dayheader">Day ${index + 1} - ${dayTitle}</span>
+                        <p class="dayDetailsitineary">${cleanDesc}</p>
                     </div>
+
+                    <div class="DaywiseItinearyDivRight">
+                        <img src="${imageUrl}" 
+                            alt="${dayTitle}"
+                            style="width: 14rem; height: 14rem; border-radius: 50%; object-fit: cover; object-position:center;"
+                            onerror="this.style.display='none'"
+                        />
+                    </div>
+
                 </div>
-            </div>
+
+                ${index < DetailedItinerary.length - 1
+                ? `<hr style="margin: 2rem 0; border: 1px solid #ccc;">`
+                : ""}
+
+                ${(index + 1) % 3 === 0 ? `<div class="page-break"></div>` : ""}
+                `;
+
+    }).join("")}
+
         </div>
-        ` : ''}
+    </div>
+</div>
+` : ""}
+
 
         <!-- Inclusions & Exclusions -->
         <div class="page-break">
-            <div class="itinearypage" style="position: relative;">
-                <div class="page3">
+                <div class="page1">
                     <div class="page-head">Inclusions</div>
                     <div class="itinearyDiv">
                         <ul>
@@ -250,7 +266,6 @@ export const TemplateJourneyRouters = (data) => {
                     </div>
                 </div>
             </div>
-        </div>
     </div>
 </body>
 </html>`;
