@@ -50,6 +50,17 @@ export const TemplateJourneyRouters = (data) => {
         body { background: #f7faf9; font-family: Verdana, Arial, sans-serif; }
         .page-break { page-break-before: always; }
         .pre.size-a4 { width: 55rem; margin: 0 auto; color: #fff; }
+          .coverpage {
+          border:'2px solid red';
+        width: 54.85rem;
+        height: 70rem;
+        background-image: url('https://www.shutterstock.com/image-vector/black-white-landscape-panorama-mountains-260nw-1981188578.jpg');
+        background-position: center bottom -90px;
+        background-repeat: no-repeat;
+        background-size: 167%;
+        position: relative;
+        color: #fff;
+      }  
   .page1 {
         width: 54.85rem;
         height: 78rem;
@@ -59,16 +70,17 @@ export const TemplateJourneyRouters = (data) => {
         background-size: 167%;
         position: relative;
         color: #fff;
-      }        .page3 { width: 54.85rem;
-
+      }       
+    .page3 { width: 54.85rem;
+    height: fit-content;
+        min-height: 70rem;
         background-image: url('https://www.shutterstock.com/image-vector/black-white-landscape-panorama-mountains-260nw-1981188578.jpg');
-        background-position: center bottom -123px;
+        background-position: center bottom;
         background-repeat: no-repeat;
         background-size: contain;
         position: relative;
         color: #fff;
-                 width: 55rem; height: fit-content; min-height: 78rem; position: relative; }
-
+        }
         .page-head { background-color: #000; color: white; font-size: 1.6rem; padding: 1rem 0; text-align: center; }
         .package-table { width: 100%; border-collapse: collapse; font-size: 20px; margin-bottom: 50px; }
         .package-table th { background: #f5f5f5; padding: 20px 25px; border: 1px solid #ddd; font-weight: 600; text-align: left; width: 35%; }
@@ -98,7 +110,7 @@ export const TemplateJourneyRouters = (data) => {
 <body>
     <div class="pre size-a4">
         <!-- Cover Page -->
-        <div class="page1">
+        <div class="coverpage">
             <div style="text-align: center;">
                 <div style="background-color: #000; padding: 2rem; margin: 10rem auto 3rem; font-size: 4.5rem; width: min-content; text-align: center;">
                     ${companyName.toUpperCase()}
