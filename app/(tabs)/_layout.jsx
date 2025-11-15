@@ -118,6 +118,18 @@ export default function TabLayout() {
       />
       
       <Tabs.Screen
+        name="invoices/create"
+        options={{
+          href: null, // This hides the screen from tab bar
+        }}
+      />
+        <Tabs.Screen
+        name="invoices/index"
+        options={{
+          href: null, // This hides the screen from tab bar
+        }}
+      />
+        <Tabs.Screen
         name="newLeadForm"
         options={{
           href: null, // This hides the screen from tab bar
