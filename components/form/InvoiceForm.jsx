@@ -65,8 +65,10 @@ const styles = StyleSheet.create({
 });
 
 export default function InvoiceForm({ tripId, onSubmit, initialData = null, onCancel }) {
-  const [step, setStep] = useState('selectQuotation'); // 'selectQuotation' or 'fillForm'
+  console.log(tripId)
+  const [step, setStep] = useState('fillForm'); // 'selectQuotation' or 'fillForm'
   const [quotations, setQuotations] = useState([]);
+  console.log(quotations)
   const [selectedQuotation, setSelectedQuotation] = useState(null);
   const [loading, setLoading] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
@@ -95,7 +97,6 @@ export default function InvoiceForm({ tripId, onSubmit, initialData = null, onCa
     TCS: "",
     GST: "",
     TotalAmount: "",
-    TcsClaim: initialData?.TcsClaim || [{ panNumber: "", name: "", percentage: "" }],
     Installments: [
       {
         InstallmentAmount: 0,
@@ -112,9 +113,8 @@ export default function InvoiceForm({ tripId, onSubmit, initialData = null, onCa
         LastUpdatedBy: "",
       },
     ],
-
-      CancellationDetails:
-        "Flight - As Per Airline Policy\n\nHotel - As Per the Hotel Policy\n\nLand Part - 25% Cancel Charges Before 20 Days of Travel\n\nLand Part - Within 20 Days of Travel No Refund\n\nAny Visa, TCS, Taxes, and Remittance charges paid will be Non-refundable\nJourney Routers Cancellation Charges - INR 2500 Per Pax\n\nReschedule Charges - INR 2,000 Per Pax + Fare Difference If any (For Flights and Land Part)\n\nLate Payment Fee - INR 5,000 (within allowable limits)",
+    CancellationDetails:
+      "Flight - As Per Airline Policy\n\nHotel - As Per the Hotel Policy\n\nLand Part - 25% Cancel Charges Before 20 Days of Travel\n\nLand Part - Within 20 Days of Travel No Refund\n\nAny Visa, TCS, Taxes, and Remittance charges paid will be Non-refundable\nJourney Routers Cancellation Charges - INR 2500 Per Pax\n\nReschedule Charges - INR 2,000 Per Pax + Fare Difference If any (For Flights and Land Part)\n\nLate Payment Fee - INR 5,000 (within allowable limits)",
     Notes: "",
     AuditTrail: [
       {
@@ -124,7 +124,7 @@ export default function InvoiceForm({ tripId, onSubmit, initialData = null, onCa
         Details: "",
       },
     ],
-    TcsClaim: [{ panNumber: "", name: "", percentage: "" }],
+    TcsClaim: Array.isArray(initialData?.TcsClaim) ? initialData.TcsClaim : [{ panNumber: "", name: "", percentage: "" }],
     Deliverables:
       "Hotel Vouchers\n\nCab/Driver Details (*Before Trip Start Date)\n\nScanned copy of passport\n\nScanned copy of flights and tickets\n\nScreenshot of payment when done - especially for NEFT Payment\n\nScanned copy of PAN card",
   });
@@ -401,73 +401,32 @@ export default function InvoiceForm({ tripId, onSubmit, initialData = null, onCa
     }
   };
 
-  // Fetch quotations when the component mounts or tripId changes
-  useEffect(() => {
-    const fetchQuotations = async () => {
-      if (!tripId) return;
-      
-      try {
-        setLoading(true);
-        // Replace this with your actual API call to fetch quotations
-        // const response = await fetch(`/api/quotations?tripId=${tripId}`);
-        // const data = await response.json();
-        // setQuotations(data);
-        
-        // Mock data for now
-        const mockQuotations = [
-          {
-            id: "Q123",
-            customerName: initialData?.CustomerDetails?.Name || "John Doe",
-            customerEmail: initialData?.CustomerDetails?.Email || "john@example.com",
-            customerContact: initialData?.CustomerDetails?.Contact || "+1234567890",
-            destination: initialData?.Destination || "Paris, France",
-            numberOfTravelers: initialData?.NumberOfTravelers || 2,
-            travelDate: initialData?.TravelDate || "2023-12-15",
-            totalAmount: initialData?.TotalAmount || 2500,
-            createdAt: new Date().toISOString(),
-          },
-        ];
-        
-        setQuotations(mockQuotations);
-        
-        // If initialData is provided, pre-select the first quotation
-        if (initialData?.FinalPackageQuotationId) {
-          const selected = mockQuotations.find(q => q.id === initialData.FinalPackageQuotationId);
-          if (selected) {
-            handleSelectQuotation(selected);
-          }
-        } else if (mockQuotations.length === 1) {
-          // Auto-select if there's only one quotation
-          handleSelectQuotation(mockQuotations[0]);
-        }
-      } catch (error) {
-        console.error('Error fetching quotations:', error);
-        Alert.alert('Error', 'Failed to load quotations');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchQuotations();
-  }, [tripId, initialData]);
-
   const handleSelectQuotation = (quotation) => {
     if (!quotation) return;
+    
+    const totalCost =
+      (quotation.Costs?.FlightCost || 0) +
+      (quotation.Costs?.VisaCost || 0) +
+      (quotation.Costs?.LandPackageCost || 0);
     
     setSelectedQuotation(quotation);
     setFormData(prev => ({
       ...prev,
-      FinalPackageQuotationId: quotation.id || "",
+      FinalPackageQuotationId: quotation.QuoteId || "",
       CustomerDetails: {
         ...prev.CustomerDetails,
-        Name: quotation.customerName || "",
-        Email: quotation.customerEmail || "",
-        Contact: quotation.customerContact || "",
+        Name: quotation["Client-Name"] || "",
+        Email: quotation["Client-Email"] || "",
+        Contact: quotation["Client-Contact"] || "",
       },
-      Destination: quotation.destination || "",
-      NumberOfTravelers: quotation.numberOfTravelers || 1,
-      TravelDate: quotation.travelDate || "",
-      TotalAmount: quotation.totalAmount?.toString() || "",
+      Destination: quotation.DestinationName || "",
+      StartDate: quotation.TravelDate || "",
+      EndDate: quotation.TravelEndDate || "",
+      TravelDate: quotation.TravelDate || "",
+      NumberOfTravelers: quotation.NoOfPax || 0,
+      TotalAmount: totalCost.toString(),
+      GST: quotation.Costs?.GSTAmount?.toString() || "",
+      TCS: quotation.Costs?.TCSAmount?.toString() || "",
       // Ensure TcsClaim is always an array with at least one empty object
       TcsClaim: prev.TcsClaim?.length > 0 ? prev.TcsClaim : [{ panNumber: "", name: "", percentage: "" }]
     }));
@@ -525,15 +484,15 @@ export default function InvoiceForm({ tripId, onSubmit, initialData = null, onCa
           <ScrollView className="flex-1">
             {quotations.map((quotation) => (
               <TouchableOpacity
-                key={quotation.id}
+                key={quotation.QuoteId}
                 className="bg-white p-4 rounded-lg mb-3 shadow-sm"
                 onPress={() => handleSelectQuotation(quotation)}
               >
-                <Text className="font-bold text-lg">Quotation #{quotation.id}</Text>
-                <Text className="text-gray-600">{quotation.customerName}</Text>
-                <Text className="text-gray-600">Amount: ₹{quotation.totalAmount?.toLocaleString()}</Text>
+                <Text className="font-bold text-lg">Quotation #{quotation.QuoteId}</Text>
+                <Text className="text-gray-600">{quotation["Client-Name"]}</Text>
+                <Text className="text-gray-600">Amount: ₹{quotation.Costs?.TotalCost?.toLocaleString()}</Text>
                 <Text className="text-gray-500 text-sm mt-1">
-                  {quotation.destination} • {new Date(quotation.createdAt).toLocaleDateString()}
+                  {quotation.DestinationName} • {new Date(quotation.TravelDate).toLocaleDateString()}
                 </Text>
               </TouchableOpacity>
             ))}
@@ -936,7 +895,7 @@ export default function InvoiceForm({ tripId, onSubmit, initialData = null, onCa
             </TouchableOpacity>
           </View>
 
-          {formData.TcsClaim.map((claim, index) => (
+          {formData?.TcsClaim && Array.isArray(formData.TcsClaim) && formData.TcsClaim.map((claim, index) => (
             <View
               key={index}
               className="border border-gray-200 rounded-lg p-3 mb-3 bg-gray-50"

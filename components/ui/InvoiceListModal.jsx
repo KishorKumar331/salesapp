@@ -37,69 +37,18 @@ export default function InvoiceListModal({
       setLoading(true);
       setError(null);
       
-      const response = await fetch(
-        `https://0rq0f90i05.execute-api.ap-south-1.amazonaws.com/salesapp/lead-managment/invoices?TripId=${tripId}`,
-        {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-            // Add any required authentication headers here
-            // 'Authorization': `Bearer ${yourAuthToken}`
-          },
-        }
-      );
-
-      let responseData;
-      const contentType = response.headers.get('content-type');
+      // TODO: Replace with actual API call when endpoint is available
+      // const response = await fetch(
+      //   `https://0rq0f90i05.execute-api.ap-south-1.amazonaws.com/salesapp/lead-managment/invoices?TripId=${tripId}`,
+      //   { method: 'GET', headers: { 'Content-Type': 'application/json' } }
+      // );
       
-      // Handle different response types
-      if (contentType && contentType.includes('application/json')) {
-        responseData = await response.json();
-      } else {
-        const text = await response.text();
-        try {
-          responseData = JSON.parse(text);
-        } catch (e) {
-          throw new Error(`Unexpected response format: ${text.substring(0, 100)}...`);
-        }
-      }
-
-      if (!response.ok) {
-        // Handle API error responses
-        const errorMessage = responseData?.message || 
-                            responseData?.error || 
-                            `HTTP error! status: ${response.status}`;
-        throw new Error(errorMessage);
-      }
-
-      // Handle different possible response structures
-      let invoicesData = [];
-      
-      if (Array.isArray(responseData)) {
-        invoicesData = responseData;
-      } else if (responseData && typeof responseData === 'object') {
-        // Handle case where data is nested under a property
-        const possibleDataKeys = ['data', 'items', 'invoices', 'results'];
-        for (const key of possibleDataKeys) {
-          if (Array.isArray(responseData[key])) {
-            invoicesData = responseData[key];
-            break;
-          }
-        }
-      }
-
-      // Sort invoices by creation date (newest first)
-      const sortedInvoices = [...invoicesData].sort((a, b) => {
-        const dateA = a.CreatedAt || a.createdAt || a.date || 0;
-        const dateB = b.CreatedAt || b.createdAt || b.date || 0;
-        return new Date(dateB).getTime() - new Date(dateA).getTime();
-      });
-
-      setInvoices(sortedInvoices);
+      // For now, show empty state since API doesn't exist yet
+      setInvoices([]);
     } catch (err) {
       console.error("Error fetching invoices:", err);
       setError(err.message || "Failed to load invoices. Please try again later.");
-      setInvoices([]); // Clear any previous data on error
+      setInvoices([]);
     } finally {
       setLoading(false);
     }
