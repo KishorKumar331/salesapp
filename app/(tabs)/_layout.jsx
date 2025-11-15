@@ -24,7 +24,6 @@ export default function TabLayout() {
       }}
     >
       <Tabs.Screen
-      
         name="index"
         options={{
           unmountOnBlur: true,
@@ -32,6 +31,21 @@ export default function TabLayout() {
           tabBarIcon: ({ color, focused }) => (
             <Ionicons 
               name={focused ? "document-text" : "document-text-outline"} 
+              size={24} 
+              color={color} 
+            />
+          ),
+        }}
+      />
+      
+      <Tabs.Screen
+        name="invoices"
+        options={{
+          title: "Invoices",
+          headerShown: false,
+          tabBarIcon: ({ color, focused }) => (
+            <Ionicons 
+              name={focused ? "receipt" : "receipt-outline"} 
               size={24} 
               color={color} 
             />

@@ -361,12 +361,21 @@ const FollowUpCards = ({ data }) => {
         onClose={() => setIsInvoiceModalVisible(false)}
         tripId={data?.TripId}
         onCreateNew={() => {
-          router.push({
-            pathname: "/invoice/InvoiceScreen",
-            params: {
-              tripId: data?.TripId,
-            },
-          });
+          // First close the modal
+          setIsInvoiceModalVisible(false);
+          // Then navigate to the invoice creation screen with a small delay
+          setTimeout(() => {
+            router.push({
+              pathname: "/(tabs)/invoices/create",
+              params: {
+                tripId: data?.TripId,
+                customerName: data?.['Client-Name'],
+                destination: data?.['Client-Destination'],
+                pax: data?.['Client-Pax'],
+                travelDate: data?.['Client-TravelDate']
+              },
+            });
+          }, 300); // Small delay to ensure modal is closed before navigation
         }}
       />
       <QuotationListModal

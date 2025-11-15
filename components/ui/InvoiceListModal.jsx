@@ -27,28 +27,79 @@ export default function InvoiceListModal({
   }, [visible, tripId]);
 
   const fetchInvoices = async () => {
+    if (!tripId) {
+      setError("Trip ID is required");
+      setLoading(false);
+      return;
+    }
+
     try {
       setLoading(true);
-      // TODO: Replace with actual API endpoint
+      setError(null);
+      
       const response = await fetch(
-        `https://0rq0f90i05.execute-api.ap-south-1.amazonaws.com/salesapp/lead-managment/invoices?TripId=${tripId}`
+        `https://0rq0f90i05.execute-api.ap-south-1.amazonaws.com/salesapp/lead-managment/invoices?TripId=${tripId}`,
+        {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            // Add any required authentication headers here
+            // 'Authorization': `Bearer ${yourAuthToken}`
+          },
+        }
       );
 
-      if (!response.ok) throw new Error("Failed to fetch invoices");
+      let responseData;
+      const contentType = response.headers.get('content-type');
+      
+      // Handle different response types
+      if (contentType && contentType.includes('application/json')) {
+        responseData = await response.json();
+      } else {
+        const text = await response.text();
+        try {
+          responseData = JSON.parse(text);
+        } catch (e) {
+          throw new Error(`Unexpected response format: ${text.substring(0, 100)}...`);
+        }
+      }
 
-      const data = await response.json();
+      if (!response.ok) {
+        // Handle API error responses
+        const errorMessage = responseData?.message || 
+                            responseData?.error || 
+                            `HTTP error! status: ${response.status}`;
+        throw new Error(errorMessage);
+      }
 
-      const sorted = Array.isArray(data)
-        ? data.sort(
-            (a, b) =>
-              new Date(b.CreatedAt).getTime() - new Date(a.CreatedAt).getTime()
-          )
-        : [];
+      // Handle different possible response structures
+      let invoicesData = [];
+      
+      if (Array.isArray(responseData)) {
+        invoicesData = responseData;
+      } else if (responseData && typeof responseData === 'object') {
+        // Handle case where data is nested under a property
+        const possibleDataKeys = ['data', 'items', 'invoices', 'results'];
+        for (const key of possibleDataKeys) {
+          if (Array.isArray(responseData[key])) {
+            invoicesData = responseData[key];
+            break;
+          }
+        }
+      }
 
-      setInvoices(sorted);
+      // Sort invoices by creation date (newest first)
+      const sortedInvoices = [...invoicesData].sort((a, b) => {
+        const dateA = a.CreatedAt || a.createdAt || a.date || 0;
+        const dateB = b.CreatedAt || b.createdAt || b.date || 0;
+        return new Date(dateB).getTime() - new Date(dateA).getTime();
+      });
+
+      setInvoices(sortedInvoices);
     } catch (err) {
       console.error("Error fetching invoices:", err);
-      setError("Failed to load invoices.");
+      setError(err.message || "Failed to load invoices. Please try again later.");
+      setInvoices([]); // Clear any previous data on error
     } finally {
       setLoading(false);
     }
@@ -106,10 +157,30 @@ export default function InvoiceListModal({
           {loading ? (
             <View className="flex-1 items-center justify-center">
               <ActivityIndicator size="large" color="#7c3aed" />
-              <Text className="mt-3 text-gray-600">Loading invoices...</Text>
+              <Text className="mt-2 text-gray-600">Loading invoices...</Text>
             </View>
           ) : error ? (
-            <Text className="text-center text-red-500 mt-6">{error}</Text>
+            <View className="flex-1 items-center justify-center p-6">
+              <View className="bg-red-50 p-4 rounded-full mb-4">
+                <Ionicons name="alert-circle" size={32} color="#ef4444" />
+              </View>
+              <Text className="text-lg font-semibold text-gray-900 mb-2">Couldn't load invoices</Text>
+              <Text className="text-red-600 text-center mb-6">{error}</Text>
+              <View className="flex-row space-x-4">
+                <TouchableOpacity
+                  onPress={onClose}
+                  className="border border-gray-300 px-6 py-2 rounded-lg"
+                >
+                  <Text className="text-gray-700">Close</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  onPress={fetchInvoices}
+                  className="bg-purple-600 px-6 py-2 rounded-lg"
+                >
+                  <Text className="text-white font-medium">Try Again</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
           ) : invoices.length === 0 ? (
             <View className="flex-1 items-center justify-center">
               <Ionicons name="receipt-outline" size={64} color="#d1d5db" />
