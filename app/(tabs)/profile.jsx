@@ -1,32 +1,38 @@
-import { View, Text, ScrollView, TouchableOpacity } from "react-native";
+import { View, Text, ScrollView, TouchableOpacity, Alert } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { useRouter } from "expo-router";
 import Navbar from "@/components/Navbar";
 
 export default function ProfileScreen() {
+  const router = useRouter();
+
+  const handleLogout = () => {
+    Alert.alert(
+      "Logout",
+      "Are you sure you want to logout?",
+      [
+        {
+          text: "Cancel",
+          style: "cancel"
+        },
+        { 
+          text: "Logout", 
+          onPress: () => router.replace("/(auth)")
+        }
+      ]
+    );
+  };
   return (
     <View className="flex-1 bg-gray-50">
       {/* Navbar with Profile Info */}
-      <View className="bg-gradient-to-br from-purple-600 to-purple-800 pt-12 pb-6 px-4 rounded-b-3xl">
-        <View className="flex-row items-center justify-between mb-4">
-          <View className="flex-1" />
-          <TouchableOpacity className="bg-white/20 rounded-full p-3 relative">
-            <Ionicons name="notifications-outline" size={24} color="white" />
-            <View className="absolute -top-1 -right-1 bg-red-500 rounded-full w-5 h-5 items-center justify-center">
-              <Text className="text-white text-xs font-bold">3</Text>
-            </View>
-          </TouchableOpacity>
-        </View>
-        
-        <View className="flex-row items-center mb-4">
-          <View className="bg-white/20 rounded-full p-4 mr-4">
-            <Ionicons name="person" size={32} color="white" />
-          </View>
-          <View>
-            <Text className="text-white text-2xl font-bold">John Doe</Text>
-            <Text className="text-white/80 text-sm">Travel Agent</Text>
-          </View>
-        </View>
-      </View>
+         <Navbar
+        title="Journey Readdy"
+        subtitle="Explore beautiful destinations"
+        showSearch
+        showNotifications
+        onNotificationPress={() => console.log("Notifications pressed")}
+      />
+
 
       <ScrollView className="flex-1 px-4 pt-6">
         {/* Stats Cards */}
@@ -61,11 +67,14 @@ export default function ProfileScreen() {
             <Ionicons name="chevron-forward" size={20} color="#9ca3af" />
           </TouchableOpacity>
 
-          <TouchableOpacity className="flex-row items-center py-3">
+          <TouchableOpacity 
+            className="flex-row items-center py-3"
+            onPress={handleLogout}
+          >
             <Ionicons name="log-out-outline" size={24} color="#ef4444" />
             <Text className="text-red-500 font-medium ml-3 flex-1">Logout</Text>
-            <Ionicons name="chevron-forward" size={20} color="#9ca3af" />
           </TouchableOpacity>
+
         </View>
       </ScrollView>
 

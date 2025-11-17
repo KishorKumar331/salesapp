@@ -32,7 +32,7 @@ const [leadData,setLeadData]=useState([]);
 
       // optional cleanup when screen loses focus
       return () => {
-        console.log("FollowUpPage blurred/unfocused");
+        // Cleanup function - no console.log needed here
       };
     }, [user])
   );

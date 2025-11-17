@@ -4,6 +4,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { LinearGradient } from 'expo-linear-gradient';
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { router } from "expo-router";
+import { useState } from "react";
 
 
 
@@ -16,24 +17,34 @@ export default function Navbar({
   onBackPress,
 }) {
   const insets = useSafeAreaInsets();
+const [isSearchFocused, setIsSearchFocused] = useState(false);
 
   return (
     <LinearGradient
     colors={['#7c3aed', '#5b21b6']} 
     start={{ x: 0, y: 0 }}
     end={{ x: 1, y: 1 }}
-    className="rounded-b-3xl px-4 pb-6"
+    className="rounded-b-3xl px-4"
     style={{ paddingTop: insets.top + 16 }}
   >
-      <View className="flex-row items-center justify-between mb-4">
+      <View className="flex-row items-center gap-[0.5rem] justify-between mb-4">
+    {!isSearchFocused && (
+  <Text className="text-white text-[1.2rem] font-bold">
+    PP
+    {/* {title} */}
+  </Text>
+)}
+
         {showSearch && !showBack && (
           <Pressable onPress={async() =>  await   AsyncStorage.removeItem("createAccount") } className="flex-row items-center bg-white/20 rounded-full px-4 py-3 flex-1 mr-4">
             <Ionicons name="search" size={20} color="white" />
-            <TextInput
-              placeholder="Search destinations"
-              placeholderTextColor="rgba(255,255,255,0.7)"
-              className="text-white ml-2 flex-1"
-            />
+         <TextInput
+  onFocus={() => setIsSearchFocused(true)}
+  onBlur={() => setIsSearchFocused(false)}
+  placeholder={!isSearchFocused?"Search":"Search TripId"}
+  placeholderTextColor="rgba(255,255,255,0.7)"
+  className="text-white ml-2 flex-1"
+/>
           </Pressable>
         )}
 
@@ -56,18 +67,18 @@ export default function Navbar({
           <Ionicons name="add" size={24} color="white" />
         </TouchableOpacity>
 
-        {showNotifications && (
+        {/* {showNotifications && (
           <TouchableOpacity 
             onPress={async () => {
               try {
                 await AsyncStorage.removeItem("createAccount");
                  router.replace("/(auth)");
 
-                // if (__DEV__) {
-                //   router.replace("/(auth)");
-                // } else {
-                //   await Updates.reloadAsync();
-                // }
+                if (__DEV__) {
+                  router.replace("/(auth)");
+                } else {
+                  await Updates.reloadAsync();
+                }
               } catch (error) {
                 console.error("Error during logout:", error);
                 router.replace("/(auth)");
@@ -76,21 +87,20 @@ export default function Navbar({
             className="bg-white/20 rounded-full p-3 relative"
           >
             <Ionicons name="notifications-outline" size={24} color="white" />
-            {/* Notification Badge */}
             <View className="absolute -top-1 -right-1 bg-red-500 rounded-full w-5 h-5 items-center justify-center">
               <Text className="text-white text-xs font-bold">3</Text>
             </View>
           </TouchableOpacity>
-        )}
+        )} */}
       </View>
 
       {/* Title and Subtitle */}
-      <View>
+      {/* <View>
         <Text className="text-white text-2xl font-bold">{title}</Text>
         {subtitle && (
           <Text className="text-white/80 text-sm mt-1">{subtitle}</Text>
         )}
-      </View>
+      </View> */}
     </LinearGradient>
   );
 }

@@ -17,5 +17,5 @@
     "app/(tabs)/_layout.jsx",
     "app/(tabs)/index.jsx",
     "nativewind-env.d.ts"
-  ]
+, "app/(tabs)/profile.jsx"  ]
 }
