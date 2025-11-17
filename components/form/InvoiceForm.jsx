@@ -1,4 +1,1229 @@
-import React, { useState, useEffect, useRef } from "react";
+// import React, { useState, useEffect, useRef } from "react";
+// import {
+//   View,
+//   Text,
+//   TextInput,
+//   TouchableOpacity,
+//   ScrollView,
+//   Alert,
+//   ActivityIndicator,
+//   Modal,
+//   StyleSheet,
+//   Platform,
+// } from "react-native";
+// import { Ionicons } from "@expo/vector-icons";
+// import { WebView } from 'react-native-webview';
+// import * as Print from 'expo-print';
+// import { shareAsync } from 'expo-sharing';
+// import * as FileSystem from 'expo-file-system/legacy';
+// import DatePicker from "@/components/ui/DatePicker";
+// import CustomPicker from "@/components/ui/CustomPicker";
+// import { generateInvoiceHtml } from "@/utils/invoiceGenerator";
+// import { getUserProfile } from "@/utils/userProfile";
+
+// // Styles for the modal and buttons
+// const styles = StyleSheet.create({
+//   modalContainer: {
+//     flex: 1,
+//     backgroundColor: 'white',
+//   },
+//   modalHeader: {
+//     flexDirection: 'row',
+//     justifyContent: 'space-between',
+//     alignItems: 'center',
+//     padding: 15,
+//     borderBottomWidth: 1,
+//     borderBottomColor: '#eee',
+//   },
+//   modalTitle: {
+//     fontSize: 18,
+//     fontWeight: '600',
+//   },
+//   buttonContainer: {
+//     flexDirection: 'row',
+//     justifyContent: 'space-around',
+//     padding: 15,
+//     borderTopWidth: 1,
+//     borderTopColor: '#eee',
+//     backgroundColor: '#f9f9f9',
+//   },
+//   button: {
+//     padding: 10,
+//     borderRadius: 5,
+//     minWidth: 120,
+//     alignItems: 'center',
+//   },
+//   buttonText: {
+//     color: 'white',
+//     fontWeight: '600',
+//   },
+//   closeButton: {
+//     padding: 10,
+//   },
+//   webview: {
+//     flex: 1,
+//   },
+// });
+
+// export default function InvoiceForm({ tripId, onSubmit, initialData = null, onCancel }) {
+//   const [step, setStep] = useState('fillForm'); // 'selectQuotation' or 'fillForm'
+//   const [quotations, setQuotations] = useState([]);
+//   const [selectedQuotation, setSelectedQuotation] = useState(null);
+//   const [loading, setLoading] = useState(false);
+//   const [showPreview, setShowPreview] = useState(false);
+//   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
+//   const [pdfUri, setPdfUri] = useState(null);
+//   const [userProfile, setUserProfile] = useState(null);
+//   const [formData, setFormData] = useState({
+//     invoiceId: "",
+//     invoiceNumber: "",
+//     tripId: tripId || "",
+//     finalPackageQuotationId: "",
+//     leadId: "",
+//     createdAt: "",
+//     updatedAt: "",
+//     invoiceDate: "",
+//     invoiceStatus: "Pending",
+//     currency: "INR",
+//     customer: {
+//       name: "",
+//       email: "",
+//       contact: "",
+//       address: {
+//         street: "",
+//         city: "",
+//         state: "",
+//         zipCode: "",
+//         country: "",
+//       },
+//     },
+//     travelerSummary: {
+//       adults: 0,
+//       children: 0,
+//       infants: 0,
+//       totalTravelers: 0,
+//     },
+//     destination: "",
+//     travelDate: "",
+//     startDate: "",
+//     endDate: "",
+//     packageSummary: {
+//       packageName: "",
+//       packageType: "International",
+//       nights: 0,
+//       days: 0,
+//     },
+//     pricing: {
+//       baseAmount: 0,
+//       discountAmount: 0,
+//       taxableAmount: 0,
+//       gstPercentage: 0,
+//       gstAmount: 0,
+//       tcsPercentage: 0,
+//       tcsAmount: 0,
+//       otherCharges: [],
+//       totalAmount: 0,
+//       amountInWords: "",
+//       tcsClaim: Array.isArray(initialData?.pricing?.tcsClaim) ? initialData.pricing.tcsClaim : [{ panNumber: "", name: "", percentage: 0 }],
+//     },
+//     payment: {
+//       dueDate: "",
+//       totalPaid: 0,
+//       balanceAmount: 0,
+//       installments: [
+//         {
+//           installmentId: "",
+//           sequence: 1,
+//           installmentAmount: 0,
+//           installmentDate: "",
+//           status: "Pending",
+//           paymentMethod: "",
+//           paymentVerification: null,
+//           receivedDate: "",
+//           amountReceived: 0,
+//           utrNumber: "",
+//           amountReceivedBy: "",
+//           amountConfirmedBy: "",
+//           lastUpdatedDate: "",
+//           lastUpdatedBy: "",
+//         },
+//       ],
+//     },
+//     cancellationPolicy: {
+//       flights: "As per airline policy",
+//       hotel: "As per the hotel policy",
+//       land: [
+//         {
+//           fromDaysBeforeTravel: 20,
+//           toDaysBeforeTravel: null,
+//           chargeType: "PERCENT",
+//           value: 25,
+//         },
+//         {
+//           fromDaysBeforeTravel: 0,
+//           toDaysBeforeTravel: 19,
+//           chargeType: "PERCENT",
+//           value: 100,
+//         },
+//       ],
+//       nonRefundableComponents: ["Visa", "TCS", "Taxes", "Remittance charges"],
+//       jrCancellationChargePerPax: 2500,
+//       rescheduleChargePerPax: {
+//         amount: 2000,
+//         notes: "Per pax + fare difference for flights and land part",
+//       },
+//       latePaymentFee: {
+//         amount: 5000,
+//         notes: "Within allowable limits",
+//       },
+//     },
+//     deliverables: [
+//       { item: "Hotel Vouchers", required: true, provided: false },
+//       { item: "Cab/Driver Details", required: true, provided: false },
+//       { item: "Scanned copy of passport", required: true, provided: false },
+//       { item: "Scanned copy of flights and tickets", required: true, provided: false },
+//       { item: "Payment screenshot (esp. NEFT)", required: true, provided: false },
+//       { item: "Scanned copy of PAN card", required: true, provided: false },
+//     ],
+//     notes: "",
+//     meta: {
+//       createdBy: "",
+//       lastUpdatedBy: "",
+//       source: "mobile",
+//       companyProfileId: "",
+//     },
+//     auditTrail: [
+//       {
+//         action: "CREATE",
+//         performedBy: "",
+//         timestamp: "",
+//         details: "",
+//       },
+//     ],
+//   });
+
+//   useEffect(() => {
+//     if (tripId) {
+//       console.log('📍 Setting tripId in formData:', tripId);
+//       setFormData((prev) => ({ ...prev, tripId }));
+//       fetchQuotations();
+//     }
+//   }, [tripId]);
+
+//   useEffect(() => {
+//     if (initialData) {
+//       setFormData(initialData);
+//     }
+//   }, [initialData]);
+
+//   useEffect(() => {
+//     const loadUserProfile = async () => {
+//       try {
+//         const profile = await getUserProfile();
+//         if (profile) {
+//           setUserProfile(profile);
+//           // Update meta data with user profile info
+//           setFormData(prev => ({
+//             ...prev,
+//             meta: {
+//               ...prev.meta,
+//               createdBy: profile.email || profile.name || "",
+//               companyProfileId: profile.companyId || "",
+//             },
+//           }));
+//         }
+//       } catch (error) {
+//         console.error("Error loading user profile:", error);
+//       }
+//     };
+//     loadUserProfile();
+//   }, []);
+
+//   const fetchQuotations = async () => {
+//     try {
+//       setLoading(true);
+//       const response = await fetch(
+//         `https://0rq0f90i05.execute-api.ap-south-1.amazonaws.com/salesapp/lead-managment/quotations?TripId=${tripId}`
+//       );
+
+//       if (!response.ok) throw new Error("Failed to fetch quotations");
+
+//       const data = await response.json();
+//       setQuotations(Array.isArray(data) ? data : []);
+//     } catch (error) {
+//       console.error("Error fetching quotations:", error);
+//       Alert.alert("Error", "Failed to load quotations");
+//     } finally {
+//       setLoading(false);
+//     }
+//   };
+
+//   const handleQuotationSelectFromPicker = (quoteId) => {
+//     const quotation = quotations.find((q) => q.QuoteId === quoteId);
+//     if (quotation) {
+//       handleSelectQuotation(quotation);
+//     }
+//   };
+
+//   const updateFormData = (field, value) => {
+//     setFormData((prev) => ({ ...prev, [field]: value }));
+//   };
+
+//   const updateNestedField = (parent, field, value) => {
+//     setFormData((prev) => ({
+//       ...prev,
+//       [parent]: {
+//         ...prev[parent],
+//         [field]: value,
+//       },
+//     }));
+//   };
+
+//   const updateAddressField = (field, value) => {
+//     setFormData((prev) => ({
+//       ...prev,
+//       customer: {
+//         ...prev.customer,
+//         address: {
+//           ...prev.customer.address,
+//           [field]: value,
+//         },
+//       },
+//     }));
+//   };
+
+//   const addInstallment = () => {
+//     setFormData((prev) => {
+//       const currentInstallments = prev?.payment?.installments || [];
+//       return {
+//         ...prev,
+//         payment: {
+//           ...prev.payment,
+//           installments: [
+//             ...currentInstallments,
+//             {
+//               installmentId: "",
+//               sequence: currentInstallments.length + 1,
+//               installmentAmount: 0,
+//               installmentDate: "",
+//               status: "Pending",
+//               paymentMethod: "",
+//               paymentVerification: null,
+//               receivedDate: "",
+//               amountReceived: 0,
+//               utrNumber: "",
+//               amountReceivedBy: "",
+//               amountConfirmedBy: "",
+//               lastUpdatedDate: "",
+//               lastUpdatedBy: "",
+//             },
+//           ],
+//         },
+//       };
+//     });
+//   };
+
+//   const removeInstallment = (index) => {
+//     if ((formData?.payment?.installments?.length || 0) <= 1) {
+//       Alert.alert("Error", "At least one installment is required");
+//       return;
+//     }
+//     setFormData((prev) => ({
+//       ...prev,
+//       payment: {
+//         ...prev.payment,
+//         installments: (prev?.payment?.installments || []).filter((_, i) => i !== index),
+//       },
+//     }));
+//   };
+
+//   const updateInstallment = (index, field, value) => {
+//     setFormData((prev) => ({
+//       ...prev,
+//       payment: {
+//         ...prev.payment,
+//         installments: (prev?.payment?.installments || []).map((inst, i) =>
+//           i === index ? { ...inst, [field]: value } : inst
+//         ),
+//       },
+//     }));
+//   };
+
+//   const addTcsClaim = () => {
+//     setFormData((prev) => ({
+//       ...prev,
+//       pricing: {
+//         ...prev.pricing,
+//         tcsClaim: [...(prev.pricing.tcsClaim || []), { panNumber: "", name: "", percentage: 0 }],
+//       },
+//     }));
+//   };
+
+//   const removeTcsClaim = (index) => {
+//     if (!formData.pricing.tcsClaim || formData.pricing.tcsClaim.length <= 1) {
+//       Alert.alert("Error", "At least one TCS claim entry is required");
+//       return;
+//     }
+//     setFormData((prev) => ({
+//       ...prev,
+//       pricing: {
+//         ...prev.pricing,
+//         tcsClaim: (prev.pricing.tcsClaim || []).filter((_, i) => i !== index),
+//       },
+//     }));
+//   };
+
+//   const updateTcsClaim = (index, field, value) => {
+//     setFormData((prev) => {
+//       const currentClaims = Array.isArray(prev.pricing.tcsClaim) ? [...prev.pricing.tcsClaim] : [];
+      
+//       if (index >= currentClaims.length) {
+//         currentClaims.push({ panNumber: "", name: "", percentage: 0 });
+//       }
+      
+//       const updatedClaims = currentClaims.map((claim, i) =>
+//         i === index ? { ...claim, [field]: value } : claim
+//       );
+      
+//       return {
+//         ...prev,
+//         pricing: {
+//           ...prev.pricing,
+//           tcsClaim: updatedClaims,
+//         },
+//       };
+//     });
+//   };
+
+//   // Calculate invoice total with GST and TCS
+//   const calculateInvoiceTotal = () => {
+//     const baseAmount = parseFloat(formData?.pricing?.totalAmount) || 0;
+//     const gst = parseFloat(formData?.pricing?.gstAmount) || 0;
+//     const tcs = parseFloat(formData?.pricing?.tcsAmount) || 0;
+//     return baseAmount + gst + tcs;
+//   };
+
+//   const generatePreviewHtml = () => {
+//     // Generate HTML for the invoice preview
+//     const previewData = {
+//       ...formData,
+//       InvoiceNumber: 'INV-' + Math.random().toString(36).substr(2, 9).toUpperCase(),
+//       InvoiceDate: new Date().toISOString().split('T')[0],
+//       DueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+//     };
+    
+//     return generateInvoiceHtml(previewData);
+//   };
+
+//   const handlePreview = () => {
+//     setShowPreview(true);
+//   };
+
+//   const generatePdf = async (forSharing = false) => {
+//     try {
+//       setIsGeneratingPdf(true);
+      
+//       // First save the form data if needed
+//       if (!forSharing) {
+//         await handleSubmit(false);
+//       }
+      
+//       // Generate HTML for the invoice
+//       const invoiceNumber = 'INV-' + Math.random().toString(36).substr(2, 9).toUpperCase();
+//       const html = generateInvoiceHtml({
+//         ...formData,
+//         InvoiceNumber: invoiceNumber,
+//         InvoiceDate: new Date().toISOString().split('T')[0],
+//         DueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+//       });
+      
+//       // Generate PDF
+//       const { uri } = await Print.printToFileAsync({
+//         html,
+//         width: 595,
+//         height: 842,
+//       });
+      
+//       // Generate a filename
+//       const customerName = formData.CustomerDetails?.Name?.replace(/\s+/g, '_') || 'Customer';
+//       const filename = `Invoice_${customerName}_${invoiceNumber}.pdf`;
+//       const newUri = `${FileSystem.documentDirectory}${filename}`;
+      
+//       // Move the file to a permanent location
+//       await FileSystem.moveAsync({
+//         from: uri,
+//         to: newUri,
+//       });
+      
+//       return newUri;
+//     } catch (error) {
+//       console.error('Error generating PDF:', error);
+//       Alert.alert('Error', 'Failed to generate PDF. Please try again.');
+//       throw error;
+//     } finally {
+//       setIsGeneratingPdf(false);
+//     }
+//   };
+
+//   const downloadPdf = async () => {
+//     try {
+//       const pdfUri = await generatePdf(false);
+//       // For Android, we'll use the share dialog as a save option
+//       await shareAsync(pdfUri, {
+//         mimeType: 'application/pdf',
+//         dialogTitle: 'Save Invoice',
+//         UTI: 'com.adobe.pdf',
+//       });
+//     } catch (error) {
+//       // Error already handled in generatePdf
+//     }
+//   };
+
+//   const sharePdf = async () => {
+//     try {
+//       const pdfUri = await generatePdf(true);
+//       await shareAsync(pdfUri, {
+//         mimeType: 'application/pdf',
+//         dialogTitle: 'Share Invoice',
+//         UTI: 'com.adobe.pdf',
+//       });
+//     } catch (error) {
+//       // Error already handled in generatePdf
+//     }
+//   };
+
+//   const handleSelectQuotation = (quotation) => {
+//     if (!quotation) return;
+    
+//     const totalCost =
+//       (quotation.Costs?.FlightCost || 0) +
+//       (quotation.Costs?.VisaCost || 0) +
+//       (quotation.Costs?.LandPackageCost || 0);
+    
+//     setSelectedQuotation(quotation);
+//     setFormData(prev => ({
+//       ...prev,
+//       finalPackageQuotationId: quotation.QuoteId || "",
+//       customer: {
+//         ...prev.customer,
+//         name: quotation["Client-Name"] || "",
+//         email: quotation["Client-Email"] || "",
+//         contact: quotation["Client-Contact"] || "",
+//       },
+//       destination: quotation.DestinationName || "",
+//       startDate: quotation.TravelDate || "",
+//       endDate: quotation.TravelEndDate || "",
+//       travelDate: quotation.TravelDate || "",
+//       travelerSummary: {
+//         ...prev.travelerSummary,
+//         totalTravelers: quotation.NoOfPax || 0,
+//       },
+//       pricing: {
+//         ...prev.pricing,
+//         totalAmount: totalCost,
+//         gstAmount: quotation.Costs?.GSTAmount || 0,
+//         tcsAmount: quotation.Costs?.TCSAmount || 0,
+//       },
+//     }));
+//     setStep('fillForm');
+//   };
+
+//   const handleSubmit = async () => {
+//     // Validation
+//     if (!formData.finalPackageQuotationId) {
+//       Alert.alert("Error", "Please select a quotation");
+//       return false;
+//     }
+//     if (!formData.customer.name) {
+//       Alert.alert("Error", "Customer name is required");
+//       return false;
+//     }
+//     if (!formData.pricing.totalAmount) {
+//       Alert.alert("Error", "Total amount is required");
+//       return false;
+//     }
+
+//     try {
+//       // Generate invoice number: {company initials}-Inv-{timestamp}
+//       const generateInvoiceNumber = () => {
+//         const companyName = userProfile?.companyName || "JR";
+//         // Get initials from company name (handle multiple spaces)
+//         const initials = companyName
+//           .split(/\s+/)
+//           .map(word => word[0]?.toUpperCase())
+//           .join('')
+//           .substring(0, 3) || "INV";
+        
+//         const timestamp = new Date().toISOString().split('T')[0].replace(/-/g, '');
+//         return `${initials}-Inv-${timestamp}`;
+//       };
+
+//       // Generate audit trail entry
+//       const auditEntry = {
+//         action: "Created",
+//         timestamp: new Date().toISOString(),
+//         performedBy: userProfile?.email || "system",
+//         changes: {
+//           status: "Pending",
+//           invoiceNumber: generateInvoiceNumber(),
+//         },
+//       };
+
+//       // Debug tripId
+//       console.log('🔍 Debug - tripId from prop:', tripId);
+//       console.log('🔍 Debug - tripId from formData:', formData.tripId);
+      
+//       // Clean up form data - remove old keys and keep only new schema
+//       const cleanedData = {
+//         invoiceNumber: generateInvoiceNumber(),
+//         tripId: formData.tripId || tripId,
+//         finalPackageQuotationId: formData.finalPackageQuotationId,
+//         customer: formData.customer,
+//         destination: formData.destination,
+//         startDate: formData.startDate,
+//         endDate: formData.endDate,
+//         travelDate: formData.travelDate,
+//         travelerSummary: formData.travelerSummary,
+//         pricing: formData.pricing,
+//         payment: formData.payment,
+//         cancellationPolicy: formData.cancellationPolicy,
+//         deliverables: formData.deliverables,
+//         notes: formData.notes,
+//         invoiceDate: new Date().toISOString().split('T')[0],
+//         meta: {
+//           createdBy: userProfile?.email || "",
+//           companyProfileId: userProfile?.companyId || "",
+//           companyName: userProfile?.companyName || "",
+//           bankDetails: userProfile?.bankDetails || {},
+//         },
+//         auditTrail: [auditEntry],
+//       };
+      
+//       // Console log the cleaned form data
+//       console.log('📋 Invoice Form Data (Cleaned):', cleanedData);
+//       console.log('📋 Invoice Number:', cleanedData.invoiceNumber);
+//       console.log('👤 Customer:', cleanedData.customer);
+//       console.log('💰 Pricing:', cleanedData.pricing);
+//       console.log('📅 Payment Installments:', cleanedData.payment.installments);
+//       console.log('🎯 TCS Claims:', cleanedData.pricing.tcsClaim);
+//       console.log('📄 Meta:', cleanedData.meta);
+//       console.log('📄 Audit Trail:', cleanedData.auditTrail);
+      
+//       // Call the parent's onSubmit with the cleaned form data
+//       await onSubmit(cleanedData);
+//       return true;
+//     } catch (error) {
+//       console.error('Error saving invoice:', error);
+//       Alert.alert("Error", error.message || "Failed to save invoice. Please try again.");
+//       return false;
+//     }
+//   };
+
+//   const quotationOptions = quotations.map((q) => ({
+//     label: `${q.QuoteId} - ₹${q.Costs?.TotalCost?.toLocaleString("en-IN") || 0}`,
+//     value: q.QuoteId,
+//   }));
+
+//   // Quotation Selection Step
+//   if (step === 'selectQuotation') {
+//     return (
+//       <View className="flex-1 bg-gray-50 p-4">
+//         <Text className="text-xl font-bold mb-4">Select Quotation</Text>
+//         {quotations.length === 0 ? (
+//           <View className="flex-1 justify-center items-center">
+//             <Text className="text-gray-500">No quotations found for this trip</Text>
+//           </View>
+//         ) : (
+//           <ScrollView className="flex-1">
+//             {quotations.map((quotation) => (
+//               <TouchableOpacity
+//                 key={quotation.QuoteId}
+//                 className="bg-white p-4 rounded-lg mb-3 shadow-sm"
+//                 onPress={() => handleSelectQuotation(quotation)}
+//               >
+//                 <Text className="font-bold text-lg">Quotation #{quotation.QuoteId}</Text>
+//                 <Text className="text-gray-600">{quotation["Client-Name"]}</Text>
+//                 <Text className="text-gray-600">Amount: ₹{quotation.Costs?.TotalCost?.toLocaleString()}</Text>
+//                 <Text className="text-gray-500 text-sm mt-1">
+//                   {quotation.DestinationName} • {new Date(quotation.TravelDate).toLocaleDateString()}
+//                 </Text>
+//               </TouchableOpacity>
+//             ))}
+//           </ScrollView>
+//         )}
+//         <View className="flex-row justify-between mt-4">
+//           <TouchableOpacity
+//             className="bg-gray-200 px-6 py-3 rounded-lg"
+//             onPress={onCancel}
+//           >
+//             <Text className="text-gray-800 font-medium">Cancel</Text>
+//           </TouchableOpacity>
+//           <TouchableOpacity
+//             className="bg-purple-600 px-6 py-3 rounded-lg"
+//             onPress={() => setStep('fillForm')}
+//           >
+//             <Text className="text-white font-medium">Skip & Create Blank</Text>
+//           </TouchableOpacity>
+//         </View>
+//       </View>
+//     );
+//   }
+
+//   // Form Filling Step
+//   return (
+//     <ScrollView className="flex-1 bg-gray-50">
+//       <View className="p-4">
+//         {selectedQuotation && (
+//           <View className="bg-blue-50 p-3 rounded-lg mb-4 flex-row justify-between items-center">
+//             <Text className="text-blue-800">
+//               Using Quotation #{selectedQuotation?.QuoteId || selectedQuotation?.id}
+//             </Text>
+//             <TouchableOpacity onPress={() => setStep('selectQuotation')}>
+//               <Text className="text-blue-600 font-medium">Change</Text>
+//             </TouchableOpacity>
+//           </View>
+//         )}
+//         {/* Header */}
+//         <View className="bg-white rounded-xl p-4 mb-4">
+//           <Text className="text-2xl font-bold text-gray-900 mb-2">
+//             Create Invoice
+//           </Text>
+//           <Text className="text-gray-600">
+//             Select a quotation and fill in the details
+//           </Text>
+//         </View>
+
+//         {/* Quotation Selection */}
+//         <View className="bg-white rounded-xl p-4 mb-4">
+//           <Text className="text-lg font-semibold text-gray-900 mb-3">
+//             Select Quotation
+//           </Text>
+//           {loading ? (
+//             <ActivityIndicator size="small" color="#7c3aed" />
+//           ) : (
+//             <CustomPicker
+//               items={quotationOptions}
+//               selectedValue={formData?.finalPackageQuotationId}
+//               onValueChange={handleQuotationSelectFromPicker}
+//               placeholder="Select a quotation"
+//               title="Select Quotation"
+//             />
+//           )}
+//         </View>
+
+//         {/* Customer Details */}
+//         <View className="bg-white rounded-xl p-4 mb-4">
+//           <Text className="text-lg font-semibold text-gray-900 mb-3">
+//             Customer Details
+//           </Text>
+
+//           <Text className="text-sm font-medium text-gray-700 mb-2">Name *</Text>
+//           <TextInput
+//             className="border border-gray-300 rounded-lg p-3 mb-3 bg-white"
+//             value={formData?.customer?.name || ""}
+//             onChangeText={(value) => updateNestedField("customer", "name", value)}
+//             placeholder="Customer name"
+//           />
+
+//           <Text className="text-sm font-medium text-gray-700 mb-2">Email</Text>
+//           <TextInput
+//             className="border border-gray-300 rounded-lg p-3 mb-3 bg-white"
+//             value={formData?.customer?.email || ""}
+//             onChangeText={(value) => updateNestedField("customer", "email", value)}
+//             placeholder="customer@email.com"
+//             keyboardType="email-address"
+//           />
+
+//           <Text className="text-sm font-medium text-gray-700 mb-2">Contact</Text>
+//           <TextInput
+//             className="border border-gray-300 rounded-lg p-3 mb-3 bg-white"
+//             value={formData?.customer?.contact || ""}
+//             onChangeText={(value) => updateNestedField("customer", "contact", value)}
+//             placeholder="Phone number"
+//             keyboardType="phone-pad"
+//           />
+
+//           {/* Address */}
+//           <Text className="text-base font-semibold text-gray-900 mt-3 mb-2">
+//             Address
+//           </Text>
+
+//           <Text className="text-sm font-medium text-gray-700 mb-2">Street</Text>
+//           <TextInput
+//             className="border border-gray-300 rounded-lg p-3 mb-3 bg-white"
+//             value={formData?.customer?.address?.street || ""}
+//             onChangeText={(value) => updateAddressField("street", value)}
+//             placeholder="Street address"
+//           />
+
+//           <View className="flex-row gap-3 mb-3">
+//             <View className="flex-1">
+//               <Text className="text-sm font-medium text-gray-700 mb-2">City</Text>
+//               <TextInput
+//                 className="border border-gray-300 rounded-lg p-3 bg-white"
+//                 value={formData?.customer?.address?.city || ""}
+//                 onChangeText={(value) => updateAddressField("city", value)}
+//                 placeholder="City"
+//               />
+//             </View>
+//             <View className="flex-1">
+//               <Text className="text-sm font-medium text-gray-700 mb-2">State</Text>
+//               <TextInput
+//                 className="border border-gray-300 rounded-lg p-3 bg-white"
+//                 value={formData?.customer?.address?.state || ""}
+//                 onChangeText={(value) => updateAddressField("state", value)}
+//                 placeholder="State"
+//               />
+//             </View>
+//           </View>
+
+//           <View className="flex-row gap-3">
+//             <View className="flex-1">
+//               <Text className="text-sm font-medium text-gray-700 mb-2">Zip Code</Text>
+//               <TextInput
+//                 className="border border-gray-300 rounded-lg p-3 bg-white"
+//                 value={formData?.customer?.address?.zipCode || ""}
+//                 onChangeText={(value) => updateAddressField("zipCode", value)}
+//                 placeholder="Zip"
+//                 keyboardType="numeric"
+//               />
+//             </View>
+//             <View className="flex-1">
+//               <Text className="text-sm font-medium text-gray-700 mb-2">Country</Text>
+//               <TextInput
+//                 className="border border-gray-300 rounded-lg p-3 bg-white"
+//                 value={formData?.customer?.address?.country || ""}
+//                 onChangeText={(value) => updateAddressField("country", value)}
+//                 placeholder="Country"
+//               />
+//             </View>
+//           </View>
+//         </View>
+
+//         {/* Trip Details */}
+//         {/* <View className="bg-white rounded-xl p-4 mb-4">
+//           <Text className="text-lg font-semibold text-gray-900 mb-3">
+//             Trip Details
+//           </Text>
+
+//           <Text className="text-sm font-medium text-gray-700 mb-2">Destination</Text>
+//           <TextInput
+//             className="border border-gray-300 rounded-lg p-3 mb-3 bg-white"
+//             value={formData.Destination}
+//             onChangeText={(value) => updateFormData("Destination", value)}
+//             placeholder="Destination"
+//           />
+
+//           <Text className="text-sm font-medium text-gray-700 mb-2">Travel Date</Text>
+//           <DatePicker
+//             value={formData.TravelDate}
+//             onDateChange={(value) => updateFormData("TravelDate", value)}
+//             placeholder="Select travel date"
+//           />
+
+//           <View className="flex-row gap-3 mt-3">
+//             <View className="flex-1">
+//               <Text className="text-sm font-medium text-gray-700 mb-2">Start Date</Text>
+//               <DatePicker
+//                 value={formData.StartDate}
+//                 onDateChange={(value) => updateFormData("StartDate", value)}
+//                 placeholder="Start date"
+//               />
+//             </View>
+//             <View className="flex-1">
+//               <Text className="text-sm font-medium text-gray-700 mb-2">End Date</Text>
+//               <DatePicker
+//                 value={formData.EndDate}
+//                 onDateChange={(value) => updateFormData("EndDate", value)}
+//                 placeholder="End date"
+//               />
+//             </View>
+//           </View>
+
+//           <Text className="text-sm font-medium text-gray-700 mb-2 mt-3">
+//             Number of Travelers
+//           </Text>
+//           <TextInput
+//             className="border border-gray-300 rounded-lg p-3 bg-white"
+//             value={formData.NumberOfTravelers.toString()}
+//             onChangeText={(value) => updateFormData("NumberOfTravelers", parseInt(value) || 0)}
+//             placeholder="Number of travelers"
+//             keyboardType="numeric"
+//           />
+//         </View> */}
+
+//         {/* Financial Details */}
+//         <View className="bg-white rounded-xl p-4 mb-4">
+//           <Text className="text-lg font-semibold text-gray-900 mb-3">
+//             Financial Details
+//           </Text>
+
+//           {/* Package Amount (Read-only from quotation) */}
+//           <View className="bg-gray-50 rounded-lg p-3 mb-3">
+//             <Text className="text-sm text-gray-600 mb-1">Package Amount</Text>
+//             <Text className="text-2xl font-bold text-gray-900">
+//               ₹{parseFloat(formData?.pricing?.totalAmount || 0).toLocaleString("en-IN")}
+//             </Text>
+//             <Text className="text-xs text-gray-500 mt-1">
+//               From selected quotation
+//             </Text>
+//           </View>
+
+//           {/* Editable GST and TCS */}
+//           <View className="flex-row gap-3 mb-3">
+//             <View className="flex-1">
+//               <Text className="text-sm font-medium text-gray-700 mb-2">GST (₹)</Text>
+//               <TextInput
+//                 className="border border-gray-300 rounded-lg p-3 bg-white"
+//                 value={(formData?.pricing?.gstAmount || 0).toString()}
+//                 onChangeText={(value) => setFormData(prev => ({
+//                   ...prev,
+//                   pricing: { ...prev.pricing, gstAmount: parseFloat(value) || 0 }
+//                 }))}
+//                 placeholder="GST amount"
+//                 keyboardType="numeric"
+//               />
+//             </View>
+//             <View className="flex-1">
+//               <Text className="text-sm font-medium text-gray-700 mb-2">TCS (₹)</Text>
+//               <TextInput
+//                 className="border border-gray-300 rounded-lg p-3 bg-white"
+//                 value={(formData?.pricing?.tcsAmount || 0).toString()}
+//                 onChangeText={(value) => setFormData(prev => ({
+//                   ...prev,
+//                   pricing: { ...prev.pricing, tcsAmount: parseFloat(value) || 0 }
+//                 }))}
+//                 placeholder="TCS amount"
+//                 keyboardType="numeric"
+//               />
+//             </View>
+//           </View>
+
+//           {/* Invoice Total Calculation */}
+//           <View className="bg-purple-50 rounded-lg p-4 border border-purple-200">
+//             <Text className="text-sm font-semibold text-gray-700 mb-2">
+//               Invoice Breakdown
+//             </Text>
+//             <View className="space-y-2">
+//               <View className="flex-row justify-between">
+//                 <Text className="text-gray-700">Package Amount:</Text>
+//                 <Text className="font-semibold text-gray-900">
+//                   ₹{parseFloat(formData?.pricing?.totalAmount || 0).toLocaleString("en-IN")}
+//                 </Text>
+//               </View>
+//               <View className="flex-row justify-between">
+//                 <Text className="text-gray-700">GST:</Text>
+//                 <Text className="font-semibold text-gray-900">
+//                   ₹{parseFloat(formData?.pricing?.gstAmount || 0).toLocaleString("en-IN")}
+//                 </Text>
+//               </View>
+//               <View className="flex-row justify-between">
+//                 <Text className="text-gray-700">TCS:</Text>
+//                 <Text className="font-semibold text-gray-900">
+//                   ₹{parseFloat(formData?.pricing?.tcsAmount || 0).toLocaleString("en-IN")}
+//                 </Text>
+//               </View>
+//               <View className="border-t border-purple-300 pt-2 mt-2">
+//                 <View className="flex-row justify-between">
+//                   <Text className="text-lg font-bold text-purple-700">
+//                     Invoice Total:
+//                   </Text>
+//                   <Text className="text-lg font-bold text-purple-700">
+//                     ₹{calculateInvoiceTotal().toLocaleString("en-IN")}
+//                   </Text>
+//                 </View>
+//               </View>
+//             </View>
+//           </View>
+//         </View>
+
+//         {/* Installments */}
+//         <View className="bg-white rounded-xl p-4 mb-4">
+//           <View className="flex-row justify-between items-center mb-3">
+//             <Text className="text-lg font-semibold text-gray-900">Installments</Text>
+//             <TouchableOpacity
+//               onPress={addInstallment}
+//               className="bg-purple-600 rounded-lg px-4 py-2 flex-row items-center"
+//             >
+//               <Ionicons name="add" size={16} color="white" />
+//               <Text className="text-white font-medium ml-1">Add</Text>
+//             </TouchableOpacity>
+//           </View>
+
+//           {formData?.payment?.installments?.map((installment, index) => (
+//             <View
+//               key={index}
+//               className="border border-gray-200 rounded-lg p-3 mb-3 bg-gray-50"
+//             >
+//               <View className="flex-row justify-between items-center mb-2">
+//                 <Text className="font-semibold text-gray-900">
+//                   Installment {index + 1}
+//                 </Text>
+//                 {formData?.payment?.installments?.length > 1 && (
+//                   <TouchableOpacity
+//                     onPress={() => removeInstallment(index)}
+//                     className="bg-red-100 rounded-full p-1"
+//                   >
+//                     <Ionicons name="trash" size={16} color="#dc2626" />
+//                   </TouchableOpacity>
+//                 )}
+//               </View>
+
+//               <Text className="text-sm font-medium text-gray-700 mb-2">
+//                 Amount (₹)
+//               </Text>
+//               <TextInput
+//                 className="border border-gray-300 rounded-lg p-3 mb-3 bg-white"
+//                 value={installment.installmentAmount.toString()}
+//                 onChangeText={(value) =>
+//                   updateInstallment(index, "installmentAmount", parseFloat(value) || 0)
+//                 }
+//                 placeholder="Installment amount"
+//                 keyboardType="numeric"
+//               />
+
+//               <Text className="text-sm font-medium text-gray-700 mb-2">
+//                 Installment Date
+//               </Text>
+//               <DatePicker
+//                 value={installment.installmentDate}
+//                 onDateChange={(value) =>
+//                   updateInstallment(index, "installmentDate", value)
+//                 }
+//                 placeholder="Select installment date"
+//               />
+//             </View>
+//           ))}
+
+//           {/* Installment Summary */}
+//           <View className="bg-purple-50 rounded-lg p-3 mt-2">
+//             <View className="flex-row justify-between">
+//               <Text className="text-gray-700">Total Installments:</Text>
+//               <Text className="font-semibold text-gray-900">
+//                 ₹
+//                 {(formData?.payment?.installments || []).reduce(
+//                   (sum, inst) => sum + (inst.installmentAmount || 0),
+//                   0
+//                 ).toLocaleString("en-IN")}
+//               </Text>
+//             </View>
+//             <View className="flex-row justify-between mt-1">
+//               <Text className="text-gray-700">Invoice Total (with GST & TCS):</Text>
+//               <Text className="font-semibold text-purple-700">
+//                 ₹{calculateInvoiceTotal().toLocaleString("en-IN")}
+//               </Text>
+//             </View>
+//             {calculateInvoiceTotal() > 0 &&
+//               (formData?.payment?.installments || []).reduce(
+//                 (sum, inst) => sum + (inst.installmentAmount || 0),
+//                 0
+//               ) !== calculateInvoiceTotal() && (
+//                 <Text className="text-red-600 text-xs mt-2">
+//                   ⚠️ Installments don't match invoice total (₹{calculateInvoiceTotal().toLocaleString("en-IN")})
+//                 </Text>
+//               )}
+//           </View>
+//         </View>
+
+//         {/* Cancellation Details */}
+//         <View className="bg-white rounded-xl p-4 mb-4">
+//           <Text className="text-lg font-semibold text-gray-900 mb-3">
+//             Cancellation Policy
+//           </Text>
+//           <TextInput
+//             className="border border-gray-300 rounded-lg p-3 bg-white"
+//             value={formData?.cancellationPolicy?.flights || ""}
+//             onChangeText={(value) => setFormData(prev => ({
+//               ...prev,
+//               cancellationPolicy: { ...prev.cancellationPolicy, flights: value }
+//             }))}
+//             placeholder="Enter cancellation policy details..."
+//             multiline
+//             numberOfLines={8}
+//             textAlignVertical="top"
+//           />
+//         </View>
+
+//         {/* TCS Claim */}
+//         <View className="bg-white rounded-xl p-4 mb-4">
+//           <View className="flex-row justify-between items-center mb-3">
+//             <Text className="text-lg font-semibold text-gray-900">TCS Claim</Text>
+//             <TouchableOpacity
+//               onPress={addTcsClaim}
+//               className="bg-purple-600 rounded-lg px-4 py-2 flex-row items-center"
+//             >
+//               <Ionicons name="add" size={16} color="white" />
+//               <Text className="text-white font-medium ml-1">Add</Text>
+//             </TouchableOpacity>
+//           </View>
+
+//           {formData?.pricing?.tcsClaim && Array.isArray(formData.pricing.tcsClaim) && formData.pricing.tcsClaim.map((claim, index) => (
+//             <View
+//               key={index}
+//               className="border border-gray-200 rounded-lg p-3 mb-3 bg-gray-50"
+//             >
+//               <View className="flex-row justify-between items-center mb-2">
+//                 <Text className="font-semibold text-gray-900">
+//                   TCS Claim {index + 1}
+//                 </Text>
+//                 {formData.pricing.tcsClaim.length > 1 && (
+//                   <TouchableOpacity
+//                     onPress={() => removeTcsClaim(index)}
+//                     className="bg-red-100 rounded-full p-1"
+//                   >
+//                     <Ionicons name="trash" size={16} color="#dc2626" />
+//                   </TouchableOpacity>
+//                 )}
+//               </View>
+
+//               <Text className="text-sm font-medium text-gray-700 mb-2">
+//                 PAN Number
+//               </Text>
+//               <TextInput
+//                 className="border border-gray-300 rounded-lg p-3 mb-3 bg-white"
+//                 value={claim.panNumber}
+//                 onChangeText={(value) =>
+//                   updateTcsClaim(index, "panNumber", value)
+//                 }
+//                 placeholder="PAN Number"
+//                 autoCapitalize="characters"
+//               />
+
+//               <Text className="text-sm font-medium text-gray-700 mb-2">
+//                 Name
+//               </Text>
+//               <TextInput
+//                 className="border border-gray-300 rounded-lg p-3 mb-3 bg-white"
+//                 value={claim.name}
+//                 onChangeText={(value) =>
+//                   updateTcsClaim(index, "name", value)
+//                 }
+//                 placeholder="Name"
+//               />
+
+//               <Text className="text-sm font-medium text-gray-700 mb-2">
+//                 Percentage (%)
+//               </Text>
+//               <TextInput
+//                 className="border border-gray-300 rounded-lg p-3 bg-white"
+//                 value={claim.percentage.toString()}
+//                 onChangeText={(value) =>
+//                   updateTcsClaim(index, "percentage", parseFloat(value) || 0)
+//                 }
+//                 placeholder="Percentage"
+//                 keyboardType="numeric"
+//               />
+//             </View>
+//           ))}
+//         </View>
+
+//         {/* Notes */}
+//         <View className="bg-white rounded-xl p-4 mb-4">
+//           <Text className="text-lg font-semibold text-gray-900 mb-3">Notes</Text>
+//           <TextInput
+//             className="border border-gray-300 rounded-lg p-3 bg-white"
+//             value={formData?.notes || ""}
+//             onChangeText={(value) => updateFormData("notes", value)}
+//             placeholder="Additional notes..."
+//             multiline
+//             numberOfLines={4}
+//             textAlignVertical="top"
+//           />
+//         </View>
+
+//         {/* Action Buttons */}
+//         <View className="flex-row gap-3 mt-6 mb-6">
+//           <TouchableOpacity
+//             className="flex-1 bg-purple-600 py-3 rounded-xl"
+//             onPress={handlePreview}
+//             disabled={isGeneratingPdf}
+//           >
+//             <Text className="text-white text-center font-semibold text-sm">
+//               {isGeneratingPdf ? 'Generating...' : 'Preview'}
+//             </Text>
+//           </TouchableOpacity>
+//           <TouchableOpacity
+//             className="flex-1 bg-green-600 py-3 rounded-xl"
+//             onPress={downloadPdf}
+//             disabled={isGeneratingPdf}
+//           >
+//             <Text className="text-white text-center font-semibold text-sm">
+//               {isGeneratingPdf ? 'Generating...' : 'Save PDF'}
+//             </Text>
+//           </TouchableOpacity>
+//           <TouchableOpacity
+//             className="flex-1 bg-blue-600 py-3 rounded-xl"
+//             onPress={sharePdf}
+//             disabled={isGeneratingPdf}
+//           >
+//             <Text className="text-white text-center font-semibold text-sm">
+//               {isGeneratingPdf ? 'Generating...' : 'Share'}
+//             </Text>
+//           </TouchableOpacity>
+//         </View>
+
+//         {/* PDF Preview Modal */}
+//         <Modal
+//           visible={showPreview}
+//           animationType="slide"
+//           onRequestClose={() => setShowPreview(false)}
+//         >
+//           <View style={styles.modalContainer}>
+//             <View style={styles.modalHeader}>
+//               <Text style={styles.modalTitle}>Invoice Preview</Text>
+//               <TouchableOpacity
+//                 style={styles.closeButton}
+//                 onPress={() => setShowPreview(false)}
+//               >
+//                 <Ionicons name="close" size={24} color="#333" />
+//               </TouchableOpacity>
+//             </View>
+            
+//             <WebView
+//               source={{ html: generatePreviewHtml() }}
+//               style={styles.webview}
+//               startInLoadingState={true}
+//               renderLoading={() => (
+//                 <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+//                   <ActivityIndicator size="large" color="#7c3aed" />
+//                 </View>
+//               )}
+//             />
+            
+//             <View style={styles.buttonContainer}>
+//               <TouchableOpacity
+//                 style={[styles.button, { backgroundColor: '#6b7280' }]}
+//                 onPress={() => setShowPreview(false)}
+//               >
+//                 <Text style={styles.buttonText}>Close</Text>
+//               </TouchableOpacity>
+//             </View>
+//           </View>
+//         </Modal>
+
+//         <View className="flex-row justify-between mt-6 mb-8">
+//           <TouchableOpacity
+//             onPress={() => setStep('selectQuotation')}
+//             className="border border-purple-600 rounded-xl p-4 flex-1 mr-2 items-center"
+//           >
+//             <Text className="text-purple-600 font-bold">Back</Text>
+//           </TouchableOpacity>
+//  <TouchableOpacity
+//   onPress={() => setShowPreview(true)}
+//   className="bg-purple-600 rounded-xl p-4 flex-1 ml-2 items-center"
+// >
+//   <Text className="text-white font-bold">Preview & Save</Text>
+// </TouchableOpacity>
+
+//         </View>
+//       </View>
+//     </ScrollView>
+//   );
+// }
+
+
+
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -9,52 +1234,51 @@ import {
   ActivityIndicator,
   Modal,
   StyleSheet,
-  Platform,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { WebView } from 'react-native-webview';
-import * as Print from 'expo-print';
-import { shareAsync } from 'expo-sharing';
-import * as FileSystem from 'expo-file-system/legacy';
+import { WebView } from "react-native-webview";
+import * as Print from "expo-print";
+import { shareAsync } from "expo-sharing";
+import * as FileSystem from "expo-file-system/legacy";
 import DatePicker from "@/components/ui/DatePicker";
 import CustomPicker from "@/components/ui/CustomPicker";
 import { generateInvoiceHtml } from "@/utils/invoiceGenerator";
+import { getUserProfile } from "@/utils/userProfile";
 
-// Styles for the modal and buttons
 const styles = StyleSheet.create({
   modalContainer: {
     flex: 1,
-    backgroundColor: 'white',
+    backgroundColor: "white",
   },
   modalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     padding: 15,
     borderBottomWidth: 1,
-    borderBottomColor: '#eee',
+    borderBottomColor: "#eee",
   },
   modalTitle: {
     fontSize: 18,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   buttonContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
+    flexDirection: "row",
+    justifyContent: "space-around",
     padding: 15,
     borderTopWidth: 1,
-    borderTopColor: '#eee',
-    backgroundColor: '#f9f9f9',
+    borderTopColor: "#eee",
+    backgroundColor: "#f9f9f9",
   },
   button: {
     padding: 10,
     borderRadius: 5,
-    minWidth: 120,
-    alignItems: 'center',
+    minWidth: 110,
+    alignItems: "center",
   },
   buttonText: {
-    color: 'white',
-    fontWeight: '600',
+    color: "white",
+    fontWeight: "600",
   },
   closeButton: {
     padding: 10,
@@ -64,86 +1288,243 @@ const styles = StyleSheet.create({
   },
 });
 
-export default function InvoiceForm({ tripId, onSubmit, initialData = null, onCancel }) {
-  console.log(tripId)
-  const [step, setStep] = useState('fillForm'); // 'selectQuotation' or 'fillForm'
+export default function InvoiceForm({
+  tripId,
+  onSubmit,
+  initialData = null,
+  onCancel,
+  defaultCustomerName = "",
+  defaultEmail = "",
+  defaultContact = "",
+  defaultDestination = "",
+  defaultPax = "",
+  defaultTravelDate = "",
+}) {
+  const [step, setStep] = useState("fillForm"); // 'selectQuotation' or 'fillForm'
   const [quotations, setQuotations] = useState([]);
-  console.log(quotations)
   const [selectedQuotation, setSelectedQuotation] = useState(null);
-  const [loading, setLoading] = useState(false);
+  const [quotationsLoading, setQuotationsLoading] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
-  const [pdfUri, setPdfUri] = useState(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [userProfile, setUserProfile] = useState(null);
+
   const [formData, setFormData] = useState({
-    TripId: tripId,
-    FinalPackageQuotationId: "",
-    CustomerDetails: {
-      Name: "",
-      Email: "",
-      Contact: "",
-      Address: {
-        Street: "",
-        City: "",
-        State: "",
-        ZipCode: "",
-        Country: "",
+    invoiceId: "",
+    invoiceNumber: "",
+    tripId: tripId || "",
+    finalPackageQuotationId: "",
+    leadId: "",
+    createdAt: "",
+    updatedAt: "",
+    invoiceDate: "",
+    invoiceStatus: "Pending",
+    currency: "INR",
+    customer: {
+      name: "",
+      email: "",
+      contact: "",
+      address: {
+        street: "",
+        city: "",
+        state: "",
+        zipCode: "",
+        country: "",
       },
     },
-    Destination: "",
-    StartDate: "",
-    EndDate: "",
-    TravelDate: "",
-    NumberOfTravelers: 0,
-    TCS: "",
-    GST: "",
-    TotalAmount: "",
-    Installments: [
+    travelerSummary: {
+      adults: 0,
+      children: 0,
+      infants: 0,
+      totalTravelers: 0,
+    },
+    destination: "",
+    travelDate: "",
+    startDate: "",
+    endDate: "",
+    packageSummary: {
+      packageName: "",
+      packageType: "International",
+      nights: 0,
+      days: 0,
+    },
+    pricing: {
+      baseAmount: 0,
+      discountAmount: 0,
+      taxableAmount: 0,
+      gstPercentage: 0,
+      gstAmount: 0,
+      tcsPercentage: 0,
+      tcsAmount: 0,
+      otherCharges: [],
+      totalAmount: 0,
+      amountInWords: "",
+      tcsClaim: Array.isArray(initialData?.pricing?.tcsClaim)
+        ? initialData.pricing.tcsClaim
+        : [{ panNumber: "", name: "", percentage: 0 }],
+    },
+    payment: {
+      dueDate: "",
+      totalPaid: 0,
+      balanceAmount: 0,
+      installments: [
+        {
+          installmentId: "",
+          sequence: 1,
+          installmentAmount: 0,
+          installmentDate: "",
+          status: "Pending",
+          paymentMethod: "",
+          paymentVerification: null,
+          receivedDate: "",
+          amountReceived: 0,
+          utrNumber: "",
+          amountReceivedBy: "",
+          amountConfirmedBy: "",
+          lastUpdatedDate: "",
+          lastUpdatedBy: "",
+        },
+      ],
+    },
+    cancellationPolicy: {
+      flights: "As per airline policy",
+      hotel: "As per the hotel policy",
+      land: [
+        {
+          fromDaysBeforeTravel: 20,
+          toDaysBeforeTravel: null,
+          chargeType: "PERCENT",
+          value: 25,
+        },
+        {
+          fromDaysBeforeTravel: 0,
+          toDaysBeforeTravel: 19,
+          chargeType: "PERCENT",
+          value: 100,
+        },
+      ],
+      nonRefundableComponents: ["Visa", "TCS", "Taxes", "Remittance charges"],
+      jrCancellationChargePerPax: 2500,
+      rescheduleChargePerPax: {
+        amount: 2000,
+        notes: "Per pax + fare difference for flights and land part",
+      },
+      latePaymentFee: {
+        amount: 5000,
+        notes: "Within allowable limits",
+      },
+    },
+    deliverables: [
+      { item: "Hotel Vouchers", required: true, provided: false },
+      { item: "Cab/Driver Details", required: true, provided: false },
+      { item: "Scanned copy of passport", required: true, provided: false },
       {
-        InstallmentAmount: 0,
-        InstallmentDate: "",
-        Status: "Pending",
-        PaymentVerification: null,
-        VerifiedBy: null,
-        ReceivedDate: "",
-        AmountRecieved: "",
-        UTR_Number: "",
-        AmountReceivedBy: "",
-        AmountConfirmedBy: "",
-        LastUpdatedDate: "",
-        LastUpdatedBy: "",
+        item: "Scanned copy of flights and tickets",
+        required: true,
+        provided: false,
+      },
+      {
+        item: "Payment screenshot (esp. NEFT)",
+        required: true,
+        provided: false,
+      },
+      { item: "Scanned copy of PAN card", required: true, provided: false },
+    ],
+    notes: "",
+    meta: {
+      createdBy: "",
+      lastUpdatedBy: "",
+      source: "mobile",
+      companyProfileId: "",
+      companyName: "",
+      bankDetails: {},
+    },
+    auditTrail: [
+      {
+        action: "CREATE",
+        performedBy: "",
+        timestamp: "",
+        details: "",
       },
     ],
-    CancellationDetails:
-      "Flight - As Per Airline Policy\n\nHotel - As Per the Hotel Policy\n\nLand Part - 25% Cancel Charges Before 20 Days of Travel\n\nLand Part - Within 20 Days of Travel No Refund\n\nAny Visa, TCS, Taxes, and Remittance charges paid will be Non-refundable\nJourney Routers Cancellation Charges - INR 2500 Per Pax\n\nReschedule Charges - INR 2,000 Per Pax + Fare Difference If any (For Flights and Land Part)\n\nLate Payment Fee - INR 5,000 (within allowable limits)",
-    Notes: "",
-    AuditTrail: [
-      {
-        Action: "",
-        PerformedBy: "",
-        Timestamp: "",
-        Details: "",
-      },
-    ],
-    TcsClaim: Array.isArray(initialData?.TcsClaim) ? initialData.TcsClaim : [{ panNumber: "", name: "", percentage: "" }],
-    Deliverables:
-      "Hotel Vouchers\n\nCab/Driver Details (*Before Trip Start Date)\n\nScanned copy of passport\n\nScanned copy of flights and tickets\n\nScreenshot of payment when done - especially for NEFT Payment\n\nScanned copy of PAN card",
   });
 
+  // Load quotations when TripId is available
   useEffect(() => {
     if (tripId) {
+      setFormData((prev) => ({ ...prev, tripId }));
       fetchQuotations();
     }
   }, [tripId]);
 
+  // Apply initialData if passed (not used from screen currently, but kept)
   useEffect(() => {
     if (initialData) {
-      setFormData(initialData);
+      setFormData((prev) => ({
+        ...prev,
+        ...initialData,
+      }));
     }
   }, [initialData]);
 
+  // Prefill from navigation params (customer, dest, pax, date)
+  useEffect(() => {
+    setFormData((prev) => {
+      const pax = defaultPax ? parseInt(defaultPax, 10) || 0 : prev.travelerSummary.totalTravelers;
+      return {
+        ...prev,
+        customer: {
+          ...prev.customer,
+          name: defaultCustomerName || prev.customer.name,
+          email: defaultEmail || prev.customer.email,
+          contact: defaultContact || prev.customer.contact,
+        },
+        destination: defaultDestination || prev.destination,
+        travelDate: defaultTravelDate || prev.travelDate,
+        travelerSummary: {
+          ...prev.travelerSummary,
+          totalTravelers: pax || prev.travelerSummary.totalTravelers,
+          adults: pax || prev.travelerSummary.adults,
+        },
+      };
+    });
+  }, [
+    defaultCustomerName,
+    defaultEmail,
+    defaultContact,
+    defaultDestination,
+    defaultPax,
+    defaultTravelDate,
+  ]);
+
+  // Load user profile
+  useEffect(() => {
+    const loadUserProfile = async () => {
+      try {
+        const profile = await getUserProfile();
+        if (profile) {
+          setUserProfile(profile);
+          setFormData((prev) => ({
+            ...prev,
+            meta: {
+              ...prev.meta,
+              createdBy: profile.email || profile.name || "",
+              companyProfileId: profile.companyId || "",
+              companyName: profile.companyName || "",
+              bankDetails: profile.bankDetails || {},
+            },
+          }));
+        }
+      } catch (error) {
+        console.error("Error loading user profile:", error);
+      }
+    };
+    loadUserProfile();
+  }, []);
+
   const fetchQuotations = async () => {
     try {
-      setLoading(true);
+      setQuotationsLoading(true);
       const response = await fetch(
         `https://0rq0f90i05.execute-api.ap-south-1.amazonaws.com/salesapp/lead-managment/quotations?TripId=${tripId}`
       );
@@ -156,40 +1537,14 @@ export default function InvoiceForm({ tripId, onSubmit, initialData = null, onCa
       console.error("Error fetching quotations:", error);
       Alert.alert("Error", "Failed to load quotations");
     } finally {
-      setLoading(false);
+      setQuotationsLoading(false);
     }
   };
 
-  const handleQuotationSelect = (quoteId) => {
+  const handleQuotationSelectFromPicker = (quoteId) => {
     const quotation = quotations.find((q) => q.QuoteId === quoteId);
     if (quotation) {
-      setSelectedQuotation(quotation);
-
-      // Calculate total from costs
-      const totalCost =
-        (quotation.Costs?.FlightCost || 0) +
-        (quotation.Costs?.VisaCost || 0) +
-        (quotation.Costs?.LandPackageCost || 0);
-
-      // Auto-fill form with quotation data
-      setFormData((prev) => ({
-        ...prev,
-        FinalPackageQuotationId: quoteId,
-        CustomerDetails: {
-          ...prev.CustomerDetails,
-          Name: quotation["Client-Name"] || "",
-          Email: quotation["Client-Email"] || "",
-          Contact: quotation["Client-Contact"] || "",
-        },
-        Destination: quotation.DestinationName || "",
-        StartDate: quotation.TravelDate || "",
-        EndDate: quotation.TravelEndDate || "",
-        TravelDate: quotation.TravelDate || "",
-        NumberOfTravelers: quotation.NoOfPax || 0,
-        TotalAmount: totalCost.toString(),
-        GST: quotation.Costs?.GSTAmount?.toString() || "",
-        TCS: quotation.Costs?.TCSAmount?.toString() || "",
-      }));
+      handleSelectQuotation(quotation);
     }
   };
 
@@ -210,10 +1565,10 @@ export default function InvoiceForm({ tripId, onSubmit, initialData = null, onCa
   const updateAddressField = (field, value) => {
     setFormData((prev) => ({
       ...prev,
-      CustomerDetails: {
-        ...prev.CustomerDetails,
-        Address: {
-          ...prev.CustomerDetails.Address,
+      customer: {
+        ...prev.customer,
+        address: {
+          ...prev.customer.address,
           [field]: value,
         },
       },
@@ -221,264 +1576,386 @@ export default function InvoiceForm({ tripId, onSubmit, initialData = null, onCa
   };
 
   const addInstallment = () => {
-    setFormData((prev) => ({
-      ...prev,
-      Installments: [
-        ...prev.Installments,
-        {
-          InstallmentAmount: 0,
-          InstallmentDate: "",
-          Status: "Pending",
-          PaymentVerification: null,
-          VerifiedBy: null,
-          ReceivedDate: "",
-          AmountRecieved: "",
-          UTR_Number: "",
-          AmountReceivedBy: "",
-          AmountConfirmedBy: "",
-          LastUpdatedDate: "",
-          LastUpdatedBy: "",
+    setFormData((prev) => {
+      const currentInstallments = prev?.payment?.installments || [];
+      return {
+        ...prev,
+        payment: {
+          ...prev.payment,
+          installments: [
+            ...currentInstallments,
+            {
+              installmentId: "",
+              sequence: currentInstallments.length + 1,
+              installmentAmount: 0,
+              installmentDate: "",
+              status: "Pending",
+              paymentMethod: "",
+              paymentVerification: null,
+              receivedDate: "",
+              amountReceived: 0,
+              utrNumber: "",
+              amountReceivedBy: "",
+              amountConfirmedBy: "",
+              lastUpdatedDate: "",
+              lastUpdatedBy: "",
+            },
+          ],
         },
-      ],
-    }));
+      };
+    });
   };
 
   const removeInstallment = (index) => {
-    if (formData.Installments.length === 1) {
+    if ((formData?.payment?.installments?.length || 0) <= 1) {
       Alert.alert("Error", "At least one installment is required");
       return;
     }
     setFormData((prev) => ({
       ...prev,
-      Installments: prev.Installments.filter((_, i) => i !== index),
+      payment: {
+        ...prev.payment,
+        installments: (prev?.payment?.installments || []).filter(
+          (_, i) => i !== index
+        ),
+      },
     }));
   };
 
   const updateInstallment = (index, field, value) => {
     setFormData((prev) => ({
       ...prev,
-      Installments: prev.Installments.map((inst, i) =>
-        i === index ? { ...inst, [field]: value } : inst
-      ),
+      payment: {
+        ...prev.payment,
+        installments: (prev?.payment?.installments || []).map((inst, i) =>
+          i === index ? { ...inst, [field]: value } : inst
+        ),
+      },
     }));
   };
 
   const addTcsClaim = () => {
     setFormData((prev) => ({
       ...prev,
-      // Ensure TcsClaim exists and is an array before spreading
-      TcsClaim: [...(prev.TcsClaim || []), { panNumber: "", name: "", percentage: "" }],
+      pricing: {
+        ...prev.pricing,
+        tcsClaim: [
+          ...(prev.pricing.tcsClaim || []),
+          { panNumber: "", name: "", percentage: 0 },
+        ],
+      },
     }));
   };
 
   const removeTcsClaim = (index) => {
-    if (!formData.TcsClaim || formData.TcsClaim.length <= 1) {
+    if (!formData.pricing.tcsClaim || formData.pricing.tcsClaim.length <= 1) {
       Alert.alert("Error", "At least one TCS claim entry is required");
       return;
     }
     setFormData((prev) => ({
       ...prev,
-      TcsClaim: (prev.TcsClaim || []).filter((_, i) => i !== index),
+      pricing: {
+        ...prev.pricing,
+        tcsClaim: (prev.pricing.tcsClaim || []).filter((_, i) => i !== index),
+      },
     }));
   };
 
   const updateTcsClaim = (index, field, value) => {
     setFormData((prev) => {
-      // Ensure TcsClaim exists and is an array
-      const currentClaims = Array.isArray(prev.TcsClaim) ? [...prev.TcsClaim] : [];
-      
-      // If the index is out of bounds, add a new claim
+      const currentClaims = Array.isArray(prev.pricing.tcsClaim)
+        ? [...prev.pricing.tcsClaim]
+        : [];
+
       if (index >= currentClaims.length) {
-        currentClaims.push({ panNumber: "", name: "", percentage: "" });
+        currentClaims.push({ panNumber: "", name: "", percentage: 0 });
       }
-      
-      // Update the specific claim
+
       const updatedClaims = currentClaims.map((claim, i) =>
         i === index ? { ...claim, [field]: value } : claim
       );
-      
+
       return {
         ...prev,
-        TcsClaim: updatedClaims,
+        pricing: {
+          ...prev.pricing,
+          tcsClaim: updatedClaims,
+        },
       };
     });
   };
 
-  // Calculate invoice total with GST and TCS
   const calculateInvoiceTotal = () => {
-    const baseAmount = parseFloat(formData.TotalAmount) || 0;
-    const gst = parseFloat(formData.GST) || 0;
-    const tcs = parseFloat(formData.TCS) || 0;
+    const baseAmount = parseFloat(formData?.pricing?.totalAmount) || 0;
+    const gst = parseFloat(formData?.pricing?.gstAmount) || 0;
+    const tcs = parseFloat(formData?.pricing?.tcsAmount) || 0;
     return baseAmount + gst + tcs;
   };
 
+  const generateInvoiceNumberValue = () => {
+    const companyName = userProfile?.companyName || "JR";
+    const initials =
+      companyName
+        .split(/\s+/)
+        .map((w) => w[0]?.toUpperCase())
+        .join("")
+        .substring(0, 3) || "INV";
+    const timestamp = new Date().toISOString().split("T")[0].replace(/-/g, "");
+    return `${initials}-Inv-${timestamp}`;
+  };
+
+  const ensureInvoiceNumber = () => {
+    if (formData.invoiceNumber && formData.invoiceNumber.length > 0) {
+      return formData.invoiceNumber;
+    }
+    const newNumber = generateInvoiceNumberValue();
+    setFormData((prev) => ({ ...prev, invoiceNumber: newNumber }));
+    return newNumber;
+  };
+
   const generatePreviewHtml = () => {
-    // Generate HTML for the invoice preview
+    const invoiceNumber = ensureInvoiceNumber();
+    const today = new Date().toISOString().split("T")[0];
+    const dueDate = new Date(
+      Date.now() + 30 * 24 * 60 * 60 * 1000
+    )
+      .toISOString()
+      .split("T")[0];
+
     const previewData = {
       ...formData,
-      InvoiceNumber: 'INV-' + Math.random().toString(36).substr(2, 9).toUpperCase(),
-      InvoiceDate: new Date().toISOString().split('T')[0],
-      DueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+      InvoiceNumber: invoiceNumber,
+      InvoiceDate: today,
+      DueDate: dueDate,
     };
-    
+
     return generateInvoiceHtml(previewData);
   };
 
-  const handlePreview = () => {
+  const handleOpenPreview = () => {
+    if (!validateForm()) return;
+    ensureInvoiceNumber();
     setShowPreview(true);
   };
 
-  const generatePdf = async (forSharing = false) => {
+  const generatePdf = async () => {
     try {
       setIsGeneratingPdf(true);
-      
-      // First save the form data if needed
-      if (!forSharing) {
-        await handleSubmit(false);
-      }
-      
-      // Generate HTML for the invoice
-      const invoiceNumber = 'INV-' + Math.random().toString(36).substr(2, 9).toUpperCase();
+
+      const invoiceNumber = ensureInvoiceNumber();
+      const today = new Date().toISOString().split("T")[0];
+      const dueDate = new Date(
+        Date.now() + 30 * 24 * 60 * 60 * 1000
+      )
+        .toISOString()
+        .split("T")[0];
+
       const html = generateInvoiceHtml({
         ...formData,
         InvoiceNumber: invoiceNumber,
-        InvoiceDate: new Date().toISOString().split('T')[0],
-        DueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+        InvoiceDate: today,
+        DueDate: dueDate,
       });
-      
-      // Generate PDF
+
       const { uri } = await Print.printToFileAsync({
         html,
         width: 595,
         height: 842,
       });
-      
-      // Generate a filename
-      const customerName = formData.CustomerDetails?.Name?.replace(/\s+/g, '_') || 'Customer';
+
+      const customerName =
+        (formData?.customer?.name || "Customer").replace(/\s+/g, "_");
       const filename = `Invoice_${customerName}_${invoiceNumber}.pdf`;
       const newUri = `${FileSystem.documentDirectory}${filename}`;
-      
-      // Move the file to a permanent location
+
       await FileSystem.moveAsync({
         from: uri,
         to: newUri,
       });
-      
+
       return newUri;
     } catch (error) {
-      console.error('Error generating PDF:', error);
-      Alert.alert('Error', 'Failed to generate PDF. Please try again.');
+      console.error("Error generating PDF:", error);
+      Alert.alert("Error", "Failed to generate PDF. Please try again.");
       throw error;
     } finally {
       setIsGeneratingPdf(false);
     }
   };
 
-  const downloadPdf = async () => {
-    try {
-      const pdfUri = await generatePdf(false);
-      // For Android, we'll use the share dialog as a save option
-      await shareAsync(pdfUri, {
-        mimeType: 'application/pdf',
-        dialogTitle: 'Save Invoice',
-        UTI: 'com.adobe.pdf',
-      });
-    } catch (error) {
-      // Error already handled in generatePdf
-    }
-  };
+const sharePdf = async () => {
+  try {
+    // 1. First save invoice to backend
+    const success = await handleSubmitInvoice(true); // true = silent mode
+    if (!success) return;
 
-  const sharePdf = async () => {
-    try {
-      const pdfUri = await generatePdf(true);
-      await shareAsync(pdfUri, {
-        mimeType: 'application/pdf',
-        dialogTitle: 'Share Invoice',
-        UTI: 'com.adobe.pdf',
-      });
-    } catch (error) {
-      // Error already handled in generatePdf
-    }
-  };
+    // 2. Then generate PDF
+    const pdfUri = await generatePdf();
+
+    // 3. Then share
+    await shareAsync(pdfUri, {
+      mimeType: "application/pdf",
+      dialogTitle: "Share Invoice",
+      UTI: "com.adobe.pdf",
+    });
+  } catch (error) {
+    console.log("Share error:", error);
+  }
+};
+
 
   const handleSelectQuotation = (quotation) => {
     if (!quotation) return;
-    
+
     const totalCost =
       (quotation.Costs?.FlightCost || 0) +
       (quotation.Costs?.VisaCost || 0) +
       (quotation.Costs?.LandPackageCost || 0);
-    
+
     setSelectedQuotation(quotation);
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      FinalPackageQuotationId: quotation.QuoteId || "",
-      CustomerDetails: {
-        ...prev.CustomerDetails,
-        Name: quotation["Client-Name"] || "",
-        Email: quotation["Client-Email"] || "",
-        Contact: quotation["Client-Contact"] || "",
+      finalPackageQuotationId: quotation.QuoteId || "",
+      customer: {
+        ...prev.customer,
+        name: quotation["Client-Name"] || "",
+        email: quotation["Client-Email"] || "",
+        contact: quotation["Client-Contact"] || "",
       },
-      Destination: quotation.DestinationName || "",
-      StartDate: quotation.TravelDate || "",
-      EndDate: quotation.TravelEndDate || "",
-      TravelDate: quotation.TravelDate || "",
-      NumberOfTravelers: quotation.NoOfPax || 0,
-      TotalAmount: totalCost.toString(),
-      GST: quotation.Costs?.GSTAmount?.toString() || "",
-      TCS: quotation.Costs?.TCSAmount?.toString() || "",
-      // Ensure TcsClaim is always an array with at least one empty object
-      TcsClaim: prev.TcsClaim?.length > 0 ? prev.TcsClaim : [{ panNumber: "", name: "", percentage: "" }]
+      destination: quotation.DestinationName || "",
+      startDate: quotation.TravelDate || "",
+      endDate: quotation.TravelEndDate || "",
+      travelDate: quotation.TravelDate || "",
+      travelerSummary: {
+        ...prev.travelerSummary,
+        totalTravelers: quotation.NoOfPax || 0,
+      },
+      pricing: {
+        ...prev.pricing,
+        totalAmount: totalCost,
+        gstAmount: quotation.Costs?.GSTAmount || 0,
+        tcsAmount: quotation.Costs?.TCSAmount || 0,
+      },
     }));
-    setStep('fillForm');
+    setStep("fillForm");
   };
 
-  const handleSubmit = async () => {
-    // Validation
-    if (!formData.FinalPackageQuotationId) {
+  const validateForm = () => {
+    if (!formData.finalPackageQuotationId) {
       Alert.alert("Error", "Please select a quotation");
       return false;
     }
-    if (!formData.CustomerDetails.Name) {
+    if (!formData.customer.name) {
       Alert.alert("Error", "Customer name is required");
       return false;
     }
-    if (!formData.TotalAmount) {
+    if (!formData.pricing.totalAmount) {
       Alert.alert("Error", "Total amount is required");
       return false;
     }
+    return true;
+  };
+
+  const handleSubmitInvoice = async () => {
+    if (!validateForm()) return;
 
     try {
-      // Generate preview first
-      const previewData = {
-        ...formData,
-        TripId: tripId,
-        InvoiceDate: new Date().toISOString().split('T')[0],
+      setIsSubmitting(true);
+
+      const invoiceNumber = ensureInvoiceNumber();
+      const today = new Date().toISOString();
+
+      const auditEntry = {
+        action: "Created",
+        timestamp: today,
+        performedBy: userProfile?.email || "system",
+        changes: {
+          status: "Pending",
+          invoiceNumber,
+        },
       };
-      
-      // Call the parent's onSubmit with the form data
-      await onSubmit(previewData);
-      return true;
+
+      const cleanedData = {
+        invoiceNumber,
+        invoiceId: formData.tripId || tripId,
+
+        tripId: formData.tripId || tripId,
+        finalPackageQuotationId: formData.finalPackageQuotationId,
+        customer: formData.customer,
+        destination: formData.destination,
+        startDate: formData.startDate,
+        endDate: formData.endDate,
+        travelDate: formData.travelDate,
+        travelerSummary: formData.travelerSummary,
+        pricing: formData.pricing,
+        payment: formData.payment,
+        cancellationPolicy: formData.cancellationPolicy,
+        deliverables: formData.deliverables,
+        notes: formData.notes,
+        invoiceDate: today.split("T")[0],
+        meta: {
+          createdBy: userProfile?.email || "",
+          companyProfileId: userProfile?.companyId || "",
+          companyName: userProfile?.companyName || "",
+          bankDetails: userProfile?.bankDetails || {},
+          source: "mobile",
+        },
+        auditTrail: [auditEntry],
+      };
+
+      console.log("📋 Invoice Payload:", cleanedData);
+
+      const response = await fetch(
+        "https://0rq0f90i05.execute-api.ap-south-1.amazonaws.com/salesapp/invoice-management/invoice",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(cleanedData),
+        }
+      );
+
+      if (!response.ok) {
+        const text = await response.text();
+        console.log("Invoice API error:", text);
+        throw new Error("Failed to save invoice");
+      }
+
+      let data = null;
+      try {
+        data = await response.json();
+      } catch {
+        // if no json body
+      }
+
+      Alert.alert("Success", "Invoice submitted successfully");
+      if (onSubmit) {
+        onSubmit(data || cleanedData);
+      }
     } catch (error) {
-      console.error('Error saving invoice:', error);
-      Alert.alert("Error", error.message || "Failed to save invoice. Please try again.");
-      return false;
+      console.error("Error saving invoice:", error);
+      Alert.alert("Error", error.message || "Failed to save invoice.");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   const quotationOptions = quotations.map((q) => ({
-    label: `${q.QuoteId} - ₹${q.Costs?.TotalCost?.toLocaleString("en-IN") || 0}`,
+    label: `${q.QuoteId} - ₹${
+      q.Costs?.TotalCost?.toLocaleString("en-IN") || 0
+    }`,
     value: q.QuoteId,
   }));
 
   // Quotation Selection Step
-  if (step === 'selectQuotation') {
+  if (step === "selectQuotation") {
     return (
       <View className="flex-1 bg-gray-50 p-4">
         <Text className="text-xl font-bold mb-4">Select Quotation</Text>
         {quotations.length === 0 ? (
           <View className="flex-1 justify-center items-center">
-            <Text className="text-gray-500">No quotations found for this trip</Text>
+            <Text className="text-gray-500">
+              No quotations found for this trip
+            </Text>
           </View>
         ) : (
           <ScrollView className="flex-1">
@@ -488,11 +1965,21 @@ export default function InvoiceForm({ tripId, onSubmit, initialData = null, onCa
                 className="bg-white p-4 rounded-lg mb-3 shadow-sm"
                 onPress={() => handleSelectQuotation(quotation)}
               >
-                <Text className="font-bold text-lg">Quotation #{quotation.QuoteId}</Text>
-                <Text className="text-gray-600">{quotation["Client-Name"]}</Text>
-                <Text className="text-gray-600">Amount: ₹{quotation.Costs?.TotalCost?.toLocaleString()}</Text>
+                <Text className="font-bold text-lg">
+                  Quotation #{quotation.QuoteId}
+                </Text>
+                <Text className="text-gray-600">
+                  {quotation["Client-Name"]}
+                </Text>
+                <Text className="text-gray-600">
+                  Amount: ₹
+                  {quotation.Costs?.TotalCost?.toLocaleString("en-IN")}
+                </Text>
                 <Text className="text-gray-500 text-sm mt-1">
-                  {quotation.DestinationName} • {new Date(quotation.TravelDate).toLocaleDateString()}
+                  {quotation.DestinationName} •{" "}
+                  {new Date(
+                    quotation.TravelDate
+                  ).toLocaleDateString()}
                 </Text>
               </TouchableOpacity>
             ))}
@@ -507,9 +1994,11 @@ export default function InvoiceForm({ tripId, onSubmit, initialData = null, onCa
           </TouchableOpacity>
           <TouchableOpacity
             className="bg-purple-600 px-6 py-3 rounded-lg"
-            onPress={() => setStep('fillForm')}
+            onPress={() => setStep("fillForm")}
           >
-            <Text className="text-white font-medium">Skip & Create Blank</Text>
+            <Text className="text-white font-medium">
+              Skip & Create Blank
+            </Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -523,13 +2012,15 @@ export default function InvoiceForm({ tripId, onSubmit, initialData = null, onCa
         {selectedQuotation && (
           <View className="bg-blue-50 p-3 rounded-lg mb-4 flex-row justify-between items-center">
             <Text className="text-blue-800">
-              Using Quotation #{selectedQuotation.id}
+              Using Quotation #
+              {selectedQuotation?.QuoteId || selectedQuotation?.id}
             </Text>
-            <TouchableOpacity onPress={() => setStep('selectQuotation')}>
+            <TouchableOpacity onPress={() => setStep("selectQuotation")}>
               <Text className="text-blue-600 font-medium">Change</Text>
             </TouchableOpacity>
           </View>
         )}
+
         {/* Header */}
         <View className="bg-white rounded-xl p-4 mb-4">
           <Text className="text-2xl font-bold text-gray-900 mb-2">
@@ -545,13 +2036,13 @@ export default function InvoiceForm({ tripId, onSubmit, initialData = null, onCa
           <Text className="text-lg font-semibold text-gray-900 mb-3">
             Select Quotation
           </Text>
-          {loading ? (
+          {quotationsLoading ? (
             <ActivityIndicator size="small" color="#7c3aed" />
           ) : (
             <CustomPicker
               items={quotationOptions}
-              selectedValue={formData.FinalPackageQuotationId}
-              onValueChange={handleQuotationSelect}
+              selectedValue={formData?.finalPackageQuotationId}
+              onValueChange={handleQuotationSelectFromPicker}
               placeholder="Select a quotation"
               title="Select Quotation"
             />
@@ -564,28 +2055,40 @@ export default function InvoiceForm({ tripId, onSubmit, initialData = null, onCa
             Customer Details
           </Text>
 
-          <Text className="text-sm font-medium text-gray-700 mb-2">Name *</Text>
+          <Text className="text-sm font-medium text-gray-700 mb-2">
+            Name *
+          </Text>
           <TextInput
             className="border border-gray-300 rounded-lg p-3 mb-3 bg-white"
-            value={formData.CustomerDetails.Name}
-            onChangeText={(value) => updateNestedField("CustomerDetails", "Name", value)}
+            value={formData?.customer?.name || ""}
+            onChangeText={(value) =>
+              updateNestedField("customer", "name", value)
+            }
             placeholder="Customer name"
           />
 
-          <Text className="text-sm font-medium text-gray-700 mb-2">Email</Text>
+          <Text className="text-sm font-medium text-gray-700 mb-2">
+            Email
+          </Text>
           <TextInput
             className="border border-gray-300 rounded-lg p-3 mb-3 bg-white"
-            value={formData.CustomerDetails.Email}
-            onChangeText={(value) => updateNestedField("CustomerDetails", "Email", value)}
+            value={formData?.customer?.email || ""}
+            onChangeText={(value) =>
+              updateNestedField("customer", "email", value)
+            }
             placeholder="customer@email.com"
             keyboardType="email-address"
           />
 
-          <Text className="text-sm font-medium text-gray-700 mb-2">Contact</Text>
+          <Text className="text-sm font-medium text-gray-700 mb-2">
+            Contact
+          </Text>
           <TextInput
             className="border border-gray-300 rounded-lg p-3 mb-3 bg-white"
-            value={formData.CustomerDetails.Contact}
-            onChangeText={(value) => updateNestedField("CustomerDetails", "Contact", value)}
+            value={formData?.customer?.contact || ""}
+            onChangeText={(value) =>
+              updateNestedField("customer", "contact", value)
+            }
             placeholder="Phone number"
             keyboardType="phone-pad"
           />
@@ -595,30 +2098,36 @@ export default function InvoiceForm({ tripId, onSubmit, initialData = null, onCa
             Address
           </Text>
 
-          <Text className="text-sm font-medium text-gray-700 mb-2">Street</Text>
+          <Text className="text-sm font-medium text-gray-700 mb-2">
+            Street
+          </Text>
           <TextInput
             className="border border-gray-300 rounded-lg p-3 mb-3 bg-white"
-            value={formData?.CustomerDetails?.Address?.Street}
-            onChangeText={(value) => updateAddressField("Street", value)}
+            value={formData?.customer?.address?.street || ""}
+            onChangeText={(value) => updateAddressField("street", value)}
             placeholder="Street address"
           />
 
           <View className="flex-row gap-3 mb-3">
             <View className="flex-1">
-              <Text className="text-sm font-medium text-gray-700 mb-2">City</Text>
+              <Text className="text-sm font-medium text-gray-700 mb-2">
+                City
+              </Text>
               <TextInput
                 className="border border-gray-300 rounded-lg p-3 bg-white"
-                value={formData.CustomerDetails.Address.City}
-                onChangeText={(value) => updateAddressField("City", value)}
+                value={formData?.customer?.address?.city || ""}
+                onChangeText={(value) => updateAddressField("city", value)}
                 placeholder="City"
               />
             </View>
             <View className="flex-1">
-              <Text className="text-sm font-medium text-gray-700 mb-2">State</Text>
+              <Text className="text-sm font-medium text-gray-700 mb-2">
+                State
+              </Text>
               <TextInput
                 className="border border-gray-300 rounded-lg p-3 bg-white"
-                value={formData.CustomerDetails.Address.State}
-                onChangeText={(value) => updateAddressField("State", value)}
+                value={formData?.customer?.address?.state || ""}
+                onChangeText={(value) => updateAddressField("state", value)}
                 placeholder="State"
               />
             </View>
@@ -626,78 +2135,30 @@ export default function InvoiceForm({ tripId, onSubmit, initialData = null, onCa
 
           <View className="flex-row gap-3">
             <View className="flex-1">
-              <Text className="text-sm font-medium text-gray-700 mb-2">Zip Code</Text>
+              <Text className="text-sm font-medium text-gray-700 mb-2">
+                Zip Code
+              </Text>
               <TextInput
                 className="border border-gray-300 rounded-lg p-3 bg-white"
-                value={formData.CustomerDetails.Address.ZipCode}
-                onChangeText={(value) => updateAddressField("ZipCode", value)}
+                value={formData?.customer?.address?.zipCode || ""}
+                onChangeText={(value) => updateAddressField("zipCode", value)}
                 placeholder="Zip"
                 keyboardType="numeric"
               />
             </View>
             <View className="flex-1">
-              <Text className="text-sm font-medium text-gray-700 mb-2">Country</Text>
+              <Text className="text-sm font-medium text-gray-700 mb-2">
+                Country
+              </Text>
               <TextInput
                 className="border border-gray-300 rounded-lg p-3 bg-white"
-                value={formData.CustomerDetails.Address.Country}
-                onChangeText={(value) => updateAddressField("Country", value)}
+                value={formData?.customer?.address?.country || ""}
+                onChangeText={(value) => updateAddressField("country", value)}
                 placeholder="Country"
               />
             </View>
           </View>
         </View>
-
-        {/* Trip Details */}
-        {/* <View className="bg-white rounded-xl p-4 mb-4">
-          <Text className="text-lg font-semibold text-gray-900 mb-3">
-            Trip Details
-          </Text>
-
-          <Text className="text-sm font-medium text-gray-700 mb-2">Destination</Text>
-          <TextInput
-            className="border border-gray-300 rounded-lg p-3 mb-3 bg-white"
-            value={formData.Destination}
-            onChangeText={(value) => updateFormData("Destination", value)}
-            placeholder="Destination"
-          />
-
-          <Text className="text-sm font-medium text-gray-700 mb-2">Travel Date</Text>
-          <DatePicker
-            value={formData.TravelDate}
-            onDateChange={(value) => updateFormData("TravelDate", value)}
-            placeholder="Select travel date"
-          />
-
-          <View className="flex-row gap-3 mt-3">
-            <View className="flex-1">
-              <Text className="text-sm font-medium text-gray-700 mb-2">Start Date</Text>
-              <DatePicker
-                value={formData.StartDate}
-                onDateChange={(value) => updateFormData("StartDate", value)}
-                placeholder="Start date"
-              />
-            </View>
-            <View className="flex-1">
-              <Text className="text-sm font-medium text-gray-700 mb-2">End Date</Text>
-              <DatePicker
-                value={formData.EndDate}
-                onDateChange={(value) => updateFormData("EndDate", value)}
-                placeholder="End date"
-              />
-            </View>
-          </View>
-
-          <Text className="text-sm font-medium text-gray-700 mb-2 mt-3">
-            Number of Travelers
-          </Text>
-          <TextInput
-            className="border border-gray-300 rounded-lg p-3 bg-white"
-            value={formData.NumberOfTravelers.toString()}
-            onChangeText={(value) => updateFormData("NumberOfTravelers", parseInt(value) || 0)}
-            placeholder="Number of travelers"
-            keyboardType="numeric"
-          />
-        </View> */}
 
         {/* Financial Details */}
         <View className="bg-white rounded-xl p-4 mb-4">
@@ -709,7 +2170,10 @@ export default function InvoiceForm({ tripId, onSubmit, initialData = null, onCa
           <View className="bg-gray-50 rounded-lg p-3 mb-3">
             <Text className="text-sm text-gray-600 mb-1">Package Amount</Text>
             <Text className="text-2xl font-bold text-gray-900">
-              ₹{parseFloat(formData.TotalAmount || 0).toLocaleString("en-IN")}
+              ₹
+              {parseFloat(
+                formData?.pricing?.totalAmount || 0
+              ).toLocaleString("en-IN")}
             </Text>
             <Text className="text-xs text-gray-500 mt-1">
               From selected quotation
@@ -719,21 +2183,41 @@ export default function InvoiceForm({ tripId, onSubmit, initialData = null, onCa
           {/* Editable GST and TCS */}
           <View className="flex-row gap-3 mb-3">
             <View className="flex-1">
-              <Text className="text-sm font-medium text-gray-700 mb-2">GST (₹)</Text>
+              <Text className="text-sm font-medium text-gray-700 mb-2">
+                GST (₹)
+              </Text>
               <TextInput
                 className="border border-gray-300 rounded-lg p-3 bg-white"
-                value={formData.GST}
-                onChangeText={(value) => updateFormData("GST", value)}
+                value={(formData?.pricing?.gstAmount || 0).toString()}
+                onChangeText={(value) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    pricing: {
+                      ...prev.pricing,
+                      gstAmount: parseFloat(value) || 0,
+                    },
+                  }))
+                }
                 placeholder="GST amount"
                 keyboardType="numeric"
               />
             </View>
             <View className="flex-1">
-              <Text className="text-sm font-medium text-gray-700 mb-2">TCS (₹)</Text>
+              <Text className="text-sm font-medium text-gray-700 mb-2">
+                TCS (₹)
+              </Text>
               <TextInput
                 className="border border-gray-300 rounded-lg p-3 bg-white"
-                value={formData.TCS}
-                onChangeText={(value) => updateFormData("TCS", value)}
+                value={(formData?.pricing?.tcsAmount || 0).toString()}
+                onChangeText={(value) =>
+                  setFormData((prev) => ({
+                    ...prev,
+                    pricing: {
+                      ...prev.pricing,
+                      tcsAmount: parseFloat(value) || 0,
+                    },
+                  }))
+                }
                 placeholder="TCS amount"
                 keyboardType="numeric"
               />
@@ -749,19 +2233,28 @@ export default function InvoiceForm({ tripId, onSubmit, initialData = null, onCa
               <View className="flex-row justify-between">
                 <Text className="text-gray-700">Package Amount:</Text>
                 <Text className="font-semibold text-gray-900">
-                  ₹{parseFloat(formData.TotalAmount || 0).toLocaleString("en-IN")}
+                  ₹
+                  {parseFloat(
+                    formData?.pricing?.totalAmount || 0
+                  ).toLocaleString("en-IN")}
                 </Text>
               </View>
               <View className="flex-row justify-between">
                 <Text className="text-gray-700">GST:</Text>
                 <Text className="font-semibold text-gray-900">
-                  ₹{parseFloat(formData.GST || 0).toLocaleString("en-IN")}
+                  ₹
+                  {parseFloat(
+                    formData?.pricing?.gstAmount || 0
+                  ).toLocaleString("en-IN")}
                 </Text>
               </View>
               <View className="flex-row justify-between">
                 <Text className="text-gray-700">TCS:</Text>
                 <Text className="font-semibold text-gray-900">
-                  ₹{parseFloat(formData.TCS || 0).toLocaleString("en-IN")}
+                  ₹
+                  {parseFloat(
+                    formData?.pricing?.tcsAmount || 0
+                  ).toLocaleString("en-IN")}
                 </Text>
               </View>
               <View className="border-t border-purple-300 pt-2 mt-2">
@@ -770,7 +2263,8 @@ export default function InvoiceForm({ tripId, onSubmit, initialData = null, onCa
                     Invoice Total:
                   </Text>
                   <Text className="text-lg font-bold text-purple-700">
-                    ₹{calculateInvoiceTotal().toLocaleString("en-IN")}
+                    ₹
+                    {calculateInvoiceTotal().toLocaleString("en-IN")}
                   </Text>
                 </View>
               </View>
@@ -781,7 +2275,9 @@ export default function InvoiceForm({ tripId, onSubmit, initialData = null, onCa
         {/* Installments */}
         <View className="bg-white rounded-xl p-4 mb-4">
           <View className="flex-row justify-between items-center mb-3">
-            <Text className="text-lg font-semibold text-gray-900">Installments</Text>
+            <Text className="text-lg font-semibold text-gray-900">
+              Installments
+            </Text>
             <TouchableOpacity
               onPress={addInstallment}
               className="bg-purple-600 rounded-lg px-4 py-2 flex-row items-center"
@@ -791,7 +2287,7 @@ export default function InvoiceForm({ tripId, onSubmit, initialData = null, onCa
             </TouchableOpacity>
           </View>
 
-          {formData.Installments.map((installment, index) => (
+          {formData?.payment?.installments?.map((installment, index) => (
             <View
               key={index}
               className="border border-gray-200 rounded-lg p-3 mb-3 bg-gray-50"
@@ -800,7 +2296,7 @@ export default function InvoiceForm({ tripId, onSubmit, initialData = null, onCa
                 <Text className="font-semibold text-gray-900">
                   Installment {index + 1}
                 </Text>
-                {formData.Installments.length > 1 && (
+                {formData?.payment?.installments?.length > 1 && (
                   <TouchableOpacity
                     onPress={() => removeInstallment(index)}
                     className="bg-red-100 rounded-full p-1"
@@ -815,9 +2311,13 @@ export default function InvoiceForm({ tripId, onSubmit, initialData = null, onCa
               </Text>
               <TextInput
                 className="border border-gray-300 rounded-lg p-3 mb-3 bg-white"
-                value={installment.InstallmentAmount.toString()}
+                value={installment.installmentAmount.toString()}
                 onChangeText={(value) =>
-                  updateInstallment(index, "InstallmentAmount", parseFloat(value) || 0)
+                  updateInstallment(
+                    index,
+                    "installmentAmount",
+                    parseFloat(value) || 0
+                  )
                 }
                 placeholder="Installment amount"
                 keyboardType="numeric"
@@ -827,9 +2327,9 @@ export default function InvoiceForm({ tripId, onSubmit, initialData = null, onCa
                 Installment Date
               </Text>
               <DatePicker
-                value={installment.InstallmentDate}
+                value={installment.installmentDate}
                 onDateChange={(value) =>
-                  updateInstallment(index, "InstallmentDate", value)
+                  updateInstallment(index, "installmentDate", value)
                 }
                 placeholder="Select installment date"
               />
@@ -842,25 +2342,30 @@ export default function InvoiceForm({ tripId, onSubmit, initialData = null, onCa
               <Text className="text-gray-700">Total Installments:</Text>
               <Text className="font-semibold text-gray-900">
                 ₹
-                {formData.Installments.reduce(
-                  (sum, inst) => sum + (inst.InstallmentAmount || 0),
-                  0
-                ).toLocaleString("en-IN")}
+                {(formData?.payment?.installments || [])
+                  .reduce(
+                    (sum, inst) => sum + (inst.installmentAmount || 0),
+                    0
+                  )
+                  .toLocaleString("en-IN")}
               </Text>
             </View>
             <View className="flex-row justify-between mt-1">
-              <Text className="text-gray-700">Invoice Total (with GST & TCS):</Text>
+              <Text className="text-gray-700">
+                Invoice Total (with GST & TCS):
+              </Text>
               <Text className="font-semibold text-purple-700">
                 ₹{calculateInvoiceTotal().toLocaleString("en-IN")}
               </Text>
             </View>
             {calculateInvoiceTotal() > 0 &&
-              formData.Installments.reduce(
-                (sum, inst) => sum + (inst.InstallmentAmount || 0),
+              (formData?.payment?.installments || []).reduce(
+                (sum, inst) => sum + (inst.installmentAmount || 0),
                 0
               ) !== calculateInvoiceTotal() && (
                 <Text className="text-red-600 text-xs mt-2">
-                  ⚠️ Installments don't match invoice total (₹{calculateInvoiceTotal().toLocaleString("en-IN")})
+                  ⚠️ Installments don't match invoice total (₹
+                  {calculateInvoiceTotal().toLocaleString("en-IN")})
                 </Text>
               )}
           </View>
@@ -873,8 +2378,16 @@ export default function InvoiceForm({ tripId, onSubmit, initialData = null, onCa
           </Text>
           <TextInput
             className="border border-gray-300 rounded-lg p-3 bg-white"
-            value={formData.CancellationDetails}
-            onChangeText={(value) => updateFormData("CancellationDetails", value)}
+            value={formData?.cancellationPolicy?.flights || ""}
+            onChangeText={(value) =>
+              setFormData((prev) => ({
+                ...prev,
+                cancellationPolicy: {
+                  ...prev.cancellationPolicy,
+                  flights: value,
+                },
+              }))
+            }
             placeholder="Enter cancellation policy details..."
             multiline
             numberOfLines={8}
@@ -885,7 +2398,9 @@ export default function InvoiceForm({ tripId, onSubmit, initialData = null, onCa
         {/* TCS Claim */}
         <View className="bg-white rounded-xl p-4 mb-4">
           <View className="flex-row justify-between items-center mb-3">
-            <Text className="text-lg font-semibold text-gray-900">TCS Claim</Text>
+            <Text className="text-lg font-semibold text-gray-900">
+              TCS Claim
+            </Text>
             <TouchableOpacity
               onPress={addTcsClaim}
               className="bg-purple-600 rounded-lg px-4 py-2 flex-row items-center"
@@ -895,73 +2410,81 @@ export default function InvoiceForm({ tripId, onSubmit, initialData = null, onCa
             </TouchableOpacity>
           </View>
 
-          {formData?.TcsClaim && Array.isArray(formData.TcsClaim) && formData.TcsClaim.map((claim, index) => (
-            <View
-              key={index}
-              className="border border-gray-200 rounded-lg p-3 mb-3 bg-gray-50"
-            >
-              <View className="flex-row justify-between items-center mb-2">
-                <Text className="font-semibold text-gray-900">
-                  TCS Claim {index + 1}
+          {formData?.pricing?.tcsClaim &&
+            Array.isArray(formData.pricing.tcsClaim) &&
+            formData.pricing.tcsClaim.map((claim, index) => (
+              <View
+                key={index}
+                className="border border-gray-200 rounded-lg p-3 mb-3 bg-gray-50"
+              >
+                <View className="flex-row justify-between items-center mb-2">
+                  <Text className="font-semibold text-gray-900">
+                    TCS Claim {index + 1}
+                  </Text>
+                  {formData.pricing.tcsClaim.length > 1 && (
+                    <TouchableOpacity
+                      onPress={() => removeTcsClaim(index)}
+                      className="bg-red-100 rounded-full p-1"
+                    >
+                      <Ionicons name="trash" size={16} color="#dc2626" />
+                    </TouchableOpacity>
+                  )}
+                </View>
+
+                <Text className="text-sm font-medium text-gray-700 mb-2">
+                  PAN Number
                 </Text>
-                {formData.TcsClaim.length > 1 && (
-                  <TouchableOpacity
-                    onPress={() => removeTcsClaim(index)}
-                    className="bg-red-100 rounded-full p-1"
-                  >
-                    <Ionicons name="trash" size={16} color="#dc2626" />
-                  </TouchableOpacity>
-                )}
+                <TextInput
+                  className="border border-gray-300 rounded-lg p-3 mb-3 bg-white"
+                  value={claim.panNumber}
+                  onChangeText={(value) =>
+                    updateTcsClaim(index, "panNumber", value)
+                  }
+                  placeholder="PAN Number"
+                  autoCapitalize="characters"
+                />
+
+                <Text className="text-sm font-medium text-gray-700 mb-2">
+                  Name
+                </Text>
+                <TextInput
+                  className="border border-gray-300 rounded-lg p-3 mb-3 bg-white"
+                  value={claim.name}
+                  onChangeText={(value) =>
+                    updateTcsClaim(index, "name", value)
+                  }
+                  placeholder="Name"
+                />
+
+                <Text className="text-sm font-medium text-gray-700 mb-2">
+                  Percentage (%)
+                </Text>
+                <TextInput
+                  className="border border-gray-300 rounded-lg p-3 bg-white"
+                  value={claim.percentage.toString()}
+                  onChangeText={(value) =>
+                    updateTcsClaim(
+                      index,
+                      "percentage",
+                      parseFloat(value) || 0
+                    )
+                  }
+                  placeholder="Percentage"
+                  keyboardType="numeric"
+                />
               </View>
-
-              <Text className="text-sm font-medium text-gray-700 mb-2">
-                PAN Number
-              </Text>
-              <TextInput
-                className="border border-gray-300 rounded-lg p-3 mb-3 bg-white"
-                value={claim.panNumber}
-                onChangeText={(value) =>
-                  updateTcsClaim(index, "panNumber", value)
-                }
-                placeholder="PAN Number"
-                autoCapitalize="characters"
-              />
-
-              <Text className="text-sm font-medium text-gray-700 mb-2">
-                Name
-              </Text>
-              <TextInput
-                className="border border-gray-300 rounded-lg p-3 mb-3 bg-white"
-                value={claim.name}
-                onChangeText={(value) =>
-                  updateTcsClaim(index, "name", value)
-                }
-                placeholder="Name"
-              />
-
-              <Text className="text-sm font-medium text-gray-700 mb-2">
-                Percentage (%)
-              </Text>
-              <TextInput
-                className="border border-gray-300 rounded-lg p-3 bg-white"
-                value={claim.percentage}
-                onChangeText={(value) =>
-                  updateTcsClaim(index, "percentage", value)
-                }
-                placeholder="Percentage"
-                keyboardType="numeric"
-              />
-            </View>
-          ))}
+            ))}
         </View>
 
         {/* Notes */}
         <View className="bg-white rounded-xl p-4 mb-4">
-          <Text className="text-lg font-semibold text-gray-900 mb-3">Notes</Text>
+          <Text className="text-lg font-semibold text-gray-900 mb-3">
+            Notes
+          </Text>
           <TextInput
             className="border border-gray-300 rounded-lg p-3 bg-white"
-            value={formData.Notes}
-            onChangeText={(value) => updateFormData("Notes", value)}
+            value={formData?.notes || ""}
+            onChangeText={(value) => updateFormData("notes", value)}
             placeholder="Additional notes..."
             multiline
             numberOfLines={4}
@@ -970,90 +2493,94 @@ export default function InvoiceForm({ tripId, onSubmit, initialData = null, onCa
         </View>
 
         {/* Action Buttons */}
-        <View className="flex-row gap-3 mt-6 mb-6">
-          <TouchableOpacity
-            className="flex-1 bg-purple-600 py-3 rounded-xl"
-            onPress={handlePreview}
-            disabled={isGeneratingPdf}
-          >
-            <Text className="text-white text-center font-semibold text-sm">
-              {isGeneratingPdf ? 'Generating...' : 'Preview'}
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            className="flex-1 bg-green-600 py-3 rounded-xl"
-            onPress={downloadPdf}
-            disabled={isGeneratingPdf}
-          >
-            <Text className="text-white text-center font-semibold text-sm">
-              {isGeneratingPdf ? 'Generating...' : 'Save PDF'}
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            className="flex-1 bg-blue-600 py-3 rounded-xl"
-            onPress={sharePdf}
-            disabled={isGeneratingPdf}
-          >
-            <Text className="text-white text-center font-semibold text-sm">
-              {isGeneratingPdf ? 'Generating...' : 'Share'}
-            </Text>
-          </TouchableOpacity>
-        </View>
-
-        {/* PDF Preview Modal */}
-        <Modal
-          visible={showPreview}
-          animationType="slide"
-          onRequestClose={() => setShowPreview(false)}
-        >
-          <View style={styles.modalContainer}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Invoice Preview</Text>
-              <TouchableOpacity
-                style={styles.closeButton}
-                onPress={() => setShowPreview(false)}
-              >
-                <Ionicons name="close" size={24} color="#333" />
-              </TouchableOpacity>
-            </View>
-            
-            <WebView
-              source={{ html: generatePreviewHtml() }}
-              style={styles.webview}
-              startInLoadingState={true}
-              renderLoading={() => (
-                <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-                  <ActivityIndicator size="large" color="#7c3aed" />
-                </View>
-              )}
-            />
-            
-            <View style={styles.buttonContainer}>
-              <TouchableOpacity
-                style={[styles.button, { backgroundColor: '#6b7280' }]}
-                onPress={() => setShowPreview(false)}
-              >
-                <Text style={styles.buttonText}>Close</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </Modal>
-
         <View className="flex-row justify-between mt-6 mb-8">
           <TouchableOpacity
-            onPress={() => setStep('selectQuotation')}
+            onPress={() => setStep("selectQuotation")}
             className="border border-purple-600 rounded-xl p-4 flex-1 mr-2 items-center"
           >
             <Text className="text-purple-600 font-bold">Back</Text>
           </TouchableOpacity>
           <TouchableOpacity
-            onPress={handleSubmit}
+            onPress={handleOpenPreview}
             className="bg-purple-600 rounded-xl p-4 flex-1 ml-2 items-center"
           >
-            <Text className="text-white font-bold">Preview & Save</Text>
+            <Text className="text-white font-bold">
+              Preview & Save
+            </Text>
           </TouchableOpacity>
         </View>
       </View>
+
+      {/* PDF Preview Modal */}
+      <Modal
+        visible={showPreview}
+        animationType="slide"
+        onRequestClose={() => setShowPreview(false)}
+      >
+        <View style={styles.modalContainer}>
+          <View style={styles.modalHeader}>
+            <Text style={styles.modalTitle}>Invoice Preview</Text>
+            <TouchableOpacity
+              style={styles.closeButton}
+              onPress={() => setShowPreview(false)}
+            >
+              <Ionicons name="close" size={24} color="#333" />
+            </TouchableOpacity>
+          </View>
+
+          <WebView
+            source={{ html: generatePreviewHtml() }}
+            style={styles.webview}
+            startInLoadingState={true}
+            renderLoading={() => (
+              <View
+                style={{
+                  flex: 1,
+                  justifyContent: "center",
+                  alignItems: "center",
+                }}
+              >
+                <ActivityIndicator size="large" color="#7c3aed" />
+              </View>
+            )}
+          />
+
+          <View style={styles.buttonContainer}>
+            <TouchableOpacity
+              style={[
+                styles.button,
+                { backgroundColor: isSubmitting ? "#9ca3af" : "#10b981" },
+              ]}
+              onPress={handleSubmitInvoice}
+              disabled={isSubmitting}
+            >
+              <Text style={styles.buttonText}>
+                {isSubmitting ? "Submitting..." : "Submit Invoice"}
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[
+                styles.button,
+                { backgroundColor: isGeneratingPdf ? "#9ca3af" : "#3b82f6" },
+              ]}
+              onPress={sharePdf}
+              disabled={isGeneratingPdf}
+            >
+              <Text style={styles.buttonText}>
+                {isGeneratingPdf ? "Sharing..." : "Share PDF"}
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.button, { backgroundColor: "#6b7280" }]}
+              onPress={() => setShowPreview(false)}
+            >
+              <Text style={styles.buttonText}>Close</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </ScrollView>
   );
 }

@@ -2,37 +2,71 @@ import { View, Text, ScrollView, ActivityIndicator } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Ionicons } from '@expo/vector-icons';
-import { TouchableOpacity } from 'react-native-gesture-handler';
+import { GestureHandlerRootView, TouchableOpacity } from 'react-native-gesture-handler';
 import InvoiceForm from '@/components/form/InvoiceForm';
 
 export default function CreateInvoiceScreen() {
   const params = useLocalSearchParams();
   const [loading, setLoading] = useState(false);
+  const [initialData, setInitialData] = useState(null);
   const [tripData, setTripData] = useState({
-    TripId: params.tripId || '',
-    CustomerDetails: {
-      Name: params.customerName || '',
-      Email: params.email || '',
-      Contact: params.contact || '',
-      Address: {
-        Street: '',
-        City: '',
-        State: '',
-        ZipCode: '',
-        Country: '',
+    tripId: params.tripId || '',
+    customer: {
+      name: params.customerName || '',
+      email: params.email || '',
+      contact: params.contact || '',
+      address: {
+        street: '',
+        city: '',
+        state: '',
+        zipCode: '',
+        country: '',
       },
     },
-    Destination: params.destination || '',
-    NumberOfTravelers: params.pax ? parseInt(params.pax) : 1,
-    TravelDate: params.travelDate || new Date().toISOString().split('T')[0],
-    Installments: [
-      {
-        InstallmentAmount: 0,
-        InstallmentDate: new Date().toISOString().split('T')[0],
-        Status: 'Pending',
-      },
-    ],
+    destination: params.destination || '',
+    pax: params.pax ? parseInt(params.pax) : 1,
+    travelDate: params.travelDate || new Date().toISOString().split('T')[0],
+    payment: {
+      installments: [
+        {
+          installmentAmount: 0,
+          installmentDate: new Date().toISOString().split('T')[0],
+          status: 'Pending',
+        },
+      ],
+    },
   });
+
+  // Parse initialData if provided for editing
+  useEffect(() => {
+    if (params.initialData) {
+      try {
+        const parsedData = JSON.parse(params.initialData);
+        setInitialData(parsedData);
+        // Update tripData with the parsed initialData
+        setTripData(prev => ({
+          ...prev,
+          ...parsedData,
+          tripId: parsedData.tripId || params.tripId || '',
+          customer: {
+            ...prev.customer,
+            ...parsedData.customer,
+            address: {
+              ...prev.customer?.address,
+              ...parsedData.customer?.address
+            }
+          },
+          payment: {
+            ...prev.payment,
+            ...parsedData.payment,
+            installments: parsedData.payment?.installments || prev.payment.installments
+          }
+        }));
+      } catch (error) {
+        console.error('Error parsing initialData:', error);
+      }
+    }
+  }, [params.initialData]);
 
   // Initialize form with any passed parameters
   useEffect(() => {
@@ -74,31 +108,32 @@ export default function CreateInvoiceScreen() {
   }
 
   return (
-    <View className="flex-1 bg-gray-50">
-      {/* Header */}
-      <View className="bg-white px-4 py-4 border-b border-gray-200 flex-row items-center">
-        <View 
-          onPress={() => router.back()}
-          className="mr-4"
-        >
-          <Ionicons name="arrow-back" size={24} color="#4b5563" />
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <View className="flex-1 bg-gray-50">
+        <View className="bg-white px-4 py-3 border-b border-gray-200 flex-row items-center justify-between">
+          <TouchableOpacity onPress={() => router.back()}>
+            <Ionicons name="arrow-back" size={24} color="#4B5563" />
+          </TouchableOpacity>
+          <Text className="text-lg font-semibold text-gray-900">
+            {params.isEdit ? 'Edit Invoice' : 'Create Invoice'}
+          </Text>
+          <View style={{ width: 24 }} />
         </View>
-        <Text className="text-xl font-bold text-gray-900">
-          Create New Invoice
-        </Text>
-      </View>
 
-      {/* Invoice Form */}
-      <ScrollView className="flex-1">
-        <View className="p-4">
+        <ScrollView className="flex-1 p-4">
           <InvoiceForm 
-            tripId={tripData.TripId}
-            initialData={tripData}
+            tripId={tripData.tripId}
             onSubmit={handleSubmit}
-            onCancel={() => router.back()}
+            initialData={initialData || tripData}
+            defaultCustomerName={tripData.customer?.name}
+            defaultEmail={tripData.customer?.email}
+            defaultContact={tripData.customer?.contact}
+            defaultDestination={tripData.destination}
+            defaultPax={tripData.pax?.toString()}
+            defaultTravelDate={tripData.travelDate}
           />
-        </View>
-      </ScrollView>
-    </View>
+        </ScrollView>
+      </View>
+    </GestureHandlerRootView>
   );
 }

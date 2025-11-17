@@ -6,9 +6,14 @@ import {
   TouchableOpacity,
   ScrollView,
   ActivityIndicator,
+  Alert,
+  Share,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
+import * as Print from "expo-print";
+import * as Sharing from "expo-sharing";
+import * as FileSystem from "expo-file-system";
 
 export default function InvoiceListModal({
   visible,
@@ -37,20 +42,93 @@ export default function InvoiceListModal({
       setLoading(true);
       setError(null);
       
-      // TODO: Replace with actual API call when endpoint is available
-      // const response = await fetch(
-      //   `https://0rq0f90i05.execute-api.ap-south-1.amazonaws.com/salesapp/lead-managment/invoices?TripId=${tripId}`,
-      //   { method: 'GET', headers: { 'Content-Type': 'application/json' } }
-      // );
+      const response = await fetch(
+        `https://0rq0f90i05.execute-api.ap-south-1.amazonaws.com/salesapp/invoice-management/invoice?invoiceId=000149-8585&invoiceNumber=J-Inv-20251115&tripId=000149-8585`,
+        { 
+          method: 'GET', 
+          headers: { 
+            'Content-Type': 'application/json' 
+          } 
+        }
+      );
       
-      // For now, show empty state since API doesn't exist yet
-      setInvoices([]);
+      if (!response.ok) {
+        throw new Error('Failed to fetch invoices');
+      }
+
+      const data = await response.json();
+      setInvoices(Array.isArray(data) ? data : [data]);
     } catch (err) {
       console.error("Error fetching invoices:", err);
       setError(err.message || "Failed to load invoices. Please try again later.");
       setInvoices([]);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleEditInvoice = (invoice) => {
+    onClose();
+    // Ensure we have all required fields with proper fallbacks
+    const invoiceData = {
+      ...invoice,
+      tripId: invoice.tripId || '000149-8585',
+      customer: {
+        name: invoice.customer?.name || '',
+        email: invoice.customer?.email || '',
+        contact: invoice.customer?.contact || '',
+        address: {
+          street: invoice.customer?.address?.street || '',
+          city: invoice.customer?.address?.city || '',
+          state: invoice.customer?.address?.state || '',
+          zipCode: invoice.customer?.address?.zipCode || '',
+          country: invoice.customer?.address?.country || '',
+        }
+      },
+      destination: invoice.destination || '',
+      travelDate: invoice.travelDate || new Date().toISOString().split('T')[0],
+      pricing: invoice.pricing || {
+        totalAmount: 0,
+        gstAmount: 0,
+        tcsAmount: 0,
+        tcsClaim: []
+      },
+      payment: invoice.payment || {
+        installments: []
+      }
+    };
+
+    router.push({
+      pathname: "/(tabs)/invoices/create",
+      params: {
+        initialData: JSON.stringify(invoiceData),
+        tripId: invoiceData.tripId,
+        isEdit: 'true'
+      },
+    });
+  };
+
+  const handleShareInvoice = async (invoice) => {
+    try {
+      // Generate PDF
+      const html = generateInvoiceHtml(invoice);
+      const { uri } = await Print.printToFileAsync({
+        html,
+        width: 595,
+        height: 842,
+      });
+
+      // Share the PDF
+      await Share.share({
+        url: uri,
+        title: `Invoice ${invoice.invoiceNumber}`,
+        dialogTitle: `Share Invoice ${invoice.invoiceNumber}`,
+        mimeType: 'application/pdf',
+        UTI: 'com.adobe.pdf'
+      });
+    } catch (error) {
+      console.error('Error sharing invoice:', error);
+      Alert.alert('Error', 'Failed to share invoice. Please try again.');
     }
   };
 
@@ -74,6 +152,144 @@ export default function InvoiceListModal({
 
   const latest = invoices[0];
   const previous = invoices.slice(1);
+
+  // Add this function at the top level of your component
+  const generateInvoiceHtml = (invoice) => {
+    // This is a simplified version - you'll need to implement your actual invoice HTML template
+    return `
+      <html>
+        <head>
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <style>
+            body { font-family: Arial, sans-serif; padding: 20px; }
+            .header { text-align: center; margin-bottom: 30px; }
+            .invoice-info { margin-bottom: 30px; }
+            .customer-info { margin-bottom: 20px; }
+            table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+            th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+            th { background-color: #f2f2f2; }
+            .total { text-align: right; font-weight: bold; margin-top: 20px; }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <h1>INVOICE</h1>
+            <p>${invoice.invoiceNumber || 'N/A'}</p>
+          </div>
+          
+          <div class="invoice-info">
+            <p><strong>Date:</strong> ${new Date().toLocaleDateString()}</p>
+            <p><strong>Status:</strong> ${invoice.invoiceStatus || 'Pending'}</p>
+          </div>
+          
+          <div class="customer-info">
+            <h3>Bill To:</h3>
+            <p>${invoice.customer?.name || 'N/A'}</p>
+            <p>${invoice.customer?.email || ''}</p>
+            <p>${invoice.customer?.contact || ''}</p>
+            <p>${invoice.customer?.address?.street || ''}</p>
+            <p>${invoice.customer?.address?.city || ''}, ${invoice.customer?.address?.state || ''} ${invoice.customer?.address?.zipCode || ''}</p>
+            <p>${invoice.customer?.address?.country || ''}</p>
+          </div>
+          
+          <table>
+            <thead>
+              <tr>
+                <th>Description</th>
+                <th>Amount (₹)</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Package Amount</td>
+                <td>₹${invoice.pricing?.totalAmount?.toLocaleString('en-IN') || '0'}</td>
+              </tr>
+              <tr>
+                <td>GST (${invoice.pricing?.gstPercentage || 0}%)</td>
+                <td>₹${invoice.pricing?.gstAmount?.toLocaleString('en-IN') || '0'}</td>
+              </tr>
+              <tr>
+                <td>TCS (${invoice.pricing?.tcsPercentage || 0}%)</td>
+                <td>₹${invoice.pricing?.tcsAmount?.toLocaleString('en-IN') || '0'}</td>
+              </tr>
+            </tbody>
+          </table>
+          
+          <div class="total">
+            <p>Total Amount: ₹${(invoice.pricing?.totalAmount + 
+                               (invoice.pricing?.gstAmount || 0) + 
+                               (invoice.pricing?.tcsAmount || 0)).toLocaleString('en-IN')}</p>
+          </div>
+          
+          <div class="notes">
+            <h3>Notes:</h3>
+            <p>${invoice.notes || 'Thank you for your business!'}</p>
+          </div>
+        </body>
+      </html>
+    `;
+  };
+
+  const renderInvoiceItem = (invoice, isLatest = false) => (
+    <View key={invoice.invoiceId || invoice.invoiceNumber} className={`bg-white p-4 mb-4 rounded-xl ${isLatest ? 'border border-purple-300' : ''}`}>
+      {isLatest && (
+        <Text className="text-xs text-gray-500 mb-1 font-medium">
+          LATEST INVOICE
+        </Text>
+      )}
+      <View className="flex-row justify-between items-center mb-2">
+        <Text className="text-purple-600 font-bold text-lg">
+          {invoice.invoiceNumber || invoice.invoiceId}
+        </Text>
+        <View className={`px-3 py-1 rounded-full ${getStatusColor(invoice.invoiceStatus || invoice.Status).bg}`}>
+          <Text className={`text-xs font-medium ${getStatusColor(invoice.invoiceStatus || invoice.Status).text}`}>
+            {getStatusText(invoice.invoiceStatus || invoice.Status)}
+          </Text>
+        </View>
+      </View>
+      
+      <Text className="text-gray-900 font-semibold text-lg">
+        ₹{invoice.pricing?.totalAmount?.toLocaleString('en-IN') || '0'}
+      </Text>
+      <Text className="text-gray-500 text-sm mb-1">
+        Destination: {invoice.destination || 'N/A'}
+      </Text>
+      <Text className="text-gray-500 text-xs">
+        {invoice.customer?.name} • {invoice.customer?.contact}
+      </Text>
+
+      <View className="flex-row justify-end mt-3 space-x-2">
+        <TouchableOpacity
+          className="bg-blue-100 p-2 rounded-full"
+          onPress={() => handleEditInvoice(invoice)}
+        >
+          <Ionicons name="pencil" size={18} color="#3b82f6" />
+        </TouchableOpacity>
+        <TouchableOpacity
+          className="bg-green-100 p-2 rounded-full"
+          onPress={() => handleShareInvoice(invoice)}
+        >
+          <Ionicons name="share-social" size={18} color="#10b981" />
+        </TouchableOpacity>
+        <TouchableOpacity
+          className="bg-gray-100 p-2 rounded-full"
+          onPress={() => {
+            onClose();
+            setTimeout(() => {
+              router.push({
+                pathname: `/(tabs)/invoices/${invoice.invoiceId || invoice.invoiceNumber}`,
+                params: {
+                  invoiceData: JSON.stringify(invoice),
+                },
+              });
+            }, 100);
+          }}
+        >
+          <Ionicons name="document-text" size={18} color="#6b7280" />
+        </TouchableOpacity>
+      </View>
+    </View>
+  );
 
   return (
     <Modal visible={visible} animationType="slide" onRequestClose={onClose}>
@@ -141,141 +357,15 @@ export default function InvoiceListModal({
           ) : (
             <ScrollView showsVerticalScrollIndicator={false}>
               {/* Latest Invoice */}
-              {latest && (
-                <View className="bg-white p-4 mb-4 rounded-xl border border-purple-300">
-                  <Text className="text-xs text-gray-500 mb-1 font-medium">
-                    LATEST INVOICE
-                  </Text>
-                  <View className="flex-row justify-between items-center mb-2">
-                    <Text className="text-purple-600 font-bold text-lg">
-                      {latest.InvoiceNumber || latest.InvoiceId}
-                    </Text>
-                    <View
-                      className={`px-3 py-1 rounded-full ${
-                        getStatusColor(latest.Status).bg
-                      }`}
-                    >
-                      <Text
-                        className={`text-xs font-medium ${
-                          getStatusColor(latest.Status).text
-                        }`}
-                      >
-                        {getStatusText(latest.Status)}
-                      </Text>
-                    </View>
-                  </View>
-
-                  <Text className="text-gray-900 font-semibold text-lg">
-                    ₹{latest.TotalAmount?.toLocaleString("en-IN") || 0}
-                  </Text>
-                  <Text className="text-gray-500 text-sm mb-1">
-                    Destination: {latest.Destination}
-                  </Text>
-                  <Text className="text-gray-500 text-xs">
-                    {latest.CustomerDetails?.Name} • {latest.CustomerDetails?.Contact}
-                  </Text>
-
-                  <View className="flex-row justify-end mt-3 space-x-3">
-                    <TouchableOpacity
-                      className="bg-blue-100 p-2 rounded-full"
-                      onPress={() => {
-                        // TODO: View invoice PDF
-                        console.log("View invoice:", latest.InvoiceId);
-                      }}
-                    >
-                      <Ionicons name="eye" size={18} color="#3b82f6" />
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                      className="bg-gray-100 p-2 rounded-full"
-                      onPress={() => {
-                        console.log("Opening invoice:", latest.InvoiceId);
-                        onClose();
-                        setTimeout(() => {
-                          router.push({
-                            pathname: "/invoice/InvoiceScreen",
-                            params: {
-                              invoiceData: JSON.stringify(latest),
-                            },
-                          });
-                        }, 100);
-                      }}
-                    >
-                      <Ionicons name="document-text" size={18} color="#6b7280" />
-                    </TouchableOpacity>
-                  </View>
-                </View>
-              )}
-
+              {latest && renderInvoiceItem(latest, true)}
+              
               {/* Previous Invoices */}
               {previous.length > 0 && (
-                <View className="mt-4">
-                  <Text className="text-xs text-gray-500 mb-2 font-medium">
+                <View className="mt-2">
+                  <Text className="text-xs text-gray-500 font-medium mb-2">
                     PREVIOUS INVOICES
                   </Text>
-
-                  {previous.map((invoice) => (
-                    <View
-                      key={invoice.InvoiceId}
-                      className="bg-white p-4 mb-3 rounded-xl border border-gray-200"
-                    >
-                      <View className="flex-row justify-between mb-1">
-                        <Text className="text-gray-800 font-semibold">
-                          {invoice.InvoiceNumber || invoice.InvoiceId}
-                        </Text>
-                        <View
-                          className={`px-3 py-1 rounded-full ${
-                            getStatusColor(invoice.Status).bg
-                          }`}
-                        >
-                          <Text
-                            className={`text-xs font-medium ${
-                              getStatusColor(invoice.Status).text
-                            }`}
-                          >
-                            {getStatusText(invoice.Status)}
-                          </Text>
-                        </View>
-                      </View>
-
-                      <Text className="text-gray-900 font-bold text-lg mb-1">
-                        ₹{invoice.TotalAmount?.toLocaleString("en-IN") || 0}
-                      </Text>
-                      <Text className="text-gray-500 text-sm mb-1">
-                        Destination: {invoice.Destination}
-                      </Text>
-                      <Text className="text-gray-500 text-xs mb-2">
-                        {invoice.CustomerDetails?.Name} • {invoice.CustomerDetails?.Contact}
-                      </Text>
-
-                      <View className="flex-row justify-end mt-1 space-x-3">
-                        <TouchableOpacity
-                          className="bg-blue-100 p-2 rounded-full"
-                          onPress={() => {
-                            console.log("View invoice:", invoice.InvoiceId);
-                          }}
-                        >
-                          <Ionicons name="eye" size={18} color="#3b82f6" />
-                        </TouchableOpacity>
-                        <TouchableOpacity
-                          className="bg-gray-100 p-2 rounded-full"
-                          onPress={() => {
-                            console.log("Opening invoice:", invoice.InvoiceId);
-                            onClose();
-                            setTimeout(() => {
-                              router.push({
-                                pathname: "/invoice/InvoiceScreen",
-                                params: {
-                                  invoiceData: JSON.stringify(invoice),
-                                },
-                              });
-                            }, 100);
-                          }}
-                        >
-                          <Ionicons name="document-text" size={18} color="#6b7280" />
-                        </TouchableOpacity>
-                      </View>
-                    </View>
-                  ))}
+                  {previous.map((invoice) => renderInvoiceItem(invoice))}
                 </View>
               )}
             </ScrollView>
