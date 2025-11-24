@@ -1,4 +1,4 @@
-import { View, Text, TouchableOpacity, TextInput, Pressable } from "react-native";
+import { View, Text, TouchableOpacity, TextInput, Pressable, Image } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { LinearGradient } from 'expo-linear-gradient';
@@ -28,12 +28,16 @@ const [isSearchFocused, setIsSearchFocused] = useState(false);
     style={{ paddingTop: insets.top + 16 }}
   >
       <View className="flex-row items-center gap-[0.5rem] justify-between mb-4">
-    {!isSearchFocused && (
-  <Text className="text-white text-[1.2rem] font-bold">
-    PP
-    {/* {title} */}
-  </Text>
-)}
+    {/* {!isSearchFocused && (
+      <View className="flex-row items-center">
+        <Image 
+          source={require('@/assets/images/logo.png')} 
+          className="w-16 h-16 mr-3"
+          resizeMode="contain"
+        />
+      
+      </View>
+    )} */}
 
         {showSearch && !showBack && (
           <Pressable onPress={async() =>  await   AsyncStorage.removeItem("createAccount") } className="flex-row items-center bg-white/20 rounded-full px-4 py-3 flex-1 mr-4">
