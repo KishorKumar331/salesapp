@@ -30,8 +30,7 @@ const QuotationScreen = () => {
 
   const leadData = params.leadData ? JSON.parse(params.leadData) : null;
   const followUpData = params.FollowleadData ? JSON.parse(params.FollowleadData) : null;
-  console.log(followUpData, 'lllllll')
-  console.log("👤 User data:", user);
+
 
   const handleFormSubmit = async (data) => {
     if (isPrinting) return;
@@ -45,12 +44,12 @@ const QuotationScreen = () => {
         ...data,
         user
       };
-
+console.log(user,'asdasd')
       // 2️⃣ Generate instant HTML preview with user data
       const result = getInstantHtmlPreview(dataWithUser);
       setPdfHtml(result.html);
       setPdfUri(null); // No PDF yet, only HTML
-      setFormDataToSubmit(data); // Store form data for later submission
+      setFormDataToSubmit({...data,CompanyId:user?.CompanyId,CompanyEmail:user?.Email}); // Store form data for later submission
       setShowPdfModal(true);
       setRefreshKey((prev) => prev + 1);
 

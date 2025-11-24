@@ -7,6 +7,7 @@ import QuotationCards from "@/components/ui/cards/QuotationCards";
 import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect } from "@react-navigation/native";
 import { useUserProfile } from "@/hooks/useUserProfile";
+import ConvertedCards from "../../components/ui/cards/ConvertedCards";
 
 const AnimatedFlatList = Animated.createAnimatedComponent(FlatList);
 
@@ -134,7 +135,7 @@ export default function ConvertedPage() {
 
   const renderItem = useCallback(({ item }) => {
     if (!item) return null;
-    return <QuotationCards leadData={item} onStatusChange={fetchLeads} />;
+    return <ConvertedCards data={item} onStatusChange={fetchLeads} />;
   }, [fetchLeads]);
 
   return (
