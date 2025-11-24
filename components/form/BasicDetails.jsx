@@ -102,11 +102,6 @@ const BasicDetails = () => {
           }}
           render={({ field: { onChange, value } }) => (
             <View style={{ flexDirection: "row", alignItems: "center" }}>
-              <View style={styles.prefix}>
-                <Text style={{ color: "#4b5563", fontWeight: "500" }}>
-                  +91
-                </Text>
-              </View>
               <TextInput
                 style={[
                   styles.inputWithPrefix,

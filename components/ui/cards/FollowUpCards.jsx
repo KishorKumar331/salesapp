@@ -251,7 +251,7 @@
 // //                   </TouchableOpacity>
 // //                 </View>
 
-          
+
 // //               </View>
 // //             </View>
 
@@ -615,11 +615,12 @@ import {
   View,
   Dimensions,
   FlatList,
+  ActivityIndicator,
 } from "react-native";
 import DocumentModal from "../DocumentModal";
 import InvoiceListModal from "../InvoiceListModal";
 import QuotationListModal from "../QuotationListModal";
-import { router } from "expo-router";
+import useStatusChange from "@/hooks/useStatusChange";
 
 const FollowUpCards = ({ data }) => {
   const [currentPage, setCurrentPage] = useState(0);
@@ -632,6 +633,12 @@ const FollowUpCards = ({ data }) => {
   const [isDocumentModalVisible, setIsDocumentModalVisible] = useState(false);
   const [isInvoiceModalVisible, setIsInvoiceModalVisible] = useState(false);
   const [isQuotationModalVisible, setIsQuotationModalVisible] = useState(false);
+  
+  // Use the useStatusChange hook with quotation data
+  const { status, isLoading, updateStatus } = useStatusChange(
+    data?.Status || 'New',
+    data // Pass the full quotation data
+  );
 
   const listRef = useRef(null);
 
@@ -814,6 +821,43 @@ const FollowUpCards = ({ data }) => {
                   </View>
                 </TouchableOpacity>
               </View>
+
+              <View className="flex flex-row">
+
+
+                <TouchableOpacity
+                  className={`${status === 'Converted' ? 'bg-green-100' : 'bg-purple-100'} rounded-lg px-1 py-4 flex-1 mt-4`}
+                  onPress={() => updateStatus('Converted')}
+                  disabled={isLoading || status === 'Converted'}
+                >
+                  <View className="items-center">
+                    {isLoading && status === 'Converted' ? (
+                      <ActivityIndicator size="small" color="#7c3aed" />
+                    ) : (
+                      <Text className={`${status === 'Converted' ? 'text-green-600' : 'text-purple-600'} font-medium text-xs mt-1`}>
+                        {status === 'Converted' ? 'Converted' : 'Convert'}
+                      </Text>
+                    )}
+                  </View>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  className={`${status === 'Dumped' ? 'bg-red-100' : 'bg-purple-100'} rounded-lg px-3 py-4 flex-1 mt-4 ml-2`}
+                  onPress={() => updateStatus('Dumped')}
+                  disabled={isLoading || status === 'Dumped'}
+                >
+                  <View className="items-center">
+                    {isLoading && status === 'Dumped' ? (
+                      <ActivityIndicator size="small" color="#7c3aed" />
+                    ) : (
+                      <Text className={`${status === 'Dumped' ? 'text-red-600' : 'text-purple-600'} font-medium text-xs mt-1`}>
+                        {status === 'Dumped' ? 'Dumped' : 'Dump'}
+                      </Text>
+                    )}
+                  </View>
+                </TouchableOpacity>
+              </View>
+
             </View>
           </>
         )}
@@ -903,9 +947,8 @@ const FollowUpCards = ({ data }) => {
           {pages.map((_, i) => (
             <View
               key={i}
-              className={`w-2 h-2 rounded-full mx-1 ${
-                currentPage === i ? "bg-purple-600" : "bg-gray-300"
-              }`}
+              className={`w-2 h-2 rounded-full mx-1 ${currentPage === i ? "bg-purple-600" : "bg-gray-300"
+                }`}
             />
           ))}
         </View>

@@ -361,7 +361,7 @@ const CreateAccountPage = () => {
             <Text className="text-gray-700 font-medium mb-2">Email Address *</Text>
             <TextInput
               value={formData.Email}
-              onChangeText={(value) => updateFormData('Email', value)}
+              onChangeText={(value) => updateFormData('Email', value.toLowerCase())}
               placeholder="Enter your email"
               keyboardType="email-address"
               autoCapitalize="none"
