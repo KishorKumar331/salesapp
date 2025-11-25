@@ -13,7 +13,7 @@ const useStatusChange = (initialStatus, quotationData) => {
     error: quotationError,
     refreshQuotation,
   } = useLatestQuotation(quotationData?.TripId);
-
+console.log(latestQuotation)
   useEffect(() => {
     if (quotationError) {
       console.log("❌ Quotation fetch error:", quotationError);

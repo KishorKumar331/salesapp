@@ -251,13 +251,13 @@ const QuotationCards = ({ leadData }) => {
         }}
       />
 
-      <LastQuotesModal
+      {/* <LastQuotesModal
         visible={isLastQuotesModalVisible}
         onClose={() => setIsLastQuotesModalVisible(false)}
         onUseQuote={(q) => {
           // keep Alert but ensure it’s not huge text
         }}
-      />
+      /> */}
     </>
   );
 };

@@ -29,6 +29,7 @@ const QuotationScreen = () => {
   const [formDataToSubmit, setFormDataToSubmit] = useState(null);
 
   const leadData = params.leadData ? JSON.parse(params.leadData) : null;
+  
   const followUpData = params.FollowleadData ? JSON.parse(params.FollowleadData) : null;
 
 

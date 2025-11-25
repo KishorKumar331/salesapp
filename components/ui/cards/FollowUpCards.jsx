@@ -364,6 +364,7 @@ const FollowUpCards = ({ data }) => {
         visible={isQuotationModalVisible}
         onClose={() => setIsQuotationModalVisible(false)}
         tripId={data?.TripId}
+        data={data}
       />
     </>
   );

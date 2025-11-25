@@ -14,6 +14,7 @@ export default function QuotationListModal({
   visible,
   onClose,
   tripId,
+  data,
   onViewQuotation,
   onCreateNew,
 }) {
@@ -21,7 +22,7 @@ export default function QuotationListModal({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [showPrevious, setShowPrevious] = useState(false);
-
+console.log(data)
   useEffect(() => {
     if (visible && tripId) {
       fetchQuotations();
@@ -156,7 +157,8 @@ export default function QuotationListModal({
                           router.push({
                             pathname: '/(tabs)/QuotationScreen',
                             params: { 
-                              FollowleadData: JSON.stringify(latest)
+                              FollowleadData: JSON.stringify(latest),
+                              leadData:JSON.stringify(data)
                             }
                           });
                         }, 100);
