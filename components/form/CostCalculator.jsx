@@ -152,7 +152,7 @@ const CostCalculator = () => {
         <View style={[styles.iconWrapper, { backgroundColor: "#dbeafe" }]}>
           <Ionicons name="calculator" size={20} color="#3b82f6" />
         </View>
-        <Text style={styles.sectionTitle}>Cost Calculator</Text>
+        <Text style={styles.sectionTitle}>Quotation Price</Text>
       </View>
 
       {/* Basic Costs */}

@@ -110,12 +110,22 @@ const FlightSection = () => {
   };
 
   // Save selected flights
-  const saveSelectedFlights = () => {
-    setValue('selectedFlights', selectedFlights, { shouldDirty: true, shouldValidate: true });
-    setShowFlightModal(false);
-    Alert.alert('Success', `${selectedFlights.length} flight(s) selected successfully!`);
-  };
+const saveSelectedFlights = () => {
+  // Calculate total price from selected flights
+  const totalPrice = selectedFlights.reduce((sum, flight) => {
+    // Assuming flight price is available as flight.price or similar
+      const price = parseFloat(flight.customPrice) || parseFloat(flight.price) || 0;
 
+    return sum + price;
+  }, 0);
+
+  // Update both selectedFlights and flightCost fields
+  setValue('selectedFlights', selectedFlights, { shouldDirty: true, shouldValidate: true });
+  setValue('Costs.FlightCost', totalPrice.toFixed(2), { shouldDirty: true, shouldValidate: true });
+  
+  setShowFlightModal(false);
+  Alert.alert('Success', `${selectedFlights.length} flight(s) selected successfully! Total: ₹${totalPrice.toFixed(2)}`);
+};
   const FormField = ({
     label,
     children,

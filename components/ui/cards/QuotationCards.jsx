@@ -34,12 +34,7 @@ const QuotationCards = ({ leadData }) => {
   const QuotaionButton = React.useMemo(
     () => () => (
       <View className="flex-row justify-between">
-        <TouchableOpacity
-          onPress={() => setIsLastQuotesModalVisible(true)}
-          className="bg-purple-100 rounded-lg px-4 py-2 flex-1 mr-2"
-        >
-          <Text className="text-purple-600 font-medium text-center">Last 10 Quotes</Text>
-        </TouchableOpacity>
+
         <TouchableOpacity
           onPress={() => {
             // Generate a truly unique TripId using lead data + timestamp + random
