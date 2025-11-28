@@ -10,8 +10,7 @@
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.deveshbisht.testapp",
-      "googleServicesFile": "" 
+      "bundleIdentifier": "com.deveshbisht.testapp"
     },
     "android": {
       "adaptiveIcon": {
