@@ -1,5 +1,6 @@
 import {
   registerDeviceWithBackend,
+  triggerLocalTestNotification,
   usePushNotifications,
 } from "@/hooks/usePushNotifications";
 import { useUserProfile } from "@/hooks/useUserProfile";
@@ -14,6 +15,7 @@ export default function RootLayout() {
   const { expoPushToken, nativePushToken } = usePushNotifications();
   const { user } = useUserProfile();
   const registrationRef = useRef({ userId: null, token: null });
+  const localTestRef = useRef(false);
 
   useEffect(() => {
     const checkAuthStatus = async () => {
@@ -61,6 +63,15 @@ export default function RootLayout() {
       registrationRef.current = { userId: userEmail, token: nativePushToken };
     });
   }, [user, nativePushToken]);
+
+  useEffect(() => {
+    if (!__DEV__) return;
+    if (localTestRef.current) return;
+    if (!nativePushToken) return;
+
+    triggerLocalTestNotification();
+    localTestRef.current = true;
+  }, [nativePushToken]);
 
   // Still loading → render nothing or splash screen
   if (!isReady) return null;

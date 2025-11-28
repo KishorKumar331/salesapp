@@ -134,6 +134,23 @@ export async function registerDeviceWithBackend({ userId, pushToken }) {
   }
 }
 
+export async function triggerLocalTestNotification({
+  title = "Local notification test",
+  body = "If you see this, local notifications are configured correctly.",
+  data = { source: "local-test" },
+} = {}) {
+  try {
+    await ensureAndroidChannelAsync();
+    await Notifications.scheduleNotificationAsync({
+      content: { title, body, data },
+      trigger: null,
+    });
+    console.log("✅ Local notification scheduled");
+  } catch (error) {
+    console.error("Failed to schedule local notification:", error);
+  }
+}
+
 export function usePushNotifications() {
   const [expoPushToken, setExpoPushToken] = useState(null);
   const [nativePushToken, setNativePushToken] = useState(null);
@@ -152,12 +169,16 @@ export function usePushNotifications() {
 
     notificationListener.current =
       Notifications.addNotificationReceivedListener((noti) => {
+        console.log("📥 Notification received:", JSON.stringify(noti, null, 2));
         setNotification(noti);
       });
 
     responseListener.current =
       Notifications.addNotificationResponseReceivedListener((response) => {
-        console.log("Notification response", response);
+        console.log(
+          "👆 Notification tapped response:",
+          JSON.stringify(response, null, 2)
+        );
       });
 
     return () => {
