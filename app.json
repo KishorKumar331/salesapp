@@ -32,7 +32,6 @@
     },
     "plugins": [
       "expo-router",
-      
       [
         "expo-splash-screen",
         {
@@ -45,17 +44,14 @@
           }
         }
       ],
-        "@react-native-firebase/app",
       [
-        "@react-native-firebase/messaging",
+        "expo-notifications",
         {
-          "sound": true,
-          "badge": true,
-          "alert": true
+          "androidMode": "default",
+          "androidCollapsedTitle": "SalesApp",
+          "iosDisplayInForeground": true
         }
       ]
-
-
     ],
     "experiments": {
       "typedRoutes": true,
