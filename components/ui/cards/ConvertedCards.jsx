@@ -13,7 +13,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import DocumentModal from '../DocumentModal';
 import InvoiceListModal from '../InvoiceListModal';
-import QuotationListModal from '../QuotationListModal';
+import QuotationListModal from '../../modals/QuotationListModal';
 import useStatusChange from '@/hooks/useStatusChange';
 
 const ConvertedCards = ({ data, onStatusChange }) => {

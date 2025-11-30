@@ -22,7 +22,7 @@ const QuotationModal: React.FC<QuotationModalProps> = ({
 }) => {
   const handleSubmit = (data: any) => {
     onSubmit(data);
-    onClose(); // Close modal after successful submission
+    onClose(); 
   };
 
   return (

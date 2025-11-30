@@ -13,8 +13,8 @@ import {
 } from "react-native";
 import DocumentModal from "../DocumentModal";
 import InvoiceListModal from "../InvoiceListModal";
-import QuotationListModal from "../QuotationListModal";
 import useStatusChange from "@/hooks/useStatusChange";
+import QuotationListModal from "../../modals/QuotationListModal";
 
 const FollowUpCards = ({ data }) => {
   const [currentPage, setCurrentPage] = useState(0);

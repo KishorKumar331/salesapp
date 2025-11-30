@@ -2,7 +2,7 @@ import React, { useMemo, useRef, useState, useCallback } from 'react';
 import { View, Text, TouchableOpacity, FlatList, Dimensions } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import QuotationModal from '../QuotationModal';
+import QuotationModal from '../../modals/QuotationModal';
 import LastQuotesModal from '../LastQuotesModal';
 
 const QuotationCards = ({ leadData }) => {

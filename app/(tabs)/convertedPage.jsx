@@ -1,9 +1,8 @@
 
 
-import React, { useRef, useState, useCallback, useMemo } from "react";
+import  { useRef, useState, useCallback, useMemo } from "react";
 import { View, Text, TouchableOpacity, ActivityIndicator, Animated, FlatList } from "react-native";
 import Navbar from "@/components/Navbar";
-import QuotationCards from "@/components/ui/cards/QuotationCards";
 import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect } from "@react-navigation/native";
 import { useUserProfile } from "@/hooks/useUserProfile";
