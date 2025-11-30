@@ -115,13 +115,13 @@ const OnBoardingPage = () => {
   };
 
   return (
-    <View className="flex-1 bg-gray-50">
+    <View style={{marginBottom:insets.bottom}} className="flex-1 bg-gray-50">
       <LinearGradient
         colors={['#7c3aed', '#5b21b6']}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
         className="rounded-b-3xl px-5 pb-6"
-        style={{ paddingTop: insets.top + 16 }}
+        style={{ paddingTop: insets.top + 16, }}
       >
         <View className="flex-row items-center justify-between">
           <Text className="text-xl font-semibold text-white">Journey Routers</Text>
