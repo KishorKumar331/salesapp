@@ -11,10 +11,10 @@ import { useFormContext, Controller, useFieldArray } from "react-hook-form";
 import { Ionicons } from "@expo/vector-icons";
 import ActivitySelector from "@/components/ui/ActivitySelector";
 import DatePicker from "@/components/ui/DatePicker";
+import { styles } from "./Styles";
 
 const ItinerarySection = () => {
-const [activity,setActivity]=useState([])
-console.log(activity)
+  const [activity, setActivity] = useState([])
 
   const {
     control,
@@ -32,14 +32,14 @@ console.log(activity)
   const days = watch("Days") || 1;
   const destinations = watch("Destinations");
   const travelDate = watch("TravelDate");
-  
+
   // Format date to YYYY-MM-DD
   const formatDate = (dateString) => {
     if (!dateString) return '';
     const date = new Date(dateString);
     return date.toISOString().split('T')[0];
   };
-  
+
   // Generate dates for the itinerary based on travel date
   const getItineraryDate = (index) => {
     if (!travelDate) return '';
@@ -52,10 +52,10 @@ console.log(activity)
     const baseDate = travelDate ? new Date(travelDate) : new Date();
     const futureDate = new Date(baseDate);
     futureDate.setDate(baseDate.getDate() + (nextDay - 1));
-    
+
     const formattedDate = formatDate(futureDate);
     const dateKey = parseInt(formattedDate.replace(/-/g, ''));
-    
+
     append({
       Date: formattedDate,
       DateKey: dateKey,
@@ -72,7 +72,7 @@ console.log(activity)
     setValue(`Itinearies.${index}.Description`, activity.Description || "");
     setValue(`Itinearies.${index}.ImageUrl`, activity.ImageUrl || "");
     setValue(`Itinearies.${index}.Activity`, activity.Title || "");
-    
+
     // Trigger re-render
     forceUpdate({});
   };
@@ -81,17 +81,17 @@ console.log(activity)
     if (fields.length > 1) {
       // Remove the day at the specified index
       remove(index);
-      
+
       // Update the day numbers for remaining items
       const updatedItineraries = [...control._formValues.Itinearies];
       updatedItineraries.splice(index, 1);
-      
+
       // Update the day numbers for remaining items
       updatedItineraries.forEach((item, idx) => {
         item.day = idx + 1;
         item.Title = `Day ${idx + 1} Itinerary`;
       });
-      
+
       // Update the form values
       control._formValues.Itinearies = updatedItineraries;
       forceUpdate();
@@ -129,10 +129,10 @@ console.log(activity)
         const dayNumber = i + 1;
         const futureDate = new Date(baseDate);
         futureDate.setDate(baseDate.getDate() + i);
-        
+
         const formattedDate = formatDate(futureDate);
         const dateKey = parseInt(formattedDate.replace(/-/g, ''));
-        
+
         append({
           day: dayNumber,
           Date: formattedDate,
@@ -177,9 +177,6 @@ console.log(activity)
 
     const fetchAllActivities = async () => {
       let allActivities = [];
-
-  
-
       if (destinations?.length) {
         const otherActivitiesPromises =
           destinations?.map(fetchActivities);
@@ -193,7 +190,7 @@ console.log(activity)
 
     fetchAllActivities();
   }, [
- destinations
+    destinations
   ]);
 
   return (
@@ -229,24 +226,24 @@ console.log(activity)
               </TouchableOpacity>
             )}
           </View>
-   
-            <Controller
-              control={control}
-              name={`Itinearies.${index}.ImageUrl`}
-              render={({ field: { onChange, value } }) => (
-                <View>
-                 
-                  {value ? (
-                    <Image
-                      source={{ uri: value }}
-                      style={{ width: 290, height: 180, marginTop: 8, borderRadius: 8 ,marginBottom:18}}
-                      resizeMode="cover"
-                    />
-                  ) : null}
-                </View>
-              )}
-            />
-   
+
+          {/* Selected Image Link */}
+          <Controller
+            control={control}
+            name={`Itinearies.${index}.ImageUrl`}
+            render={({ field: { onChange, value } }) => (
+              <View>
+
+                {value ? (
+                  <Image
+                    source={{ uri: value }}
+                    style={{ width: 290, height: 180, marginTop: 8, borderRadius: 8, marginBottom: 18 }}
+                    resizeMode="cover"
+                  />
+                ) : null}
+              </View>
+            )}
+          />
 
           {/* Date Picker */}
           <FormField label="Date">
@@ -347,7 +344,7 @@ console.log(activity)
             />
           </FormField>
 
-    
+
         </View>
       ))}
 
@@ -360,119 +357,6 @@ console.log(activity)
   );
 };
 
-const styles = StyleSheet.create({
-  card: {
-    backgroundColor: "white",
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 16,
-    shadowColor: "#000",
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 1,
-  },
-  sectionHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: 12,
-  },
-  iconWrapper: {
-    backgroundColor: "#ecfdf5",
-    borderRadius: 50,
-    padding: 8,
-    marginRight: 8,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: "700",
-    color: "#111827",
-  },
-  infoBox: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#eff6ff",
-    padding: 12,
-    borderRadius: 8,
-    marginBottom: 16,
-  },
-  infoText: {
-    marginLeft: 8,
-    fontSize: 14,
-    color: "#3b82f6",
-    flex: 1,
-  },
-  dayCard: {
-    backgroundColor: "#f9fafb",
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 16,
-    borderWidth: 1,
-    borderColor: "#e5e7eb",
-  },
-  dayHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 16,
-  },
-  dayBadge: {
-    backgroundColor: "#10b981",
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 20,
-  },
-  dayNumber: {
-    color: "white",
-    fontSize: 14,
-    fontWeight: "600",
-  },
-  removeButton: {
-    padding: 8,
-    borderRadius: 8,
-    backgroundColor: "#fef2f2",
-  },
-  subsectionTitle: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: "#374151",
-    marginBottom: 8,
-    marginTop: 8,
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: "#e5e7eb",
-    padding: 12,
-    borderRadius: 12,
-    backgroundColor: "white",
-    fontSize: 16,
-    color: "#1f2937",
-  },
-  errorInput: {
-    borderColor: "#ef4444",
-    borderWidth: 2,
-  },
-  textArea: {
-    height: 100,
-    paddingTop: 12,
-    textAlignVertical: "top",
-  },
-  addButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    padding: 16,
-    borderRadius: 12,
-    borderWidth: 2,
-    borderColor: "#10b981",
-    borderStyle: "dashed",
-    backgroundColor: "#f0fdf4",
-  },
-  addButtonText: {
-    marginLeft: 8,
-    fontSize: 16,
-    fontWeight: "600",
-    color: "#10b981",
-  },
-});
+
 
 export default ItinerarySection;

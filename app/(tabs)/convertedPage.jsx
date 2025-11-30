@@ -15,7 +15,6 @@ export default function ConvertedPage() {
   const { user, loading: userLoading } = useUserProfile();
 
   const [leads, setLeads] = useState([]);
-  console.log(leads)
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
@@ -43,7 +42,6 @@ export default function ConvertedPage() {
         setError(null);
 
         const url = `https://0rq0f90i05.execute-api.ap-south-1.amazonaws.com/salesapp/lead-managment/create-quote?SalesPersonUid=${user.FullName}&SalesStatus=Converted`;
-        console.log("🌐 API URL:", url);
 
         const response = await fetch(url, { 
           signal,
