@@ -10,6 +10,7 @@ import {
   Dimensions,
   FlatList,
   ActivityIndicator,
+  Linking,
 } from "react-native";
 import DocumentModal from "../DocumentModal";
 import InvoiceListModal from "../InvoiceListModal";
