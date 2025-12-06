@@ -29,11 +29,9 @@ export default function ConvertedPage() {
   const fetchLeads = useCallback(
     async (mode = "initial", signal) => {
       if (!user?.FullName) {
-        console.log("⏳ Waiting for user data...");
         return [];
       }
 
-      console.log(`🔄 [${mode}] Starting to fetch leads...`);
       
       if (mode === "initial") setLoading(true);
       else setRefreshing(true);
@@ -50,9 +48,7 @@ export default function ConvertedPage() {
             'Cache-Control': 'no-cache'
           }
         });
-        
-        console.log("📡 Response status:", response.status);
-        
+                
         if (!response.ok) {
           const errorText = await response.text();
           console.error("❌ API Error Response:", errorText);
@@ -60,16 +56,13 @@ export default function ConvertedPage() {
         }
         
         const responseData = await response.json();
-        console.log("✅ API Response:", responseData);
 
         const data = parseLeads(responseData);
-        console.log("📊 Parsed leads data:", data);
         
         setLeads(Array.isArray(data) ? data : []);
         return data;
       } catch (error) {
         if (error?.name === "AbortError") {
-          console.log("⏹️ Request was aborted");
           return [];
         }
         
@@ -83,7 +76,6 @@ export default function ConvertedPage() {
         setLeads([]);
         throw error; // Re-throw to handle in the caller if needed
       } finally {
-        console.log("🏁 Fetch completed, updating UI state...");
         if (mode === "initial") setLoading(false);
         setRefreshing(false);
       }
@@ -94,23 +86,18 @@ export default function ConvertedPage() {
   // Refetch on focus; cancel on blur
   useFocusEffect(
     useCallback(() => {
-      console.log("🔍 Tab focused, checking user...");
       
       if (!user?.FullName) {
-        console.log("⏳ User not loaded yet, skipping fetch");
         return;
       }
       
-      console.log("🔄 Fetching leads for user:", user.FullName);
       const controller = new AbortController();
       
-      // Add a small delay to ensure the tab is properly focused
       const timer = setTimeout(() => {
         fetchLeads("initial", controller.signal).catch(console.error);
       }, 100);
       
       return () => {
-        console.log("🧹 Cleaning up...");
         clearTimeout(timer);
         controller.abort();
       };

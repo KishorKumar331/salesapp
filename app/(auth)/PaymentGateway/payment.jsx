@@ -30,9 +30,7 @@ const PaymentPage = () => {
     setIsLoading(true);
 
     // Console log user details when reaching payment gateway
-    console.log('=== PAYMENT GATEWAY - USER DETAILS ===');
     console.log(JSON.stringify(userDetails, null, 2));
-    console.log('=== END PAYMENT GATEWAY DATA ===');
 
     const options = {
       description: 'Journey Routers - Account Setup',
