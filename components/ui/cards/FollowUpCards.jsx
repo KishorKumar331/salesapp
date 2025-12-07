@@ -18,6 +18,8 @@ import useStatusChange from "@/hooks/useStatusChange";
 import QuotationListModal from "../../modals/QuotationListModal";
 
 const FollowUpCards = ({ data }) => {
+
+  console.log(data)
   const [currentPage, setCurrentPage] = useState(0);
 
   const [notes, setNotes] = useState(
@@ -263,7 +265,7 @@ const FollowUpCards = ({ data }) => {
                               style={{ marginRight: 8 }}
                             />
                             <Text className={`text-sm ${status === 'Converted' ? 'text-green-700 font-semibold' : 'text-gray-700'}`}>
-                              Mark as Converted
+                              Converted
                             </Text>
                           </TouchableOpacity>
 
@@ -282,7 +284,7 @@ const FollowUpCards = ({ data }) => {
                               style={{ marginRight: 8 }}
                             />
                             <Text className={`text-sm ${status === 'Dumped' ? 'text-red-700 font-semibold' : 'text-gray-700'}`}>
-                              Mark as Dumped
+                              Dumped
                             </Text>
                           </TouchableOpacity>
                         </View>

@@ -29,7 +29,7 @@ const QuotationScreen = () => {
   const [formDataToSubmit, setFormDataToSubmit] = useState(null);
 
   const leadData = params.leadData ? JSON.parse(params.leadData) : null;
-  
+
   const followUpData = params.FollowleadData ? JSON.parse(params.FollowleadData) : null;
 
 
@@ -38,26 +38,20 @@ const QuotationScreen = () => {
     setIsPrinting(true);
 
     try {
-      console.log("📝 Generating HTML preview...", data);
-
-      // 1️⃣ Merge user data with form data
       const dataWithUser = {
         ...data,
         user
       };
-console.log(user,'asdasd')
-      // 2️⃣ Generate instant HTML preview with user data
       const result = getInstantHtmlPreview(dataWithUser);
       setPdfHtml(result.html);
       setPdfUri(null); // No PDF yet, only HTML
-      setFormDataToSubmit({...data,CompanyId:user?.CompanyId,CompanyEmail:user?.Email}); // Store form data for later submission
+      setFormDataToSubmit({ ...data, CompanyId: user?.CompanyId, CompanyEmail: user?.Email }); // Store form data for later submission
       setShowPdfModal(true);
       setRefreshKey((prev) => prev + 1);
 
       console.log("✅ HTML preview ready with user data");
       setIsPrinting(false);
 
-      // Note: Actual submission will happen when user shares/downloads the PDF
     } catch (error) {
       console.error("❌ Error generating preview:", error);
       Alert.alert("Error", "Failed to generate preview. Please try again.");
@@ -79,7 +73,7 @@ console.log(user,'asdasd')
 
     try {
       console.log("📤 Submitting quotation to API...");
-      
+
       const res = await axios.post(
         "https://0rq0f90i05.execute-api.ap-south-1.amazonaws.com/salesapp/lead-managment/quotations",
         formDataToSubmit
@@ -93,6 +87,7 @@ console.log(user,'asdasd')
           ? [...leadData.Quotations, res.data.QuoteId]
           : [res.data.QuoteId],
         SalesStatus: "Cold",
+        LatestQuotationId:res.data.QuoteId,
         LeadId: leadData?.LeadId || followUpData?.LeadId,
       };
 
@@ -102,7 +97,7 @@ console.log(user,'asdasd')
       );
 
       await clearQuotationDraft(formDataToSubmit.TripId);
-      
+
       Alert.alert("Success", "Quotation created and shared successfully!", [
         {
           text: "OK",

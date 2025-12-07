@@ -33,7 +33,6 @@ const ConvertedCards = ({ data, onStatusChange }) => {
       const response = await FetchQuoteByTripID(data.TripId);
       console.log(response)
       if (response?.data?.length > 0) {
-        // Get the latest quote (assuming they're sorted by date, newest first)
         const latestQuote = response.data[0];
         setQuoteDetails(latestQuote);
         setIsModalVisible(true);

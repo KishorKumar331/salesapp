@@ -59,7 +59,8 @@ const useStatusChange = (initialStatus, quotationData) => {
 
                 setStatus(newStatus);
                 if (newStatus === "Converted") {
-                  let quotationToSend = latestQuotation;
+                  
+                  let quotationToSend = await axios.get();
                   if (!quotationToSend) {
                     quotationToSend = await refreshQuotation();
                   }
