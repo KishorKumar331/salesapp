@@ -1,6 +1,7 @@
 
 import { Ionicons } from "@expo/vector-icons";
 import React, { useState, useRef, useMemo, useCallback } from "react";
+import { router } from 'expo-router';
 import {
   Text,
   TouchableOpacity,
@@ -19,7 +20,6 @@ import QuotationListModal from "../../modals/QuotationListModal";
 
 const FollowUpCards = ({ data }) => {
 
-  console.log(data)
   const [currentPage, setCurrentPage] = useState(0);
 
   const [notes, setNotes] = useState(
@@ -31,6 +31,19 @@ const FollowUpCards = ({ data }) => {
   const [isInvoiceModalVisible, setIsInvoiceModalVisible] = useState(false);
   const [isQuotationModalVisible, setIsQuotationModalVisible] = useState(false);
   const [isStatusDropdownOpen, setIsStatusDropdownOpen] = useState(false);
+
+  const handleCreateNewInvoice = () => {
+    // Navigate to the create invoice screen with the trip ID
+    router.push({
+      pathname: "/invoices/create",
+      params: { 
+        tripId: data?.TripId,
+        initialData: JSON.stringify(data) // Pass the trip data as initial data
+      }
+    });
+    // Close the modal
+    setIsInvoiceModalVisible(false);
+  };
 
   // Use the useStatusChange hook with quotation data
   const { status, isLoading, updateStatus } = useStatusChange(
@@ -456,7 +469,8 @@ const FollowUpCards = ({ data }) => {
       <InvoiceListModal
         visible={isInvoiceModalVisible}
         onClose={() => setIsInvoiceModalVisible(false)}
-        tripId={data?.TripId}
+        data={data}
+        onCreateNew={handleCreateNewInvoice}
       />
 
       <QuotationListModal

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import {
   Modal,
   View,
@@ -12,27 +12,27 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import * as Print from "expo-print";
-import * as Sharing from "expo-sharing";
-import * as FileSystem from "expo-file-system";
+
 
 export default function InvoiceListModal({
   visible,
   onClose,
-  tripId,
   onCreateNew,
+  data
 }) {
+  console.log(data)
   const [invoices, setInvoices] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    if (visible && tripId) {
+    if (visible && data?.TripId) {
       fetchInvoices();
     }
-  }, [visible, tripId]);
+  }, [visible, data?.TripId]);
 
   const fetchInvoices = async () => {
-    if (!tripId) {
+    if (!data?.TripId) {
       setError("Trip ID is required");
       setLoading(false);
       return;
@@ -41,23 +41,32 @@ export default function InvoiceListModal({
     try {
       setLoading(true);
       setError(null);
-      
-      const response = await fetch(
-        `https://0rq0f90i05.execute-api.ap-south-1.amazonaws.com/salesapp/invoice-management/invoice?invoiceId=000149-8585&invoiceNumber=J-Inv-20251115&tripId=000149-8585`,
-        { 
-          method: 'GET', 
-          headers: { 
-            'Content-Type': 'application/json' 
-          } 
+
+      // Build query parameters
+      const params = new URLSearchParams();
+      if (data?.TripId) params.append('tripId', data.TripId);
+      if (data?.invoiceId) params.append('invoiceId', data.invoiceId);
+
+      const url = `https://0rq0f90i05.execute-api.ap-south-1.amazonaws.com/salesapp/invoice-management/invoice?${params.toString()}`;
+
+      console.log('Fetching invoices from:', url);
+
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json'
         }
-      );
-      
+      });
+
       if (!response.ok) {
-        throw new Error('Failed to fetch invoices');
+        const errorText = await response.text();
+        console.error('Error response:', errorText);
+        throw new Error(`Failed to fetch invoices: ${response.status} ${response.statusText}`);
       }
 
-      const data = await response.json();
-      setInvoices(Array.isArray(data) ? data : [data]);
+      const responseData = await response.json();
+      console.log('Invoices response:', responseData);
+      setInvoices(Array.isArray(responseData) ? responseData : [responseData]);
     } catch (err) {
       console.error("Error fetching invoices:", err);
       setError(err.message || "Failed to load invoices. Please try again later.");
@@ -216,9 +225,9 @@ export default function InvoiceListModal({
           </table>
           
           <div class="total">
-            <p>Total Amount: ₹${(invoice.pricing?.totalAmount + 
-                               (invoice.pricing?.gstAmount || 0) + 
-                               (invoice.pricing?.tcsAmount || 0)).toLocaleString('en-IN')}</p>
+            <p>Total Amount: ₹${(invoice.pricing?.totalAmount +
+        (invoice.pricing?.gstAmount || 0) +
+        (invoice.pricing?.tcsAmount || 0)).toLocaleString('en-IN')}</p>
           </div>
           
           <div class="notes">
@@ -247,7 +256,7 @@ export default function InvoiceListModal({
           </Text>
         </View>
       </View>
-      
+
       <Text className="text-gray-900 font-semibold text-lg">
         ₹{invoice.pricing?.totalAmount?.toLocaleString('en-IN') || '0'}
       </Text>
@@ -308,7 +317,7 @@ export default function InvoiceListModal({
         {/* Content */}
         <View className="flex-1 p-4">
           {/* Create New Invoice Button */}
-          <TouchableOpacity
+          {!data?.invoiceId && <TouchableOpacity
             onPress={() => {
               onClose();
               setTimeout(() => onCreateNew(), 100);
@@ -318,7 +327,7 @@ export default function InvoiceListModal({
             <Ionicons name="add" size={20} color="white" />
             <Text className="text-white font-medium ml-2">Create New Invoice</Text>
           </TouchableOpacity>
-
+          }
           {loading ? (
             <View className="flex-1 items-center justify-center">
               <ActivityIndicator size="large" color="#7c3aed" />
@@ -358,7 +367,7 @@ export default function InvoiceListModal({
             <ScrollView showsVerticalScrollIndicator={false}>
               {/* Latest Invoice */}
               {latest && renderInvoiceItem(latest, true)}
-              
+
               {/* Previous Invoices */}
               {previous.length > 0 && (
                 <View className="mt-2">

@@ -7,9 +7,12 @@ import InvoiceForm from '@/components/form/InvoiceForm';
 
 export default function CreateInvoiceScreen() {
   const params = useLocalSearchParams();
+  console.log(params)
   const [loading, setLoading] = useState(false);
   const [initialData, setInitialData] = useState(null);
   const [tripData, setTripData] = useState({
+    leadId:params.LeadId||'asdadads',
+
     tripId: params.tripId || '',
     customer: {
       name: params.customerName || '',
@@ -42,12 +45,15 @@ export default function CreateInvoiceScreen() {
     if (params.initialData) {
       try {
         const parsedData = JSON.parse(params.initialData);
-        setInitialData(parsedData);
+        console.log(parsedData,'teerer')
+        setInitialData({...parsedData,leadId:parsedData.LeadId,
+});
         // Update tripData with the parsed initialData
         setTripData(prev => ({
           ...prev,
           ...parsedData,
           tripId: parsedData.tripId || params.tripId || '',
+          leadId:parsedData.LeadId,
           customer: {
             ...prev.customer,
             ...parsedData.customer,
@@ -68,13 +74,7 @@ export default function CreateInvoiceScreen() {
     }
   }, [params.initialData]);
 
-  // Initialize form with any passed parameters
-  useEffect(() => {
-    if (params.tripId) {
-      // If you need to fetch additional data, do it here
-      // Example: fetchQuotations(params.tripId).then(quotes => {...});
-    }
-  }, [params.tripId]);
+
 
   const handleSubmit = async (formData) => {
     try {
