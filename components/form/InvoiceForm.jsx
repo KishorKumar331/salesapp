@@ -21,6 +21,7 @@ import CustomPicker from "@/components/ui/CustomPicker";
 import { generateInvoiceHtml } from "@/utils/invoiceGenerator";
 import { getUserProfile } from "@/utils/userProfile";
 import axios from "axios";
+import { useQueryClient } from "@tanstack/react-query";
 
 const styles = StyleSheet.create({
   modalContainer: {
@@ -633,7 +634,7 @@ export default function InvoiceForm({
     }
     return true;
   };
-
+const query=useQueryClient()
   const handleSubmitInvoice = async () => {
     if (!validateForm()) return;
 
@@ -691,12 +692,6 @@ export default function InvoiceForm({
           body: JSON.stringify(cleanedData),
         }
       );
-      await axios.put(`https://0rq0f90i05.execute-api.ap-south-1.amazonaws.com/salesapp/lead-managment/create-quote`, {
-        LeadId: initialData?.LeadId,
-        TripId: initialData?.TripId,
-        LatestQuotationId: cleanedData?.finalPackageQuotationId
-      })
-
       if (!response.ok) {
         const text = await response.text();
         console.log("Invoice API error:", text);
@@ -710,11 +705,14 @@ export default function InvoiceForm({
         await axios.put(`https://0rq0f90i05.execute-api.ap-south-1.amazonaws.com/salesapp/lead-managment/create-quote`, {
           invoiceId: data?.invoiceId,
           TripId: initialData?.TripId,
-          LeadId: initialData?.leadId
+          LeadId: initialData?.leadId,
+          LatestQuotationId: cleanedData?.finalPackageQuotationId
+
         })
       } catch {
         // if no json body
       }
+await query.invalidateQueries({ queryKey: ["followup"] });
 
       Alert.alert("Success", "Invoice submitted successfully");
       if (onSubmit) {
