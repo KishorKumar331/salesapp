@@ -224,7 +224,7 @@ const InclusionsExclusions: React.FC = () => {
       </View>
 
       {/* Terms & Conditions */}
-      <View style={styles.subsection}>
+      {/* <View style={styles.subsection}>
         <Text style={styles.subsectionTitle}>Terms & Conditions</Text>
         <Controller
           control={control}
@@ -241,7 +241,7 @@ const InclusionsExclusions: React.FC = () => {
             />
           )}
         />
-      </View>
+      </View> */}
     </View>
   );
 };

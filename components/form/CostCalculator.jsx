@@ -156,11 +156,10 @@ const CostCalculator = () => {
       </View>
 
       {/* Basic Costs */}
-      <Text style={styles.sectionSubtitle}>Package Costs</Text>
 
       <View style={{ flexDirection: "row" }}>
         <View style={{ flex: 1, marginRight: 12 }}>
-          <FormField label="Flight Cost (₹)" error={errors?.Costs?.FlightCost}>
+          <FormField label="Flight Cost" error={errors?.Costs?.FlightCost}>
             <RHFNumberInput
               name="Costs.FlightCost"
               control={control}
@@ -170,8 +169,8 @@ const CostCalculator = () => {
           </FormField>
         </View>
 
-        <View style={{ flex: 1 }}>
-          <FormField label="Visa Cost (₹)" error={errors?.Costs?.VisaCost}>
+        <View style={{ flex: 1 ,marginRight: 12}}>
+          <FormField label="Visa Cost" error={errors?.Costs?.VisaCost}>
             <RHFNumberInput
               name="Costs.VisaCost"
               control={control}
@@ -180,10 +179,9 @@ const CostCalculator = () => {
             />
           </FormField>
         </View>
-      </View>
-
-      <FormField
-        label="Land Package Cost (₹)"
+        <View style={{flex:1,marginRight: 12}}>
+  <FormField
+        label="Ground Cost"
         error={errors?.Costs?.LandPackageCost}
       >
         <RHFNumberInput
@@ -193,6 +191,10 @@ const CostCalculator = () => {
           placeholder="Enter land package cost"
         />
       </FormField>
+        </View>
+      </View>
+
+    
 
       {/* (Optional) Taxes / toggles — if you render these elsewhere, keep the same field paths */}
       {/* <CheckboxField ... writes to Costs.PackageWithGST / Costs.PackageWithTCS /> */}
@@ -219,18 +221,14 @@ const CostCalculator = () => {
 const styles = StyleSheet.create({
   card: {
     backgroundColor: "white",
-    borderRadius: 16,
     padding: 16,
     marginBottom: 16,
-    shadowColor: "#000",
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
     elevation: 1,
   },
   sectionHeader: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 12,
+    marginBottom: 22,
   },
   iconWrapper: {
     backgroundColor: "#dbeafe",

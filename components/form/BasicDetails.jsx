@@ -9,7 +9,7 @@ import MultiSelectDestinations from '@/components/ui/MultiSelectDestinations';
 
 const DestinationList = [
   "Bali",
-  "Maldives", 
+  "Maldives",
   "Dubai",
   "Thailand",
   "Singapore",
@@ -46,11 +46,11 @@ const BasicDetails = () => {
   const isMultiDestination = watch('IsMultiDestination', false);
   const destinations = watch('Destinations', []);
 
-  const FormField = ({ 
-    label, 
-    children, 
-    required = false, 
-    error 
+  const FormField = ({
+    label,
+    children,
+    required = false,
+    error
   }) => (
     <View style={{ marginBottom: 24 }}>
       <Text style={{ color: "#374151", fontWeight: "600", marginBottom: 8 }}>
@@ -91,57 +91,64 @@ const BasicDetails = () => {
           )}
         />
       </FormField>
+      <View style={{ flexDirection: 'row', gap: 12 }}>
 
-      <FormField label="Contact Number" required error={errors["Client-Contact"]}>
-        <Controller
-          control={control}
-          name="Client-Contact"
-          rules={{
-            required: "Contact is required",
-            minLength: { value: 10, message: "Enter 10 digits" },
-          }}
-          render={({ field: { onChange, value } }) => (
-            <View style={{ flexDirection: "row", alignItems: "center" }}>
+      <View style={{ flex: 1 }}>
+
+        <FormField label="Contact Number" required error={errors["Client-Contact"]}>
+          <Controller
+            control={control}
+            name="Client-Contact"
+            rules={{
+              required: "Contact is required",
+              minLength: { value: 10, message: "Enter 10 digits" },
+            }}
+            render={({ field: { onChange, value } }) => (
+              <View style={{ flexDirection: "row", alignItems: "center" }}>
+                <TextInput
+                  style={[
+                    styles.inputWithPrefix,
+                    errors["Client-Contact"] && styles.errorInput,
+                  ]}
+                  placeholder="Enter 10-digit number"
+                  keyboardType="phone-pad"
+                  maxLength={10}
+                  value={value}
+                  onChangeText={onChange}
+                  placeholderTextColor="#9ca3af"
+                />
+              </View>
+            )}
+          />
+        </FormField>
+      </View>
+      <View style={{ flex: 1 }}>
+
+        <FormField label="Email Address" error={errors["Client-Email"]}>
+          <Controller
+            control={control}
+            name="Client-Email"
+            rules={{
+              pattern: {
+                value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
+                message: "Enter a valid email address",
+              },
+            }}
+            render={({ field: { onChange, value } }) => (
               <TextInput
-                style={[
-                  styles.inputWithPrefix,
-                  errors["Client-Contact"] && styles.errorInput,
-                ]}
-                placeholder="Enter 10-digit number"
-                keyboardType="phone-pad"
-                maxLength={10}
+                style={[styles.input, errors["Client-Email"] && styles.errorInput]}
+                placeholder="Enter email address"
+                keyboardType="email-address"
+                autoCapitalize="none"
                 value={value}
                 onChangeText={onChange}
                 placeholderTextColor="#9ca3af"
               />
-            </View>
-          )}
-        />
-      </FormField>
-
-      <FormField label="Email Address" error={errors["Client-Email"]}>
-        <Controller
-          control={control}
-          name="Client-Email"
-          rules={{
-            pattern: {
-              value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
-              message: "Enter a valid email address",
-            },
-          }}
-          render={({ field: { onChange, value } }) => (
-            <TextInput
-              style={[styles.input, errors["Client-Email"] && styles.errorInput]}
-              placeholder="Enter email address"
-              keyboardType="email-address"
-              autoCapitalize="none"
-              value={value}
-              onChangeText={onChange}
-              placeholderTextColor="#9ca3af"
-            />
-          )}
-        />
-      </FormField>
+            )}
+          />
+        </FormField>
+      </View>
+      </View>
 
       <FormField label="Travel Date" required error={errors.TravelDate}>
         <Controller
@@ -315,9 +322,9 @@ const BasicDetails = () => {
           />
         </FormField>
       ) : (
-        <FormField 
-          label="Destinations" 
-          required 
+        <FormField
+          label="Destinations"
+          required
           error={destinations.length === 0 ? { message: "At least one destination is required" } : undefined}
         >
           <MultiSelectDestinations
