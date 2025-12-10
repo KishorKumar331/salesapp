@@ -22,11 +22,11 @@ export default function InvoiceListModal({
 }) {
   console.log(data)
   const [invoices, setInvoices] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    if (visible && data?.TripId) {
+    if (visible && data?.TripId && data?.invoiceId) {
       fetchInvoices();
     }
   }, [visible, data?.TripId]);

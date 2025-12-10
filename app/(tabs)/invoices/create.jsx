@@ -11,7 +11,7 @@ export default function CreateInvoiceScreen() {
   const [loading, setLoading] = useState(false);
   const [initialData, setInitialData] = useState(null);
   const [tripData, setTripData] = useState({
-    leadId:params.LeadId||'asdadads',
+    leadId: params.LeadId || 'asdadads',
 
     tripId: params.tripId || '',
     customer: {
@@ -45,15 +45,16 @@ export default function CreateInvoiceScreen() {
     if (params.initialData) {
       try {
         const parsedData = JSON.parse(params.initialData);
-        console.log(parsedData,'teerer')
-        setInitialData({...parsedData,leadId:parsedData.LeadId,
-});
+        console.log(parsedData, 'teerer')
+        setInitialData({
+          ...parsedData, leadId: parsedData.LeadId,
+        });
         // Update tripData with the parsed initialData
         setTripData(prev => ({
           ...prev,
           ...parsedData,
           tripId: parsedData.tripId || params.tripId || '',
-          leadId:parsedData.LeadId,
+          leadId: parsedData.LeadId,
           customer: {
             ...prev.customer,
             ...parsedData.customer,
@@ -81,13 +82,13 @@ export default function CreateInvoiceScreen() {
       setLoading(true);
       // Here you would typically save the invoice to your backend
       console.log('Submitting invoice:', formData);
-      
+
       // Simulate API call
       await new Promise(resolve => setTimeout(resolve, 1000));
-      
+
       // After successful submission, navigate back
       router.back();
-      
+
       // Show success message
       alert('Invoice created successfully!');
     } catch (error) {
@@ -121,7 +122,7 @@ export default function CreateInvoiceScreen() {
         </View>
 
         <ScrollView className="flex-1 p-4">
-          <InvoiceForm 
+          <InvoiceForm
             tripId={tripData.tripId}
             onSubmit={handleSubmit}
             initialData={initialData || tripData}
