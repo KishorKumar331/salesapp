@@ -1,21 +1,16 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback } from 'react';
 import { Alert } from 'react-native';
 import axios from "axios";
-import useLatestQuotation from './useLatestQuotation';
 
 const useStatusChange = (initialStatus, quotationData) => {
   const [status, setStatus] = useState(initialStatus);
   const [isLoading, setIsLoading] = useState(false);
-
-  const {
-    latestQuotation,
-    loading: isFetchingQuotation,
-    error: quotationError,
-    refreshQuotation,
-  } = useLatestQuotation(quotationData?.TripId);
+console.log(quotationData)
+ 
 
 
   const sendHandoverEmail = useCallback(async (quotation) => {
+    console.log(quotation,'testssdsd')
     if (!quotation) {
       return;
     }
@@ -23,7 +18,9 @@ const useStatusChange = (initialStatus, quotationData) => {
     try {
       const response = await axios.post(
         "https://0rq0f90i05.execute-api.ap-south-1.amazonaws.com/salesapp/handovermail-manager",
-        quotation
+       {TripId:quotation?.TripId,
+        QuoteId:quotation?.LatestQuotationId,
+       }
       );
       return response.data;
     } catch (error) {
@@ -59,19 +56,9 @@ const useStatusChange = (initialStatus, quotationData) => {
 
                 setStatus(newStatus);
                 if (newStatus === "Converted") {
-                  
-                  let quotationToSend = await axios.get();
-                  if (!quotationToSend) {
-                    quotationToSend = await refreshQuotation();
-                  }
-                  if (!quotationToSend) {
-                    Alert.alert(
-                      "Status Updated",
-                      "Converted ho gaya, but quotation data nahi mila, email nahi bheja gaya."
-                    );
-                  } else {
                     try {
-                      await sendHandoverEmail(quotationToSend);
+                      console.log('handover runs')
+                      await sendHandoverEmail(quotationData);
                       Alert.alert(
                         "Success",
                         "Status Converted & handover email sent ✅"
@@ -82,7 +69,7 @@ const useStatusChange = (initialStatus, quotationData) => {
                         "Converted ho gaya, but handover email fail ho gaya."
                       );
                     }
-                  }
+                
                 } else {
                   Alert.alert("Success", `Status updated to ${newStatus}`);
                 }
@@ -98,16 +85,12 @@ const useStatusChange = (initialStatus, quotationData) => {
         ]
       );
     },
-    [quotationData, latestQuotation, refreshQuotation, sendHandoverEmail]
+    [ sendHandoverEmail]
   );
 
   return {
     status,
-    isLoading: isLoading || isFetchingQuotation, // ✅ button disable ke liye
     updateStatus,
-    latestQuotation,
-    refreshQuotation,
-    quotationError,
   };
 };
 
