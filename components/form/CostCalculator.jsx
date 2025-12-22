@@ -159,7 +159,7 @@ const CostCalculator = () => {
 
       <View style={{ flexDirection: "row" }}>
         <View style={{ flex: 1, marginRight: 12 }}>
-          <FormField label="Flight Cost" error={errors?.Costs?.FlightCost}>
+          <FormField label="Flight" error={errors?.Costs?.FlightCost}>
             <RHFNumberInput
               name="Costs.FlightCost"
               control={control}
@@ -170,7 +170,7 @@ const CostCalculator = () => {
         </View>
 
         <View style={{ flex: 1 ,marginRight: 12}}>
-          <FormField label="Visa Cost" error={errors?.Costs?.VisaCost}>
+          <FormField label="Visa" error={errors?.Costs?.VisaCost}>
             <RHFNumberInput
               name="Costs.VisaCost"
               control={control}
@@ -181,7 +181,7 @@ const CostCalculator = () => {
         </View>
         <View style={{flex:1,marginRight: 12}}>
   <FormField
-        label="Ground Cost"
+        label="Land"
         error={errors?.Costs?.LandPackageCost}
       >
         <RHFNumberInput

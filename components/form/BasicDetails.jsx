@@ -75,7 +75,7 @@ const BasicDetails = () => {
         <Text style={styles.sectionTitle}>Basic Details</Text>
       </View>
 
-      <FormField label="Full Name" required error={errors["Client-Name"]}>
+      <FormField label="Client Full Name" required error={errors["Client-Name"]}>
         <Controller
           control={control}
           name="Client-Name"

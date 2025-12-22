@@ -302,6 +302,7 @@ const HotelsSection = () => {
                   onSelectionChange={(newMeals) => {
                     onChange(newMeals);
                   }}
+                  type={'meals'}
                   placeholder="Select meals"
                 />
               )}
