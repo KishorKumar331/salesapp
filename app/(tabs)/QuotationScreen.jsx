@@ -151,11 +151,6 @@ const QuotationScreen = () => {
         pdfHtml={pdfHtml}
         onClose={handlePreviewClose}
         onShare={handleShare}
-        clientName={
-          followUpData?.["Client-Name"] ||
-          leadData?.ClientLeadDetails?.FullName ||
-          ""
-        }
       />
     </View>
   );
