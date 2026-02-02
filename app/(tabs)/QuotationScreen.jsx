@@ -42,19 +42,32 @@ const QuotationScreen = () => {
         ...data,
         user
       };
-      const result = getInstantHtmlPreview(dataWithUser);
-      setPdfHtml(result.html);
-      setPdfUri(null); // No PDF yet, only HTML
-      setFormDataToSubmit({ ...data, CompanyId: user?.CompanyId, CompanyEmail: user?.Email }); // Store form data for later submission
-      setShowPdfModal(true);
-      setRefreshKey((prev) => prev + 1);
 
-      console.log("✅ HTML preview ready with user data");
-      setIsPrinting(false);
+      console.log("Data with user:", dataWithUser);
+      // Call the new API endpoint to get HTML
+      const response = await axios.post(
+        'https://0rq0f90i05.execute-api.ap-south-1.amazonaws.com/salesapp/packages-pdf-html',
+        {
+          renderOnly: true,
+          data: dataWithUser
+        }
+      );
 
+      if (response.data) {
+        console.log("HTML Content received from API");
+        setPdfHtml(response.data);
+        setPdfUri(null);
+        setFormDataToSubmit({ ...data, CompanyId: user?.CompanyId, CompanyEmail: user?.Email });
+        setShowPdfModal(true);
+        setRefreshKey((prev) => prev + 1);
+        console.log("✅ HTML set for preview");
+      } else {
+        throw new Error('Invalid response format from server');
+      }
     } catch (error) {
       console.error("❌ Error generating preview:", error);
       Alert.alert("Error", "Failed to generate preview. Please try again.");
+    } finally {
       setIsPrinting(false);
     }
   };
@@ -87,7 +100,7 @@ const QuotationScreen = () => {
           ? [...leadData.Quotations, res.data.QuoteId]
           : [res.data.QuoteId],
         SalesStatus: "Cold",
-        LatestQuotationId:res.data.QuoteId,
+        LatestQuotationId: res.data.QuoteId,
         LeadId: leadData?.LeadId || followUpData?.LeadId,
       };
 
