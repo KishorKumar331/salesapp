@@ -1,43 +1,30 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback } from 'react';
 import { Alert } from 'react-native';
 import axios from "axios";
-import useLatestQuotation from './useLatestQuotation';
 
 const useStatusChange = (initialStatus, quotationData) => {
   const [status, setStatus] = useState(initialStatus);
   const [isLoading, setIsLoading] = useState(false);
+console.log(quotationData)
+ 
 
-  const {
-    latestQuotation,
-    loading: isFetchingQuotation,
-    error: quotationError,
-    refreshQuotation,
-  } = useLatestQuotation(quotationData?.TripId);
-console.log(latestQuotation)
-  useEffect(() => {
-    if (quotationError) {
-      console.log("❌ Quotation fetch error:", quotationError);
-    }
-  }, [quotationError]);
 
   const sendHandoverEmail = useCallback(async (quotation) => {
+    console.log(quotation,'testssdsd')
     if (!quotation) {
-      console.log("⚠️ No quotation provided for handover email");
       return;
     }
 
     try {
-      console.log("📤 Sending handover email with payload:", quotation);
-
       const response = await axios.post(
         "https://0rq0f90i05.execute-api.ap-south-1.amazonaws.com/salesapp/handovermail-manager",
-        quotation
+       {TripId:quotation?.TripId,
+        QuoteId:quotation?.LatestQuotationId,
+       }
       );
-
-      console.log("📨 Handover email sent successfully:", response.data);
       return response.data;
     } catch (error) {
-      console.log(
+      console.error(
         "🔥 Handover email error:",
         error?.response?.data || error?.message || error
       );
@@ -57,14 +44,6 @@ console.log(latestQuotation)
             onPress: async () => {
               try {
                 setIsLoading(true);
-
-                console.log("📤 Sending status update:", {
-                  TripId: quotationData?.TripId,
-                  LeadId: quotationData?.LeadId,
-                  LatestStatus: newStatus,
-                  SalesStatus: newStatus,
-                });
-
                 const res = await axios.put(
                   "https://0rq0f90i05.execute-api.ap-south-1.amazonaws.com/salesapp/lead-managment/create-quote",
                   {
@@ -75,58 +54,28 @@ console.log(latestQuotation)
                   }
                 );
 
-                console.log("✅ Status update response:", res?.data);
                 setStatus(newStatus);
-
-                // ===========================
-                // 🔥 Handover Email Logic
-                // ===========================
                 if (newStatus === "Converted") {
-                  // 1️⃣ Pehle try karo already loaded latestQuotation
-                  let quotationToSend = latestQuotation;
-
-                  // 2️⃣ Agar null hai to force refresh
-                  if (!quotationToSend) {
-                    console.log(
-                      "ℹ️ No cached quotation, fetching latest before email..."
-                    );
-                    quotationToSend = await refreshQuotation();
-                  }
-
-                  if (!quotationToSend) {
-                    console.log(
-                      "❌ Still no quotation after refresh, skipping email."
-                    );
-                    Alert.alert(
-                      "Status Updated",
-                      "Converted ho gaya, but quotation data nahi mila, email nahi bheja gaya."
-                    );
-                  } else {
                     try {
-                      await sendHandoverEmail(quotationToSend);
+                      console.log('handover runs')
+                      await sendHandoverEmail(quotationData);
                       Alert.alert(
                         "Success",
                         "Status Converted & handover email sent ✅"
                       );
                     } catch (emailError) {
-                      console.log("❌ Handover email failed:", emailError);
                       Alert.alert(
                         "Status Updated",
                         "Converted ho gaya, but handover email fail ho gaya."
                       );
                     }
-                  }
+                
                 } else {
                   Alert.alert("Success", `Status updated to ${newStatus}`);
                 }
 
-                console.log(`ℹ️ Status changed to ${newStatus}`, {
-                  status: newStatus,
-                  timestamp: new Date().toISOString(),
-                  quotationData,
-                });
+           
               } catch (error) {
-                console.log("❌ Error updating status:", error);
                 Alert.alert("Error", "Failed to update status. Please try again.");
               } finally {
                 setIsLoading(false);
@@ -136,16 +85,12 @@ console.log(latestQuotation)
         ]
       );
     },
-    [quotationData, latestQuotation, refreshQuotation, sendHandoverEmail]
+    [ sendHandoverEmail]
   );
 
   return {
     status,
-    isLoading: isLoading || isFetchingQuotation, // ✅ button disable ke liye
     updateStatus,
-    latestQuotation,
-    refreshQuotation,
-    quotationError,
   };
 };
 

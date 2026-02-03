@@ -149,7 +149,6 @@ const SimpleQuotationWrapper = ({
           </Text>
         </View>
       </View>
-
             <TouchableOpacity
               onPress={handlePrimary}
               style={{

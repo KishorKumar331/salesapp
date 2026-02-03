@@ -17,6 +17,7 @@ interface MultiSelectDestinationsProps {
   placeholder?: string;
   style?: any;
   disabled?: boolean;
+  type:string
 }
 
 export default function MultiSelectDestinations({
@@ -26,6 +27,7 @@ export default function MultiSelectDestinations({
   placeholder = "Select destinations",
   style,
   disabled = false,
+  type='destination'
 }: MultiSelectDestinationsProps) {
   const [showModal, setShowModal] = useState(false);
   const [tempSelected, setTempSelected] = useState<string[]>(Array.isArray(selectedDestinations) ? selectedDestinations : []);
@@ -55,7 +57,7 @@ export default function MultiSelectDestinations({
     } else if (safeSelectedDestinations.length === 1) {
       return safeSelectedDestinations[0];
     } else {
-      return `${safeSelectedDestinations.length} destinations selected`;
+      return `${safeSelectedDestinations.length} ${type} selected`;
     }
   };
 
@@ -134,7 +136,7 @@ export default function MultiSelectDestinations({
         <View style={styles.modalOverlay}>
           <View style={styles.modalContainer}>
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Select Destinations</Text>
+              <Text style={styles.modalTitle}>Select {type}</Text>
               <TouchableOpacity onPress={handleCancel}>
                 <Ionicons name="close" size={24} color="#6b7280" />
               </TouchableOpacity>
@@ -142,7 +144,7 @@ export default function MultiSelectDestinations({
 
             <View style={styles.selectedCount}>
               <Text style={styles.selectedCountText}>
-                {tempSelected.length} destination{tempSelected.length !== 1 ? 's' : ''} selected
+                {tempSelected.length} {type}{tempSelected.length !== 1 ? 's' : ''} selected
               </Text>
             </View>
 

@@ -6,10 +6,13 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   FlatList,
+  Alert,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { FetchQuoteByTripID } from "../../api/leads/FetchLeads";
+import PdfPreviewModal from "../pdf/PdfPreviewModal";
+import axios from "axios";
 
 
 
@@ -33,16 +36,26 @@ export default function QuotationListModal({
   visible,
   onClose,
   tripId,
-  onViewQuotation,
+  user,
 }) {
   const [quotations, setQuotations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [showPrevious, setShowPrevious] = useState(false);
-
+  const [isPrinting, setIsPrinting] = useState(false);
+  const [pdfHtml, setPdfHtml] = useState(null);
+  const [pdfUri, setPdfUri] = useState(null);
+  const [showPdfModal, setShowPdfModal] = useState(false);
+  const [refreshKey, setRefreshKey] = useState(0);
+  const [formDataToSubmit, setFormDataToSubmit] = useState(null);
 
   const latest = quotations[0];
   const previous = quotations.slice(1);
+
+  const handlePreviewClose = () => {
+    setShowPdfModal(false);
+    setPdfHtml(null);
+  };
 
 
 
@@ -83,6 +96,41 @@ export default function QuotationListModal({
     }
   }, [visible, tripId]);
 
+
+
+    const onViewQuotation = async (quotation) => {
+    if (isPrinting) return;
+    setIsPrinting(true);
+
+    try {
+      const response = await axios.post(
+        'https://0rq0f90i05.execute-api.ap-south-1.amazonaws.com/salesapp/packages-pdf-html',
+        {
+          renderOnly: true,
+          data: {
+            ...quotation,
+            user
+          }
+        }
+      );
+
+      if (response.data) {
+        setPdfHtml(response.data);
+        setPdfUri(null);
+        setFormDataToSubmit(quotation);
+        setShowPdfModal(true);
+        setRefreshKey(prev => prev + 1);
+      } else {
+        throw new Error('No data received from server');
+      }
+    } catch (error) {
+      console.error("Error generating preview:", error);
+      Alert.alert("Error", "Failed to load quotation preview. Please try again.");
+    } finally {
+      setIsPrinting(false);
+    }
+  };
+
   return (
     <Modal visible={visible} animationType="slide" onRequestClose={onClose}>
       <View className="flex-1 bg-gray-50">
@@ -119,8 +167,13 @@ export default function QuotationListModal({
                           <TouchableOpacity
                             className="bg-blue-100 p-2 rounded-full"
                             onPress={() => onViewQuotation(latest)}
+                            disabled={isPrinting}
                           >
-                            <Ionicons name="eye" size={18} color="#3b82f6" />
+                            {isPrinting ? (
+                              <ActivityIndicator size="small" color="#3b82f6" />
+                            ) : (
+                              <Ionicons name="eye" size={18} color="#3b82f6" />
+                            )}
                           </TouchableOpacity>
                           <TouchableOpacity
                             className="bg-gray-100 p-2 rounded-full"
@@ -212,6 +265,17 @@ export default function QuotationListModal({
               renderItem={null}
             />
           )}
+            <PdfPreviewModal
+              key={refreshKey}
+              visible={showPdfModal}
+              pdfUri={pdfUri}
+              pdfHtml={pdfHtml}
+              onClose={handlePreviewClose}
+              onShare={() => {
+                // Implement share functionality if needed
+                Alert.alert("Info", "Share functionality would go here");
+              }}
+            />
         </View>
       </View>
     </Modal>

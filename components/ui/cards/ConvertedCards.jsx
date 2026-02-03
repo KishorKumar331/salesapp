@@ -6,7 +6,8 @@ import {
   ScrollView,
   Dimensions,
   ActivityIndicator,
-  Alert
+  Alert,
+  Linking
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { FetchQuoteByTripID } from '@/api/leads/FetchLeads';
@@ -33,7 +34,6 @@ const ConvertedCards = ({ data, onStatusChange }) => {
       const response = await FetchQuoteByTripID(data.TripId);
       console.log(response)
       if (response?.data?.length > 0) {
-        // Get the latest quote (assuming they're sorted by date, newest first)
         const latestQuote = response.data[0];
         setQuoteDetails(latestQuote);
         setIsModalVisible(true);
@@ -60,6 +60,33 @@ const ConvertedCards = ({ data, onStatusChange }) => {
     setCurrentPage(pageIndex);
   };
 
+  const handleCall = (phoneNumber) => {
+  if (!phoneNumber) {
+    Alert.alert('Error', 'Phone number is not available');
+    return;
+  }
+  const phoneUrl = `tel:${phoneNumber}`;
+  Linking.openURL(phoneUrl).catch(err => 
+    console.error('Error opening phone app:', err)
+  );
+};
+
+const handleWhatsApp = (phoneNumber) => {
+  if (!phoneNumber) {
+    Alert.alert('Error', 'Phone number is not available');
+    return;
+  }
+  // Remove any non-numeric characters
+  const cleanNumber = phoneNumber.replace(/\D/g, '');
+  const whatsappUrl = `whatsapp://send?phone=${cleanNumber}`;
+  
+  Linking.openURL(whatsappUrl).catch(() => {
+    // If WhatsApp is not installed, open in browser
+    Linking.openURL(`https://wa.me/${cleanNumber}`).catch(err => 
+      console.error('Error opening WhatsApp:', err)
+    );
+  });
+};
   return (
     <>
       <View className="bg-white rounded-2xl overflow-hidden shadow-sm shadow-gray-300 border border-gray-100 mb-4">
@@ -83,10 +110,12 @@ const ConvertedCards = ({ data, onStatusChange }) => {
                 </View>
                 <View className="flex flex-row gap-2">
                   <TouchableOpacity className="bg-gray-100 rounded-full p-2">
-                    <Ionicons name="call" size={16} color="#4b5563" />
+                    <Ionicons     onPress={() => handleCall(data["Client-Contact"])}
+ name="call" size={16} color="#4b5563" />
                   </TouchableOpacity>
-                  <TouchableOpacity className="bg-gray-100 rounded-full p-2">
-                    <Ionicons name="chatbubbles" size={16} color="#4b5563" />
+                  <TouchableOpacity     onPress={() => handleWhatsApp(data["Client-Contact"])}
+ className="bg-gray-100 rounded-full p-2">
+                    <Ionicons  name="chatbubbles" size={16} color="#4b5563" />
                   </TouchableOpacity>
                 </View>
               </View>

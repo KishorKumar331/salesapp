@@ -13,7 +13,6 @@ export default function HomeScreen() {
   const { user, loading: userLoading } = useUserProfile();
 
   const [leads, setLeads] = useState([]);
-  console.log(leads)
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
@@ -28,7 +27,6 @@ export default function HomeScreen() {
   const fetchLeads = useCallback(
     async (mode = "initial", signal) => {
       if (!user?.FullName) {
-        console.log("⏳ Waiting for user data...");
         return;
       }
 
@@ -38,7 +36,6 @@ export default function HomeScreen() {
       try {
         setError(null);
 
-        console.log("👤 Fetching leads for:", user.FullName);
         const url = `https://0rq0f90i05.execute-api.ap-south-1.amazonaws.com/salesapp/lead-managment/create-quote?SalesPersonUid=${user.FullName}&SalesStatus=LeadCreate`;
 
         const res = await fetch(url, { signal });
@@ -156,41 +153,3 @@ export default function HomeScreen() {
     </View>
   );
 }
-
-
-
-// import React, { useEffect } from 'react';
-// import { View, Text } from 'react-native';
-// import messaging from '@react-native-firebase/messaging';
-
-// export default function HomeScreen  ()  {
-//   async function testFCM() {
-//     try {
-//       const authStatus = await messaging().requestPermission();
-//       const enabled =
-//         authStatus === messaging.AuthorizationStatus.AUTHORIZED ||
-//         authStatus === messaging.AuthorizationStatus.PROVISIONAL;
-
-//       if (!enabled) {
-//         console.log('🔕 Permission not granted');
-//         return;
-//       }
-
-//       const token = await messaging().getToken();
-//       console.log('🔔 FCM Token:', token);
-//     } catch (e) {
-//       console.log('❌ FCM error:', e);
-//     }
-//   }
-
-//   useEffect(() => {
-//     testFCM();
-//   }, []);
-
-//   return (
-//     <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-//       <Text>Home Screen</Text>
-//     </View>
-//   );
-// };
-

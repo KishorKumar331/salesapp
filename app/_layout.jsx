@@ -3,6 +3,7 @@ import {
   triggerLocalTestNotification,
   usePushNotifications,
 } from "@/hooks/usePushNotifications";
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useUserProfile } from "@/hooks/useUserProfile";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Stack, router } from "expo-router";
@@ -75,10 +76,15 @@ export default function RootLayout() {
 
   // Still loading → render nothing or splash screen
   if (!isReady) return null;
+
+  const queryClient = new QueryClient()
   return (
-    <Stack>
-      <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-      <Stack.Screen name="(auth)" options={{ headerShown: false }} />
-    </Stack>
+    <QueryClientProvider client={queryClient}>
+      <Stack>
+        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+        <Stack.Screen name="(auth)" options={{ headerShown: false }} />
+      </Stack>
+    </QueryClientProvider>
+
   );
 }

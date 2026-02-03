@@ -20,6 +20,8 @@ import DatePicker from "@/components/ui/DatePicker";
 import CustomPicker from "@/components/ui/CustomPicker";
 import { generateInvoiceHtml } from "@/utils/invoiceGenerator";
 import { getUserProfile } from "@/utils/userProfile";
+import axios from "axios";
+import { useQueryClient } from "@tanstack/react-query";
 
 const styles = StyleSheet.create({
   modalContainer: {
@@ -76,6 +78,7 @@ export default function InvoiceForm({
   defaultPax = "",
   defaultTravelDate = "",
 }) {
+  console.log(initialData)
   const [step, setStep] = useState("fillForm"); // 'selectQuotation' or 'fillForm'
   const [quotations, setQuotations] = useState([]);
   const [selectedQuotation, setSelectedQuotation] = useState(null);
@@ -559,25 +562,25 @@ export default function InvoiceForm({
     }
   };
 
-const sharePdf = async () => {
-  try {
-    // 1. First save invoice to backend
-    const success = await handleSubmitInvoice(true); // true = silent mode
-    if (!success) return;
+  const sharePdf = async () => {
+    try {
+      // 1. First save invoice to backend
+      const success = await handleSubmitInvoice(true); // true = silent mode
+      if (!success) return;
 
-    // 2. Then generate PDF
-    const pdfUri = await generatePdf();
+      // 2. Then generate PDF
+      const pdfUri = await generatePdf();
 
-    // 3. Then share
-    await shareAsync(pdfUri, {
-      mimeType: "application/pdf",
-      dialogTitle: "Share Invoice",
-      UTI: "com.adobe.pdf",
-    });
-  } catch (error) {
-    console.log("Share error:", error);
-  }
-};
+      // 3. Then share
+      await shareAsync(pdfUri, {
+        mimeType: "application/pdf",
+        dialogTitle: "Share Invoice",
+        UTI: "com.adobe.pdf",
+      });
+    } catch (error) {
+      console.log("Share error:", error);
+    }
+  };
 
 
   const handleSelectQuotation = (quotation) => {
@@ -631,7 +634,7 @@ const sharePdf = async () => {
     }
     return true;
   };
-
+const query=useQueryClient()
   const handleSubmitInvoice = async () => {
     if (!validateForm()) return;
 
@@ -689,7 +692,6 @@ const sharePdf = async () => {
           body: JSON.stringify(cleanedData),
         }
       );
-
       if (!response.ok) {
         const text = await response.text();
         console.log("Invoice API error:", text);
@@ -699,9 +701,18 @@ const sharePdf = async () => {
       let data = null;
       try {
         data = await response.json();
+        console.log(data)
+        await axios.put(`https://0rq0f90i05.execute-api.ap-south-1.amazonaws.com/salesapp/lead-managment/create-quote`, {
+          invoiceId: data?.invoiceId,
+          TripId: initialData?.TripId,
+          LeadId: initialData?.leadId,
+          LatestQuotationId: cleanedData?.finalPackageQuotationId
+
+        })
       } catch {
         // if no json body
       }
+await query.invalidateQueries({ queryKey: ["followup"] });
 
       Alert.alert("Success", "Invoice submitted successfully");
       if (onSubmit) {
@@ -716,70 +727,11 @@ const sharePdf = async () => {
   };
 
   const quotationOptions = quotations.map((q) => ({
-    label: `${q.QuoteId} - ₹${
-      q.Costs?.TotalCost?.toLocaleString("en-IN") || 0
-    }`,
+    label: `${q.QuoteId} - ₹${q.Costs?.TotalCost?.toLocaleString("en-IN") || 0
+      }`,
     value: q.QuoteId,
   }));
 
-  // Quotation Selection Step
-  if (step === "selectQuotation") {
-    return (
-      <View className="flex-1 bg-gray-50 p-4">
-        <Text className="text-xl font-bold mb-4">Select Quotation</Text>
-        {quotations.length === 0 ? (
-          <View className="flex-1 justify-center items-center">
-            <Text className="text-gray-500">
-              No quotations found for this trip
-            </Text>
-          </View>
-        ) : (
-          <ScrollView className="flex-1">
-            {quotations.map((quotation) => (
-              <TouchableOpacity
-                key={quotation.QuoteId}
-                className="bg-white p-4 rounded-lg mb-3 shadow-sm"
-                onPress={() => handleSelectQuotation(quotation)}
-              >
-                <Text className="font-bold text-lg">
-                  Quotation #{quotation.QuoteId}
-                </Text>
-                <Text className="text-gray-600">
-                  {quotation["Client-Name"]}
-                </Text>
-                <Text className="text-gray-600">
-                  Amount: ₹
-                  {quotation.Costs?.TotalCost?.toLocaleString("en-IN")}
-                </Text>
-                <Text className="text-gray-500 text-sm mt-1">
-                  {quotation.DestinationName} •{" "}
-                  {new Date(
-                    quotation.TravelDate
-                  ).toLocaleDateString()}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </ScrollView>
-        )}
-        <View className="flex-row justify-between mt-4">
-          <TouchableOpacity
-            className="bg-gray-200 px-6 py-3 rounded-lg"
-            onPress={onCancel}
-          >
-            <Text className="text-gray-800 font-medium">Cancel</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            className="bg-purple-600 px-6 py-3 rounded-lg"
-            onPress={() => setStep("fillForm")}
-          >
-            <Text className="text-white font-medium">
-              Skip & Create Blank
-            </Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-    );
-  }
 
   // Form Filling Step
   return (
