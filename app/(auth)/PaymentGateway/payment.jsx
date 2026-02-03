@@ -1,310 +1,551 @@
-import { Ionicons } from '@expo/vector-icons';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+
+import React, { useMemo, useState } from 'react';
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  ActivityIndicator,
+  Alert,
+  StyleSheet,
+  ScrollView,
+  Dimensions,
+  Platform
+} from 'react-native';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
-import { router } from 'expo-router';
-import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, Pressable, Text, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import RazorpayCheckout from 'react-native-razorpay';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-const PaymentPage = () => {
-  const insets = useSafeAreaInsets();
-  const [isLoading, setIsLoading] = useState(false);
-  const [userDetails, setUserDetails] = useState(null);
+import { usePricingPlan } from '../../../hooks/usePricingPlan';
 
-  useEffect(() => {
-    loadUserDetails();
-  }, []);
+const { width } = Dimensions.get('window');
 
-  const loadUserDetails = async () => {
-    try {
-      const savedData = await AsyncStorage.getItem('createAccountFormData');
-      if (savedData) {
-        setUserDetails(JSON.parse(savedData));
-      }
-    } catch (error) {
-      console.error('Error loading user details:', error);
-    }
-  };
-  const handlePayment = () => {
-    setIsLoading(true);
+/**
+ * ✅ Normalize destination coming from backend
+ * Backend sends inconsistent structure:
+ * - Object { Domestic, International }
+ * - OR Array []
+ */
+const normalizeDestination = (destination: any) => {
+  if (!destination) {
+    return { Domestic: [], International: [] };
+  }
 
-    // Console log user details when reaching payment gateway
-    console.log(JSON.stringify(userDetails, null, 2));
-
-    const options = {
-      description: 'Journey Routers - Account Setup',
-      image: 'https://i.imgur.com/3g7nmJC.png',
-      currency: 'INR',
-      key: 'rzp_test_RNiBf9dqVTjgJt',
-      amount: '100',
-      name: 'Journey Routers',
-      order_id: '',
-      prefill: {
-        email: userDetails?.Email || '',
-        contact: userDetails?.Phone || '',
-        name: userDetails?.FullName || '',
-      },
-      theme: { color: '#7c3aed' },
+  // Case 1: Already grouped
+  if (typeof destination === 'object' && !Array.isArray(destination)) {
+    return {
+      Domestic: destination.Domestic || [],
+      International: destination.International || [],
     };
+  }
 
-    RazorpayCheckout.open(options)
-      .then(async (data) => {
-        console.log('Payment Success:', data);
-        await handlePaymentSuccess(data);
-      })
-      .catch((error) => {
-        console.log('Payment Error:', error);
+  // Case 2: Flat array → treat as International
+  if (Array.isArray(destination)) {
+    return {
+      Domestic: [],
+      International: destination,
+    };
+  }
 
-        if (error.code === RazorpayCheckout.PAYMENT_CANCELLED) {
-          Alert.alert(
-            'Payment Cancelled',
-            'You cancelled the payment. Your account data has not been updated. Please try again to complete your setup.'
-          );
-        } else {
-          Alert.alert(
-            'Payment Failed',
-            `Error: ${error.code} | ${error.description || 'There was a problem processing your payment. Your account data has not been updated.'}`
-          );
-        }
+  return { Domestic: [], International: [] };
+};
 
-        // DO NOT update user data on payment failure or cancellation
-        // User data remains unchanged, they can retry payment later
-      })
-      .finally(() => {
-        setIsLoading(false);
-      });
-  };
+const PricingCard = ({ plan, isSelected, onSelect }) => {
+  const priceInRupees = (plan.PricePaise / 100).toLocaleString('en-IN', {
+    style: 'currency',
+    currency: plan.Currency || 'INR',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  });
 
-  const updateAccountPaymentStatus = async (isPaid = false) => {
-    try {
-      const accountData = await AsyncStorage.getItem('createAccountFormData');
-      if (accountData) {
-        const parsedData = JSON.parse(accountData);
+  const isInternational = Array.isArray(plan.Destination) 
+    ? plan.Destination.some(dest => !['Kerala', 'Rajasthan', 'Kashmir', 'Ladakh', 'Andaman', 'Northeast', 'Himachal', 'Goa'].includes(dest))
+    : plan.Destination?.International?.length > 0;
 
-        console.log(`Updating account payment status: isPaid = ${isPaid}`);
-
-        // Update account with payment status
-        const updatedData = {
-          ...parsedData,
-          SubscriptionStatus: isPaid ? 'active' : 'inactive',
-          SubscriptionPlanId: isPaid ? 'SUB#APP_WEB_001' : '',
-          SubscriptionType: isPaid ? 'App+Web' : '',
-          SubscriptionStart: isPaid ? new Date().toISOString() : '',
-          SubscriptionEnd: isPaid ? new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString() : '',
-          Balance: isPaid ? 1000 : 0,
-          Features_MaxQuotesPerMonth: isPaid ? 200 : 0,
-          Features_QuoteCharge: isPaid ? 2 : 0,
-          Features_PaymentProofUpload: isPaid,
-          Features_InAppNotifications: isPaid,
-          Features_WebNotifications: isPaid,
-          Features_AnalyticsDashboard: isPaid,
-        };
-
-        // Make API call to update account
-        const response = await fetch('https://sg76vqy4vi.execute-api.ap-south-1.amazonaws.com/salesapp/Auth', {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(updatedData),
-        });
-
-        if (response.ok) {
-          console.log(`Account updated successfully with payment status: ${isPaid ? 'PAID' : 'UNPAID'}`);
-        } else {
-          console.error('Failed to update account via API');
-        }
-
-        return updatedData;
-      }
-    } catch (error) {
-      console.error('Error updating account:', error);
-      throw error; // Re-throw to handle in calling function
-    }
-  };
-
-  const handlePaymentSuccess = async (paymentData) => {
-    try {
-      await AsyncStorage.setItem('paymentDetails', JSON.stringify({
-        paymentId: paymentData.razorpay_payment_id,
-        orderId: paymentData.razorpay_order_id,
-        signature: paymentData.razorpay_signature,
-        timestamp: new Date().toISOString(),
-      }));
-
-      // Update account with paid status
-      const updatedProfile = await updateAccountPaymentStatus(true);
-
-      // Update userProfile with paid status
-      if (updatedProfile) {
-        await AsyncStorage.setItem('userProfile', JSON.stringify(updatedProfile));
-      }
-
-      // Clear form data
-      await AsyncStorage.removeItem('createAccountFormData');
-      await AsyncStorage.removeItem('createAccountCurrentStep');
-
-      Alert.alert(
-        'Payment Successful! 🎉',
-        'Your account has been set up successfully. Welcome to Journey Routers!',
-        [
-          {
-            text: 'Continue',
-            onPress: () => router.replace('/(tabs)'),
-          },
-        ]
-      );
-    } catch (error) {
-      console.error('Error handling payment success:', error);
-      Alert.alert('Error', 'Payment was successful but there was an error setting up your account. Please contact support.');
-    }
-  };
-
-  const handleSkipPayment = async () => {
-    Alert.alert(
-      'Skip Payment?',
-      'You can skip the payment for now and complete it later from your profile settings.',
-      [
-        {
-          text: 'Cancel',
-          style: 'cancel',
-        },
-        {
-          text: 'Skip for Now',
-          onPress: async () => {
-            try {
-              // Update account with unpaid status
-              const updatedProfile = await updateAccountPaymentStatus(false);
-
-              // Update userProfile with unpaid status
-              if (updatedProfile) {
-                await AsyncStorage.setItem('userProfile', JSON.stringify(updatedProfile));
-              }
-
-              // Clear form data
-              await AsyncStorage.removeItem('createAccountFormData');
-              await AsyncStorage.removeItem('createAccountCurrentStep');
-
-              router.replace('/(tabs)');
-            } catch (error) {
-              console.error('Error skipping payment:', error);
-            }
-          },
-        },
-      ]
-    );
-  };
+  const destinationType = isInternational ? 'International' : 'Domestic';
+  const destinations = Array.isArray(plan.Destination) 
+    ? plan.Destination 
+    : plan.Destination?.[destinationType] || [];
 
   return (
-    <View className="flex-1 bg-gray-50">
-      {/* Header */}
-      <View className="bg-white px-5 py-4" style={{ paddingTop: insets.top + 16 }}>
-        <View className="flex-row items-center justify-between">
-          <Pressable onPress={() => router.back()}>
-            <Ionicons name="arrow-back" size={24} color="#374151" />
-          </Pressable>
-          <Text className="text-xl font-semibold text-gray-900">Complete Setup</Text>
-          <View className="w-6" />
+    <TouchableOpacity 
+      onPress={() => onSelect(plan)}
+      style={[
+        styles.card,
+        isSelected && styles.selectedCard,
+        isInternational && styles.internationalCard
+      ]}
+    >
+      <View style={styles.cardHeader}>
+        <Text style={styles.planName}>{plan.Name}</Text>
+        <Text style={styles.planPrice}>{priceInRupees}</Text>
+        <Text style={styles.credits}>{plan.QuoteCredits} Quotation Credits</Text>
+      </View>
+      
+      <View style={styles.divider} />
+      
+      <View style={styles.destinationsContainer}>
+        <Text style={styles.destinationTitle}>
+          {isInternational ? '🌍 International' : '🏠 Domestic'} Destinations
+        </Text>
+        <View style={styles.destinationsGrid}>
+          {destinations.slice(0, 6).map((dest, index) => (
+            <View key={index} style={styles.destinationItem}>
+              <Text style={styles.destinationText}>{dest}</Text>
+            </View>
+          ))}
+          {destinations.length > 6 && (
+            <View style={styles.destinationItem}>
+              <Text style={styles.destinationText}>+{destinations.length - 6} more</Text>
+            </View>
+          )}
         </View>
       </View>
-
-      {/* Content */}
-      <View className="flex-1 px-6 py-8">
-        {/* Success Icon */}
-        <View className="items-center mb-8">
-          <View className="w-24 h-24 bg-green-100 rounded-full items-center justify-center mb-4">
-            <Ionicons name="checkmark-circle" size={48} color="#10b981" />
-          </View>
-          <Text className="text-2xl font-bold text-gray-900 text-center">Almost Done!</Text>
-          <Text className="text-gray-600 text-center mt-2">
-            Complete your account setup with our premium plan
-          </Text>
-        </View>
-
-        {/* Pricing Card */}
-        <View className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 mb-6">
-          <LinearGradient
-            colors={['#7c3aed', '#5b21b6']}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            className="rounded-xl p-6 mb-4"
-          >
-            <View className="items-center">
-              <Text className="text-white text-lg font-medium">Premium Plan</Text>
-              <View className="flex-row items-baseline mt-2">
-                <Text className="text-white text-4xl font-bold">₹999</Text>
-                <Text className="text-white/80 text-lg ml-1">/month</Text>
-              </View>
-            </View>
-          </LinearGradient>
-
-          <View className="space-y-3">
-            <View className="flex-row items-center">
-              <Ionicons name="checkmark-circle" size={20} color="#10b981" />
-              <Text className="text-gray-700 ml-3">Unlimited quotations</Text>
-            </View>
-            <View className="flex-row items-center">
-              <Ionicons name="checkmark-circle" size={20} color="#10b981" />
-              <Text className="text-gray-700 ml-3">Advanced analytics</Text>
-            </View>
-            <View className="flex-row items-center">
-              <Ionicons name="checkmark-circle" size={20} color="#10b981" />
-              <Text className="text-gray-700 ml-3">Priority support</Text>
-            </View>
-            <View className="flex-row items-center">
-              <Ionicons name="checkmark-circle" size={20} color="#10b981" />
-              <Text className="text-gray-700 ml-3">Custom branding</Text>
-            </View>
-          </View>
-        </View>
-
-        {/* User Details */}
-        {userDetails && (
-          <View className="bg-white rounded-xl p-4 mb-6">
-            <Text className="text-gray-700 font-medium mb-2">Account Details:</Text>
-            <Text className="text-gray-600">
-              {userDetails.FullName}
-            </Text>
-            <Text className="text-gray-600">{userDetails.Email}</Text>
-            <Text className="text-gray-600">{userDetails.Phone}</Text>
-            <Text className="text-gray-600">{userDetails.CompanyName}</Text>
-          </View>
-        )}
-      </View>
-
-      {/* Payment Buttons */}
-      <View className="px-6 py-4 space-y-3">
-        <Pressable
-          onPress={handlePayment}
-          disabled={isLoading}
-          className="overflow-hidden rounded-full"
-        >
-          <LinearGradient
-            colors={["#7c3aed", "#5b21b6"]}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-            style={{ paddingVertical: 16, borderRadius: 9999 }}
-          >
-            <View className="flex-row items-center justify-center">
-              {isLoading && <ActivityIndicator size="small" color="white" className="mr-2" />}
-              <Text className="text-center text-white font-semibold text-base">
-                {isLoading ? 'Processing...' : 'Pay ₹999 & Complete Setup'}
-              </Text>
-            </View>
-          </LinearGradient>
-        </Pressable>
-
-        <Pressable
-          onPress={handleSkipPayment}
-          className="bg-gray-200 rounded-full py-4"
-        >
-          <Text className="text-center text-gray-700 font-semibold">Skip for Now</Text>
-        </Pressable>
-      </View>
-    </View>
+      
+      <TouchableOpacity 
+        style={[
+          styles.selectButton,
+          isSelected && styles.selectedButton
+        ]}
+        onPress={() => onSelect(plan)}
+      >
+        <Text style={styles.selectButtonText}>
+          {isSelected ? 'Selected' : 'Select Plan'}
+        </Text>
+      </TouchableOpacity>
+    </TouchableOpacity>
   );
 };
 
-export default PaymentPage;
+export default function PaymentPage() {
+  const router = useRouter();
+  const { planId } = useLocalSearchParams();
+  const { plans, loading, error } = usePricingPlan();
+  const [selectedPlan, setSelectedPlan] = useState(null);
+  
+  // Auto-select plan if coming from a direct link
+  React.useEffect(() => {
+    if (planId && plans.length > 0) {
+      const plan = plans.find(p => p.PlanId === planId);
+      if (plan) setSelectedPlan(plan);
+    }
+  }, [planId, plans]);
+  
+  const activePlans = useMemo(() => 
+    plans.filter(plan => plan.IsActive).sort((a, b) => a.PricePaise - b.PricePaise)
+  , [plans]);
+  const handleSelectPlan = (plan) => {
+    setSelectedPlan(plan);
+  };
 
+  const price = selectedPlan
+    ? (selectedPlan.PricePaise / 100).toLocaleString('en-IN')
+    : '0';
+
+  if (loading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color="#7c3aed" />
+        <Text style={styles.loadingText}>Loading plans...</Text>
+      </View>
+    );
+  }
+
+  if (error) {
+    return (
+      <View style={styles.errorContainer}>
+        <Ionicons name="warning" size={48} color="#ef4444" />
+        <Text style={styles.errorText}>Failed to load pricing plans</Text>
+        <TouchableOpacity 
+          style={styles.retryButton}
+          onPress={() => router.replace('/pricing')}
+        >
+          <Text style={styles.retryButtonText}>Retry</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
+  // =============================
+  // PAYMENT HANDLER
+  // =============================
+  const handlePayment = async () => {
+    if (!selectedPlan) {
+      Alert.alert('No Plan Selected', 'Please select a plan to continue');
+      return;
+    }
+
+    try {
+      const options = {
+        description: `Subscription for ${selectedPlan.Name}`,
+        image: 'https://your-logo-url.png',
+        currency: selectedPlan.Currency || 'INR',
+        key: 'rzp_test_S5OVwU720vAaEY', // 🔴 Replace in production
+        amount: selectedPlan.PricePaise.toString(),
+        name: 'Sales App',
+        prefill: {
+          email: 'user@example.com',
+          contact: '9999999999',
+          name: 'Customer',
+        },
+        theme: { color: '#7c3aed' },
+      };
+
+      const response = await RazorpayCheckout.open(options);
+      console.log('✅ Payment Success:', response);
+
+      Alert.alert('Payment Successful 🎉', 'Your subscription is active!', [
+        {
+          text: 'Continue',
+          onPress: () => router.replace('/(tabs)'),
+        },
+      ]);
+    } catch (err) {
+      console.error('❌ Payment failed:', err);
+
+      if (err?.code === RazorpayCheckout.PAYMENT_CANCELLED) {
+        Alert.alert('Payment Cancelled', 'You cancelled the payment.');
+      } else {
+        Alert.alert(
+          'Payment Failed',
+          err?.description || 'Something went wrong'
+        );
+      }
+    }
+  };
+
+  // =============================
+  // LOADING STATE
+  // =============================
+  if (loading) {
+    return (
+      <View className="flex-1 justify-center items-center bg-white">
+        <ActivityIndicator size="large" color="#7c3aed" />
+      </View>
+    );
+  }
+
+  // =============================
+  // ERROR / INVALID PLAN STATE
+  // =============================
+  // if (error || !selectedPlan) {
+  //   return (
+  //     <View className="flex-1 justify-center items-center bg-white px-6">
+  //       <Ionicons name="alert-circle" size={48} color="#ef4444" />
+  //       <Text className="text-lg text-gray-800 mt-4 text-center">
+  //         {error || 'Plan not found or inactive. Please choose another plan.'}
+  //       </Text>
+
+  //       <TouchableOpacity
+  //         className="mt-6 bg-purple-600 py-3 px-6 rounded-lg"
+  //         onPress={() => router.back()}
+  //       >
+  //         <Text className="text-white font-medium">Go Back</Text>
+  //       </TouchableOpacity>
+  //     </View>
+  //   );
+  // }
+
+  // =============================
+  // MAIN UI
+  // =============================
+  return (
+    <View style={styles.container}>
+  
+
+      <ScrollView contentContainerStyle={styles.scrollContent}>
+        <View style={styles.plansContainer}>
+          {activePlans.map((plan) => (
+            <PricingCard
+              key={plan.PlanId}
+              plan={plan}
+              isSelected={selectedPlan?.PlanId === plan.PlanId}
+              onSelect={handleSelectPlan}
+            />
+          ))}
+        </View>
+
+        {selectedPlan && (
+          <View style={styles.selectedPlanContainer}>
+            <Text style={styles.selectedPlanTitle}>Selected Plan</Text>
+            <View style={styles.selectedPlanCard}>
+              <Text style={styles.selectedPlanName}>{selectedPlan.Name}</Text>
+              <Text style={styles.selectedPlanPrice}>
+                {(selectedPlan.PricePaise / 100).toLocaleString('en-IN', {
+                  style: 'currency',
+                  currency: selectedPlan.Currency || 'INR',
+                  minimumFractionDigits: 0,
+                  maximumFractionDigits: 0,
+                })}
+              </Text>
+              <Text style={styles.selectedPlanCredits}>
+                {selectedPlan.QuoteCredits} Quotation Credits
+              </Text>
+            </View>
+          </View>
+        )}
+
+        <View style={styles.paymentButtonContainer}>
+          <TouchableOpacity 
+            style={[
+              styles.paymentButton,
+              !selectedPlan && styles.paymentButtonDisabled
+            ]}
+            onPress={handlePayment}
+            disabled={!selectedPlan}
+          >
+            <Text style={styles.paymentButtonText}>
+              {selectedPlan 
+                ? `Pay Now - ${(selectedPlan.PricePaise / 100).toLocaleString('en-IN', {
+                    style: 'currency',
+                    currency: selectedPlan.Currency || 'INR',
+                    minimumFractionDigits: 0,
+                    maximumFractionDigits: 0,
+                  })}`
+                : 'Select a Plan'}
+            </Text>
+          </TouchableOpacity>
+          
+          <View style={styles.paymentInfo}>
+            <Ionicons name="lock-closed" size={16} color="#64748b" />
+            <Text style={styles.paymentInfoText}>Secure payment powered by Razorpay</Text>
+          </View>
+        </View>
+      </ScrollView>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#f8fafc',
+  },
+  header: {
+    padding: 20,
+    paddingTop: Platform.OS === 'ios' ? 60 : 40,
+    paddingBottom: 20,
+    borderBottomLeftRadius: 20,
+    borderBottomRightRadius: 20,
+  },
+  headerContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: Platform.OS === 'ios' ? 0 : 10,
+  },
+  headerTitle: {
+    color: 'white',
+    fontSize: 20,
+    fontWeight: '600',
+  },
+  scrollContent: {
+    padding: 16,
+    paddingBottom: 100,
+  },
+  plansContainer: {
+    marginBottom: 24,
+  },
+  card: {
+    backgroundColor: 'white',
+    borderRadius: 12,
+    padding: 20,
+    marginBottom: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
+  },
+  selectedCard: {
+    borderColor: '#7c3aed',
+    backgroundColor: '#f5f3ff',
+    shadowColor: '#7c3aed',
+    shadowOpacity: 0.15,
+    shadowRadius: 10,
+  },
+  internationalCard: {
+    borderLeftWidth: 4,
+    borderLeftColor: '#8b5cf6',
+  },
+  cardHeader: {
+    marginBottom: 16,
+  },
+  planName: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#1e293b',
+    marginBottom: 4,
+  },
+  planPrice: {
+    fontSize: 28,
+    fontWeight: '800',
+    color: '#7c3aed',
+    marginBottom: 4,
+  },
+  credits: {
+    fontSize: 14,
+    color: '#64748b',
+    fontWeight: '500',
+  },
+  divider: {
+    height: 1,
+    backgroundColor: '#e2e8f0',
+    marginVertical: 16,
+  },
+  destinationsContainer: {
+    marginBottom: 20,
+  },
+  destinationTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#1e293b',
+    marginBottom: 12,
+  },
+  destinationsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    marginHorizontal: -4,
+  },
+  destinationItem: {
+    backgroundColor: '#f1f5f9',
+    borderRadius: 6,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    margin: 4,
+  },
+  destinationText: {
+    fontSize: 13,
+    color: '#475569',
+  },
+  selectButton: {
+    backgroundColor: '#f1f5f9',
+    padding: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  selectedButton: {
+    backgroundColor: '#7c3aed',
+  },
+  selectButtonText: {
+    color: '#475569',
+    fontWeight: '600',
+  },
+  selectedButtonText: {
+    color: 'white',
+  },
+  selectedPlanContainer: {
+    marginBottom: 24,
+  },
+  selectedPlanTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#1e293b',
+    marginBottom: 12,
+  },
+  selectedPlanCard: {
+    backgroundColor: 'white',
+    borderRadius: 12,
+    padding: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
+  },
+  selectedPlanName: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#1e293b',
+    marginBottom: 8,
+  },
+  selectedPlanPrice: {
+    fontSize: 24,
+    fontWeight: '800',
+    color: '#7c3aed',
+    marginBottom: 4,
+  },
+  selectedPlanCredits: {
+    fontSize: 14,
+    color: '#64748b',
+    fontWeight: '500',
+  },
+  paymentButtonContainer: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: 'white',
+    padding: 20,
+    borderTopWidth: 1,
+    borderTopColor: '#e2e8f0',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 5,
+  },
+  paymentButton: {
+    backgroundColor: '#7c3aed',
+    padding: 16,
+    borderRadius: 12,
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  paymentButtonDisabled: {
+    backgroundColor: '#cbd5e1',
+  },
+  paymentButtonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  paymentInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  paymentInfoText: {
+    color: '#64748b',
+    fontSize: 12,
+    marginLeft: 6,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#f8fafc',
+  },
+  loadingText: {
+    marginTop: 10,
+    color: '#64748b',
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+    backgroundColor: '#f8fafc',
+  },
+  errorText: {
+    marginTop: 16,
+    fontSize: 16,
+    color: '#ef4444',
+    textAlign: 'center',
+    marginBottom: 20,
+  },
+  retryButton: {
+    backgroundColor: '#7c3aed',
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 8,
+  },
+  retryButtonText: {
+    color: 'white',
+    fontWeight: '600',
+  },
+});

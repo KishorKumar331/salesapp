@@ -61,9 +61,11 @@ export default function ProfileScreen() {
             <Ionicons name="chevron-forward" size={20} color="#9ca3af" />
           </TouchableOpacity>
 
-          <TouchableOpacity className="flex-row items-center py-3 border-b border-gray-100">
+          <TouchableOpacity   onPress={() => router.push('/(auth)/PaymentGateway/payment')}
+ className="flex-row items-center py-3 border-b border-gray-100">
             <Ionicons name="help-circle-outline" size={24} color="#7c3aed" />
-            <Text className="text-gray-900 font-medium ml-3 flex-1">Help & Support</Text>
+            <Text   onPress={() => router.push('/(auth)/PaymentGateway/payment')}
+ className="text-gray-900 font-medium ml-3 flex-1">Pricing section</Text>
             <Ionicons name="chevron-forward" size={20} color="#9ca3af" />
           </TouchableOpacity>
 
