@@ -9,14 +9,14 @@ Notifications.setNotificationHandler({
   handleNotification: async () => ({
     shouldShowAlert: true,
     shouldPlaySound: true,
-    shouldSetBadge: false,
+    shouldSetBadge: true,
   }),
 });
 
 const DEVICE_ID_STORAGE_KEY = "DEVICE_ID";
 
 const resolveAppVersion = () =>
-  Constants?.expoConfig?.version ?? Constants?.manifest?.version ?? "1.0.0";
+  Constants?.expoConfig?.version ?? "1.0.0";
 
 const resolveDeviceRegistrationUrl = () =>
   "https://azlekhl3z9.execute-api.ap-south-1.amazonaws.com/registration/push-notification";
@@ -25,12 +25,9 @@ async function ensureAndroidChannelAsync() {
   if (Platform.OS !== "android") return;
   await Notifications.setNotificationChannelAsync("default", {
     name: "default",
-    importance: Notifications.AndroidImportance.MAX,
-    vibrationPattern: [0, 250, 250, 250],
-    lightColor: "#7c3aed",
+    importance: Notifications.AndroidImportance.HIGH,
     sound: "default",
     enableVibrate: true,
-    lockscreenVisibility: Notifications.AndroidNotificationVisibility.PUBLIC,
   });
 }
 
@@ -50,6 +47,7 @@ async function getOrCreateDeviceId() {
   }
 }
 
+// 🔑 Only care about native FCM token for SNS
 export async function registerForPushNotificationsAsync() {
   if (!Device.isDevice) {
     console.warn("Push notifications require a physical device");
@@ -69,29 +67,18 @@ export async function registerForPushNotificationsAsync() {
     return null;
   }
 
-  const projectId =
-    Constants?.expoConfig?.extra?.eas?.projectId ??
-    Constants?.easConfig?.projectId;
-  if (!projectId) {
-    console.warn(
-      "Missing EAS project ID. Expo push token cannot be generated."
-    );
-    return null;
-  }
-
   await ensureAndroidChannelAsync();
 
-  const [expoPushToken, devicePushToken] = await Promise.all([
-    Notifications.getExpoPushTokenAsync({ projectId }),
-    Notifications.getDevicePushTokenAsync(),
-  ]);
+  const devicePushToken = await Notifications.getDevicePushTokenAsync();
+  console.log("🔥 Native FCM token:", devicePushToken.data);
 
   return {
-    expoPushToken: expoPushToken?.data ?? null,
-    nativePushToken: devicePushToken?.data ?? null,
+    expoPushToken: null,                 // we don’t use this for SNS
+    nativePushToken: devicePushToken.data,
   };
 }
 
+// expects the same shape you use in RootLayout
 export async function registerDeviceWithBackend({ userId, pushToken }) {
   try {
     if (!Device.isDevice) return;
@@ -107,25 +94,30 @@ export async function registerDeviceWithBackend({ userId, pushToken }) {
     }
 
     const deviceId = await getOrCreateDeviceId();
+
     const payload = {
       UserId: userId,
       DeviceId: deviceId,
-      Platform: Platform.OS,
+      Platform: Platform.OS,              // "android" / "ios"
       PushToken: pushToken,
       AppVersion: resolveAppVersion(),
-      LastActiveAt: new Date().toISOString(),
+      LastActiveAt: new Date().toISOString(), // extra field, backend just ignores it
     };
+
+    console.log("📡 Register payload:", payload);
 
     const response = await fetch(endpointUrl, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
     });
-    console.log(response, payload);
 
+    console.log("🌐 Backend response:", response.status);
     if (!response.ok) {
       const errorText = await response.text();
-      throw new Error(`Registration failed (${response.status}): ${errorText}`);
+      throw new Error(
+        `Registration failed (${response.status}): ${errorText}`
+      );
     }
 
     console.log("✅ Device registered with backend");
@@ -151,6 +143,7 @@ export async function triggerLocalTestNotification({
   }
 }
 
+// Hook used in RootLayout
 export function usePushNotifications() {
   const [expoPushToken, setExpoPushToken] = useState(null);
   const [nativePushToken, setNativePushToken] = useState(null);
@@ -169,7 +162,10 @@ export function usePushNotifications() {
 
     notificationListener.current =
       Notifications.addNotificationReceivedListener((noti) => {
-        console.log("📥 Notification received:", JSON.stringify(noti, null, 2));
+        console.log(
+          "📥 Notification received:",
+          JSON.stringify(noti, null, 2)
+        );
         setNotification(noti);
       });
 
