@@ -89,10 +89,34 @@ const PdfPreviewModal = ({ visible, pdfUri, pdfHtml, onClose, onShare, clientNam
           )}
           {pdfHtml && (
             <WebView
-              source={{ html: pdfHtml }}
+              source={{ 
+                html: `
+                  <!DOCTYPE html>
+                  <html>
+                    <head>
+                      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                      <style>
+                        body {
+                          margin: 0;
+                          padding: 20px;
+                          display: flex;
+                          justify-content: center;
+                          align-items: center;
+                          zoom:0.44;
+                          min-height: 100vh;
+                        }
+                     
+                      </style>
+                    </head>
+                    <body>
+                      <div>
+                        ${pdfHtml}
+                      </div>
+                    </body>
+                  </html>
+                `
+              }}
               style={styles.webview}
-              // onLoadStart={() => setLoading(true)}
-              // onLoadEnd={() => setLoading(false)}
               onError={(e) => {
                 console.error('WebView error:', e.nativeEvent);
                 setLoading(false);
@@ -104,6 +128,9 @@ const PdfPreviewModal = ({ visible, pdfUri, pdfHtml, onClose, onShare, clientNam
                   <ActivityIndicator size="large" color="#7c3aed" />
                 </View>
               )}
+              scrollEnabled={true}
+              showsVerticalScrollIndicator={true}
+              showsHorizontalScrollIndicator={false}
             />
           )}
         </View>
@@ -134,6 +161,10 @@ const PdfPreviewModal = ({ visible, pdfUri, pdfHtml, onClose, onShare, clientNam
 };
 
 const styles = StyleSheet.create({
+  webview: {
+    flex: 1,
+    backgroundColor: 'white',
+  },
   container: {
     flex: 1,
     backgroundColor: '#f9fafb',
