@@ -1,8 +1,10 @@
-import React from 'react';
-import { View, Text, Modal, ScrollView, TouchableOpacity, Image, StyleSheet } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, Modal, ScrollView, TouchableOpacity, Image, StyleSheet, Alert, ActivityIndicator } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import PdfPreviewModal from '../pdf/PdfPreviewModal';
+import axios from 'axios';
 
 const DetailCard = ({ title, children, icon }) => (
   <View className="bg-white rounded-xl p-4 shadow-sm border border-gray-100 mb-4">
@@ -21,9 +23,51 @@ const DetailRow = ({ label, value, isLast = false }) => (
   </View>
 );
 
-export default function QuoteDetailsModal({ visible, onClose, quote }) {
-  console.log(quote)
+export default function QuoteDetailsModal({ visible, onClose, quote, user }) {
+  const [isPrinting, setIsPrinting] = useState(false);
+  const [showPdfModal, setShowPdfModal] = useState(false);
+  const [pdfHtml, setPdfHtml] = useState(null);
+  const [pdfUri, setPdfUri] = useState(null);
+  const [refreshKey, setRefreshKey] = useState(0);
+
   if (!visible) return null;
+
+  const onViewQuotation = async (quotation) => {
+    if (isPrinting) return;
+    setIsPrinting(true);
+
+    try {
+      const response = await axios.post(
+        'https://0rq0f90i05.execute-api.ap-south-1.amazonaws.com/salesapp/packages-pdf-html',
+        {
+          renderOnly: true,
+          data: {
+            ...quotation,
+            user
+          }
+        }
+      );
+
+      if (response.data) {
+        setPdfHtml(response.data);
+        setPdfUri(null);
+        setShowPdfModal(true);
+        setRefreshKey(prev => prev + 1);
+      } else {
+        throw new Error('No data received from server');
+      }
+    } catch (error) {
+      console.error("Error generating preview:", error);
+      Alert.alert("Error", "Failed to load quotation preview. Please try again.");
+    } finally {
+      setIsPrinting(false);
+    }
+  };
+
+  const handlePreviewClose = () => {
+    setShowPdfModal(false);
+    setPdfHtml(null);
+  };
 
   const formatDate = (dateString) => {
     if (!dateString) return 'N/A';
@@ -52,84 +96,7 @@ export default function QuoteDetailsModal({ visible, onClose, quote }) {
     </DetailCard>
   );
 
-  const renderItineraryItem = (item, index) => (
-    <View key={index} className="mb-6 last:mb-0">
-      <View className="flex-row items-start mb-2">
-        <View className="bg-purple-100 rounded-full w-6 h-6 items-center justify-center mr-2 mt-0.5">
-          <Text className="text-purple-600 font-medium text-xs">{index + 1}</Text>
-        </View>
-        <Text className="text-base font-semibold text-gray-800 flex-1">
-          {item.Title || `Day ${index + 1}`}
-        </Text>
-      </View>
-      
-      {item.ImageUrl && (
-        <Image 
-          source={{ uri: item.ImageUrl }} 
-          className="w-full h-48 rounded-lg mb-3"
-          resizeMode="cover"
-        />
-      )}
-      
-      <View className="pl-8">
-        {item.Date && (
-          <View className="flex-row items-center mb-2">
-            <Ionicons name="calendar-outline" size={16} color="#6b7280" />
-            <Text className="text-gray-600 text-sm ml-2">
-              {formatDate(item.Date)}
-            </Text>
-          </View>
-        )}
-        
-        {item.Description && (
-          <Text className="text-gray-700 text-sm mb-3">
-            {item.Description.replace(/<[^>]*>?/gm, '')}
-          </Text>
-        )}
-      </View>
-    </View>
-  );
-
-  const renderHotel = (hotel, index) => (
-    <View key={index} className="mb-4 last:mb-0">
-      <Text className="font-medium text-gray-800">{hotel.Name} 
-        {hotel.Category > 0 && (
-          <Text className="text-yellow-500">{'★'.repeat(hotel.Category)}</Text>
-        )}
-      </Text>
-      <Text className="text-sm text-gray-600">{hotel.City}</Text>
-      <Text className="text-sm text-gray-600">
-        {formatDate(hotel.CheckInDate)} - {formatDate(hotel.CheckOutDate)} • {hotel.Nights} Nights
-      </Text>
-      {hotel.RoomType && (
-        <Text className="text-sm text-gray-600">Room: {hotel.RoomType}</Text>
-      )}
-      {hotel.Comments && (
-        <Text className="text-sm text-gray-600 mt-1">Notes: {hotel.Comments}</Text>
-      )}
-    </View>
-  );
-
-  const renderInclusionExclusion = (type) => (
-    <View className="flex-1">
-      <Text className="font-medium text-gray-700 mb-2">
-        {type === 'inclusions' ? '✓ Included' : '✗ Not Included'}
-      </Text>
-      <View className="bg-gray-50 p-3 rounded-lg">
-        {quote[type === 'inclusions' ? 'Inclusions' : 'Exclusions']?.map((item, i) => (
-          <View key={i} className="flex-row items-start mb-1">
-            <Ionicons 
-              name={type === 'inclusions' ? 'checkmark-circle' : 'close-circle'} 
-              size={16} 
-              color={type === 'inclusions' ? '#10b981' : '#ef4444'} 
-              style={{ marginTop: 2, marginRight: 6 }}
-            />
-            <Text className="text-gray-700 text-sm flex-1">{item.item}</Text>
-          </View>
-        )) || <Text className="text-gray-500 text-sm">No {type} specified</Text>}
-      </View>
-    </View>
-  );
+ 
 
   if (!quote) {
     return (
@@ -151,12 +118,13 @@ export default function QuoteDetailsModal({ visible, onClose, quote }) {
   }
 const inset=useSafeAreaInsets()
   return (
-    <Modal
-      visible={visible}
-      animationType="slide"
-      presentationStyle="pageSheet"
-      onRequestClose={onClose}
-    >
+    <>
+      <Modal
+        visible={visible}
+        animationType="slide"
+        transparent={false}
+        onRequestClose={onClose}
+      >
       <View  className="flex-1  bg-gray-50">
         {/* Header */}
         <LinearGradient 
@@ -306,14 +274,30 @@ const inset=useSafeAreaInsets()
           </TouchableOpacity>
           <TouchableOpacity 
             className="flex-1 bg-purple-600 py-3 rounded-lg items-center"
-            onPress={() => {
-              // Handle share or other action
-            }}
+            onPress={() => onViewQuotation(quote)}
+            disabled={isPrinting}
           >
-            <Text className="text-white font-medium">Share Quote</Text>
+            {isPrinting ? (
+              <ActivityIndicator color="white" />
+            ) : (
+              <Text className="text-white font-medium">Share Quote</Text>
+            )}
           </TouchableOpacity>
         </View>
       </View>
-    </Modal>
+      </Modal>
+
+      <PdfPreviewModal
+        key={refreshKey}
+        visible={showPdfModal}
+        pdfUri={pdfUri}
+        pdfHtml={pdfHtml}
+        onClose={handlePreviewClose}
+        onShare={() => {
+          // Implement share functionality if needed
+          Alert.alert("Share", "Share functionality would go here");
+        }}
+      />
+    </>
   );
-}
+};
