@@ -9,13 +9,38 @@
       "client_info": {
         "mobilesdk_app_id": "1:922601159816:android:3e414e58db87495c3d333d",
         "android_client_info": {
-          "package_name": "com.deveshbisht.testapp"
+          "package_name": "com.salesapp.quickquotes"
         }
       },
       "oauth_client": [],
       "api_key": [
         {
           "current_key": "AIzaSyCMnrzPQ8pussX_iK3SyV1q_ebECw-WlPI"
+        },
+        {
+          "current_key": "AIzaSyCxyoeEez1ETNyMXsgB3gtOdOElLXn_B3k"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:922601159816:android:2b773422522734f33d333d",
+        "android_client_info": {
+          "package_name": "com.salesapp.quickquotes"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCMnrzPQ8pussX_iK3SyV1q_ebECw-WlPI"
+        },
+        {
+          "current_key": "AIzaSyCxyoeEez1ETNyMXsgB3gtOdOElLXn_B3k"
         }
       ],
       "services": {

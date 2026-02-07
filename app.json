@@ -1,16 +1,16 @@
 {
   "expo": {
-    "name": "SalesApp",
-    "slug": "testapp",
+    "name": "quickquotes",
+    "slug": "quickquotes",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "salesapp",
+    "scheme": "quickquotes",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.deveshbisht.testapp"
+      "bundleIdentifier": "com.salesapp.quickquotes"
     },
     "android": {
       "adaptiveIcon": {
@@ -21,10 +21,9 @@
       },
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
-      "package": "com.deveshbisht.testapp",
+      "package": "com.salesapp.quickquotes",
       "googleServicesFile": "./google-services.json"
     },
-
     "web": {
       "output": "static",
       "favicon": "./assets/images/favicon.png"
@@ -47,7 +46,7 @@
         "expo-notifications",
         {
           "androidMode": "default",
-          "androidCollapsedTitle": "SalesApp",
+          "androidCollapsedTitle": "quickquotes",
           "iosDisplayInForeground": true
         }
       ]
@@ -59,8 +58,9 @@
     "extra": {
       "router": {},
       "eas": {
-        "projectId": "99875551-b214-4666-af52-f7e44d38bdb0"
+        "projectId": "ab472d8f-de2c-441a-89be-4070e840e227"
       }
-    }
+    },
+    "owner": "kishorkumarip"
   }
 }
