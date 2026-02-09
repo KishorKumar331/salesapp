@@ -10,6 +10,7 @@ import { Stack, router } from "expo-router";
 import { useEffect, useRef, useState } from "react";
 import "../global.css";
 
+
 export default function RootLayout() {
   const [isReady, setIsReady] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);

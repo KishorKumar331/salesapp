@@ -29,12 +29,14 @@ const pdfTemplates = [
 ];
 
 // const categories = ['All', 'Business', 'Travel', 'Sales', 'Legal', 'Free'];
+import { useUserProfile } from "@/hooks/useUserProfile";
 
 export default function MarketplaceScreen() {
   const router = useRouter();
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [searchQuery, setSearchQuery] = useState('');
-
+  const { user } = useUserProfile();
+console.log(user)
   const filteredTemplates = pdfTemplates.filter(template => {
     const matchesCategory = selectedCategory === 'All' || template.category === selectedCategory;
     const matchesSearch = template.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -142,7 +144,7 @@ export default function MarketplaceScreen() {
               </View>
               
               {/* Content */}
-              <View className="relative p-6">
+              <View className="bg-purple-500 relative p-6">
                 <View className="items-center">
                   {/* Icon with glow effect */}
                   <View className="relative">

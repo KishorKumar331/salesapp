@@ -725,16 +725,14 @@ const query=useQueryClient()
   // Form Filling Step
   return (
     <ScrollView className="flex-1 bg-gray-50">
-      <View className="p-4">
+      <View className="p-1">
         {selectedQuotation && (
           <View className="bg-blue-50 p-3 rounded-lg mb-4 flex-row justify-between items-center">
             <Text className="text-blue-800">
               Using Quotation #
               {selectedQuotation?.QuoteId || selectedQuotation?.id}
             </Text>
-            <TouchableOpacity onPress={() => setStep("selectQuotation")}>
-              <Text className="text-blue-600 font-medium">Change</Text>
-            </TouchableOpacity>
+          
           </View>
         )}
 
