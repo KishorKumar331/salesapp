@@ -21,6 +21,7 @@ const QuotationScreen = () => {
   const router = useRouter();
   const params = useLocalSearchParams();
   const { user, loading: userLoading } = useUserProfile();
+  console.log(user)
   const [isPrinting, setIsPrinting] = useState(false);
   const [pdfUri, setPdfUri] = useState(null);
   const [pdfHtml, setPdfHtml] = useState(null);
@@ -49,7 +50,8 @@ const QuotationScreen = () => {
         'https://0rq0f90i05.execute-api.ap-south-1.amazonaws.com/salesapp/packages-pdf-html',
         {
           renderOnly: true,
-          data: dataWithUser
+          data: dataWithUser,
+          templateName: 'ip_pdf.hbs',
         }
       );
 

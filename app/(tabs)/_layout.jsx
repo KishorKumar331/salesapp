@@ -136,6 +136,18 @@ export default function TabLayout() {
           href: null, // This hides the screen from tab bar
         }}
       />
+      <Tabs.Screen
+        name="settings"
+        options={{
+          href: null, // This hides the screen from tab bar
+        }}
+      />
+      <Tabs.Screen
+        name="settings/marketplace"
+        options={{
+          href: null, // This hides the screen from tab bar
+        }}
+      />
     </Tabs>
   );
 }

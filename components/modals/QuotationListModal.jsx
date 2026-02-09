@@ -110,7 +110,9 @@ export default function QuotationListModal({
           data: {
             ...quotation,
             user
-          }
+          },
+                    templateName: 'ip_pdf.hbs',
+
         }
       );
 

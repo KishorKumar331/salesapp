@@ -8,61 +8,39 @@ import {
   ScrollView,
   Alert,
   ActivityIndicator,
-  Modal,
   StyleSheet,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
-import { WebView } from "react-native-webview";
-import * as Print from "expo-print";
-import { shareAsync } from "expo-sharing";
-import * as FileSystem from "expo-file-system/legacy";
 import DatePicker from "@/components/ui/DatePicker";
 import CustomPicker from "@/components/ui/CustomPicker";
-import { generateInvoiceHtml } from "@/utils/invoiceGenerator";
 import { getUserProfile } from "@/utils/userProfile";
 import axios from "axios";
 import { useQueryClient } from "@tanstack/react-query";
+import PdfPreviewModal from "@/components/pdf/PdfPreviewModal";
 
 const styles = StyleSheet.create({
-  modalContainer: {
-    flex: 1,
+  loadingOverlay: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    justifyContent: "center",
+    alignItems: "center",
+    zIndex: 1000,
+  },
+  loadingBox: {
     backgroundColor: "white",
-  },
-  modalHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    padding: 15,
-    borderBottomWidth: 1,
-    borderBottomColor: "#eee",
-  },
-  modalTitle: {
-    fontSize: 18,
-    fontWeight: "600",
-  },
-  buttonContainer: {
-    flexDirection: "row",
-    justifyContent: "space-around",
-    padding: 15,
-    borderTopWidth: 1,
-    borderTopColor: "#eee",
-    backgroundColor: "#f9f9f9",
-  },
-  button: {
-    padding: 10,
-    borderRadius: 5,
-    minWidth: 110,
+    padding: 24,
+    borderRadius: 12,
     alignItems: "center",
   },
-  buttonText: {
-    color: "white",
-    fontWeight: "600",
-  },
-  closeButton: {
-    padding: 10,
-  },
-  webview: {
-    flex: 1,
+  loadingText: {
+    marginTop: 12,
+    fontSize: 16,
+    color: "#374151",
+    fontWeight: "500",
   },
 });
 
@@ -87,6 +65,11 @@ export default function InvoiceForm({
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [userProfile, setUserProfile] = useState(null);
+  const [pdfUri, setPdfUri] = useState(null);
+  const [pdfHtml, setPdfHtml] = useState(null);
+  const [showPdfModal, setShowPdfModal] = useState(false);
+  const [refreshKey, setRefreshKey] = useState(0);
+  const [formDataToSubmit, setFormDataToSubmit] = useState(null);
 
   const [formData, setFormData] = useState({
     invoiceId: "",
@@ -511,16 +494,12 @@ export default function InvoiceForm({
     return generateInvoiceHtml(previewData);
   };
 
-  const handleOpenPreview = () => {
+  const handleOpenPreview = async () => {
     if (!validateForm()) return;
-    ensureInvoiceNumber();
-    setShowPreview(true);
-  };
+    if (isGeneratingPdf) return;
+    setIsGeneratingPdf(true);
 
-  const generatePdf = async () => {
     try {
-      setIsGeneratingPdf(true);
-
       const invoiceNumber = ensureInvoiceNumber();
       const today = new Date().toISOString().split("T")[0];
       const dueDate = new Date(
@@ -529,56 +508,61 @@ export default function InvoiceForm({
         .toISOString()
         .split("T")[0];
 
-      const html = generateInvoiceHtml({
+      const dataWithUser = {
         ...formData,
         InvoiceNumber: invoiceNumber,
         InvoiceDate: today,
         DueDate: dueDate,
-      });
+        user: userProfile,
+      };
 
-      const { uri } = await Print.printToFileAsync({
-        html,
-        width: 595,
-        height: 842,
-      });
+      console.log("Invoice data with user:", dataWithUser);
+      
+      // Call the API endpoint to get HTML
+      const response = await axios.post(
+        'https://0rq0f90i05.execute-api.ap-south-1.amazonaws.com/salesapp/packages-pdf-html',
+        {
+          renderOnly: true,
+          data: dataWithUser,
+          templateName: 'jr_pdf.hbs',
+        }
+      );
 
-      const customerName =
-        (formData?.customer?.name || "Customer").replace(/\s+/g, "_");
-      const filename = `Invoice_${customerName}_${invoiceNumber}.pdf`;
-      const newUri = `${FileSystem.documentDirectory}${filename}`;
-
-      await FileSystem.moveAsync({
-        from: uri,
-        to: newUri,
-      });
-
-      return newUri;
+      if (response.data) {
+        console.log("HTML Content received from API");
+        setPdfHtml(response.data);
+        setPdfUri(null);
+        setFormDataToSubmit({ ...dataWithUser, CompanyId: userProfile?.companyId, CompanyEmail: userProfile?.email });
+        setShowPdfModal(true);
+        setRefreshKey((prev) => prev + 1);
+        console.log("✅ HTML set for preview");
+      } else {
+        throw new Error('Invalid response format from server');
+      }
     } catch (error) {
-      console.error("Error generating PDF:", error);
-      Alert.alert("Error", "Failed to generate PDF. Please try again.");
-      throw error;
+      console.error("❌ Error generating preview:", error);
+      Alert.alert("Error", "Failed to generate preview. Please try again.");
     } finally {
       setIsGeneratingPdf(false);
     }
   };
 
-  const sharePdf = async () => {
+  const handlePreviewClose = () => {
+    setShowPdfModal(false);
+  };
+
+  const handleShare = async () => {
+    if (!formDataToSubmit) {
+      Alert.alert("Error", "No invoice data to submit");
+      return;
+    }
+
     try {
-      // 1. First save invoice to backend
-      const success = await handleSubmitInvoice(true); // true = silent mode
-      if (!success) return;
-
-      // 2. Then generate PDF
-      const pdfUri = await generatePdf();
-
-      // 3. Then share
-      await shareAsync(pdfUri, {
-        mimeType: "application/pdf",
-        dialogTitle: "Share Invoice",
-        UTI: "com.adobe.pdf",
-      });
+      console.log("📤 Submitting invoice to API...");
+      await handleSubmitInvoice();
     } catch (error) {
-      console.log("Share error:", error);
+      console.error("❌ Error submitting:", error);
+      Alert.alert("Error", "Failed to submit invoice: " + (error?.message || error));
     }
   };
 
@@ -657,7 +641,6 @@ const query=useQueryClient()
       const cleanedData = {
         invoiceNumber,
         invoiceId: formData.tripId || tripId,
-
         tripId: formData.tripId || tripId,
         finalPackageQuotationId: formData.finalPackageQuotationId,
         customer: formData.customer,
@@ -701,23 +684,29 @@ const query=useQueryClient()
       let data = null;
       try {
         data = await response.json();
-        console.log(data)
+        console.log(data);
         await axios.put(`https://0rq0f90i05.execute-api.ap-south-1.amazonaws.com/salesapp/lead-managment/create-quote`, {
           invoiceId: data?.invoiceId,
           TripId: initialData?.TripId,
           LeadId: initialData?.leadId,
           LatestQuotationId: cleanedData?.finalPackageQuotationId
-
-        })
+        });
       } catch {
         // if no json body
       }
-await query.invalidateQueries({ queryKey: ["followup"] });
+      await query.invalidateQueries({ queryKey: ["followup"] });
 
-      Alert.alert("Success", "Invoice submitted successfully");
-      if (onSubmit) {
-        onSubmit(data || cleanedData);
-      }
+      Alert.alert("Success", "Invoice submitted successfully!", [
+        {
+          text: "OK",
+          onPress: () => {
+            setShowPdfModal(false);
+            if (onSubmit) {
+              onSubmit(data || cleanedData);
+            }
+          }
+        }
+      ]);
     } catch (error) {
       console.error("Error saving invoice:", error);
       Alert.alert("Error", error.message || "Failed to save invoice.");
@@ -1239,76 +1228,24 @@ await query.invalidateQueries({ queryKey: ["followup"] });
         </View>
       </View>
 
-      {/* PDF Preview Modal */}
-      <Modal
-        visible={showPreview}
-        animationType="slide"
-        onRequestClose={() => setShowPreview(false)}
-      >
-        <View style={styles.modalContainer}>
-          <View style={styles.modalHeader}>
-            <Text style={styles.modalTitle}>Invoice Preview</Text>
-            <TouchableOpacity
-              style={styles.closeButton}
-              onPress={() => setShowPreview(false)}
-            >
-              <Ionicons name="close" size={24} color="#333" />
-            </TouchableOpacity>
-          </View>
-
-          <WebView
-            source={{ html: generatePreviewHtml() }}
-            style={styles.webview}
-            startInLoadingState={true}
-            renderLoading={() => (
-              <View
-                style={{
-                  flex: 1,
-                  justifyContent: "center",
-                  alignItems: "center",
-                }}
-              >
-                <ActivityIndicator size="large" color="#7c3aed" />
-              </View>
-            )}
-          />
-
-          <View style={styles.buttonContainer}>
-            <TouchableOpacity
-              style={[
-                styles.button,
-                { backgroundColor: isSubmitting ? "#9ca3af" : "#10b981" },
-              ]}
-              onPress={handleSubmitInvoice}
-              disabled={isSubmitting}
-            >
-              <Text style={styles.buttonText}>
-                {isSubmitting ? "Submitting..." : "Submit Invoice"}
-              </Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={[
-                styles.button,
-                { backgroundColor: isGeneratingPdf ? "#9ca3af" : "#3b82f6" },
-              ]}
-              onPress={sharePdf}
-              disabled={isGeneratingPdf}
-            >
-              <Text style={styles.buttonText}>
-                {isGeneratingPdf ? "Sharing..." : "Share PDF"}
-              </Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={[styles.button, { backgroundColor: "#6b7280" }]}
-              onPress={() => setShowPreview(false)}
-            >
-              <Text style={styles.buttonText}>Close</Text>
-            </TouchableOpacity>
+      {/* Loading Overlay */}
+      {isGeneratingPdf && (
+        <View style={styles.loadingOverlay}>
+          <View style={styles.loadingBox}>
+            <ActivityIndicator size="large" color="#7c3aed" />
+            <Text style={styles.loadingText}>Preparing Preview...</Text>
           </View>
         </View>
-      </Modal>
+      )}
+
+      <PdfPreviewModal
+        key={refreshKey}
+        visible={showPdfModal}
+        pdfUri={pdfUri}
+        pdfHtml={pdfHtml}
+        onClose={handlePreviewClose}
+        onShare={handleShare}
+      />
     </ScrollView>
   );
-}
+};

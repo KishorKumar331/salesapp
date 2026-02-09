@@ -44,7 +44,9 @@ export default function QuoteDetailsModal({ visible, onClose, quote, user }) {
           data: {
             ...quotation,
             user
-          }
+          },
+          templateName: 'ip_pdf.hbs',
+
         }
       );
 
@@ -88,7 +90,7 @@ export default function QuoteDetailsModal({ visible, onClose, quote, user }) {
   };
 
   const renderSection = (title, content, icon = null) => (
-    <DetailCard 
+    <DetailCard
       title={title}
       icon={icon}
     >
@@ -96,7 +98,7 @@ export default function QuoteDetailsModal({ visible, onClose, quote, user }) {
     </DetailCard>
   );
 
- 
+
 
   if (!quote) {
     return (
@@ -106,7 +108,7 @@ export default function QuoteDetailsModal({ visible, onClose, quote, user }) {
           <Text className="text-gray-600 text-lg mt-4 text-center">
             No quote details available
           </Text>
-          <TouchableOpacity 
+          <TouchableOpacity
             onPress={onClose}
             className="mt-6 bg-purple-100 px-6 py-3 rounded-lg"
           >
@@ -116,7 +118,7 @@ export default function QuoteDetailsModal({ visible, onClose, quote, user }) {
       </Modal>
     );
   }
-const inset=useSafeAreaInsets()
+  const inset = useSafeAreaInsets()
   return (
     <>
       <Modal
@@ -125,166 +127,166 @@ const inset=useSafeAreaInsets()
         transparent={false}
         onRequestClose={onClose}
       >
-      <View  className="flex-1  bg-gray-50">
-        {/* Header */}
-        <LinearGradient 
-        
-          colors={['#7c3aed', '#5b21b6']}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 0 }}
-          className="px-4 py-4 pt-12"
-        >
-          <View className="flex-row justify-between items-center mb-2">
-            <View>
-              <Text className="text-xl font-bold text-white">Quote #{quote.QuoteId}</Text>
-              <Text className="text-sm text-purple-100">Trip ID: {quote.TripId || 'N/A'}</Text>
+        <View className="flex-1  bg-gray-50">
+          {/* Header */}
+          <LinearGradient
+
+            colors={['#7c3aed', '#5b21b6']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 0 }}
+            className="px-4 py-4 pt-12"
+          >
+            <View className="flex-row justify-between items-center mb-2">
+              <View>
+                <Text className="text-xl font-bold text-white">Quote #{quote.QuoteId}</Text>
+                <Text className="text-sm text-purple-100">Trip ID: {quote.TripId || 'N/A'}</Text>
+              </View>
+              <TouchableOpacity
+                onPress={onClose}
+                className="p-2 -mr-2"
+              >
+                <Ionicons name="close" size={24} color="white" />
+              </TouchableOpacity>
             </View>
-            <TouchableOpacity 
-              onPress={onClose}
-              className="p-2 -mr-2"
-            >
-              <Ionicons name="close" size={24} color="white" />
-            </TouchableOpacity>
-          </View>
-          <View className="flex-row justify-between">
-            <Text className="text-sm text-purple-100">Created: {formatDate(quote.CreatedAt)}</Text>
-            {quote.Quotations && (
-              <Text className="text-sm text-purple-100">Total Quotes: {quote.Quotations.length || 0}</Text>
+            <View className="flex-row justify-between">
+              <Text className="text-sm text-purple-100">Created: {formatDate(quote.CreatedAt)}</Text>
+              {quote.Quotations && (
+                <Text className="text-sm text-purple-100">Total Quotes: {quote.Quotations.length || 0}</Text>
+              )}
+            </View>
+            {quote.SalesPersonEmail && (
+              <Text className="text-sm text-purple-100 mt-1">Sales: {quote.SalesPersonEmail}</Text>
             )}
-          </View>
-          {quote.SalesPersonEmail && (
-            <Text className="text-sm text-purple-100 mt-1">Sales: {quote.SalesPersonEmail}</Text>
-          )}
-        </LinearGradient>
+          </LinearGradient>
 
-        <ScrollView className="flex-1 p-4">
-          {/* Trip Summary */}
-      
-          {/* Contact Information */}
-          {renderSection('Contact Information', (
-            <View className="space-y-2">
-              <DetailRow 
-                label="Customer Name" 
-                value={quote['Client-Name']} 
-              />
-              <DetailRow 
-                label="Email" 
-                value={quote['Client-Email']} 
-              />
-              <DetailRow 
-                label="Phone" 
-                value={quote['Client-Contact']} 
-                isLast={true}
-              />
-            </View>
-          ), <Ionicons name="person" size={20} color="#6366f1" />)}
-    {renderSection('Trip Summary', (
-            <View className="space-y-3">
-              <View className="flex-row justify-between items-center">
-                <View>
-                  <Text className="text-sm text-gray-500">Destination</Text>
-                  <Text className="text-base font-medium">{quote.DestinationName}</Text>
-                </View>
-                <View className="items-end">
-                  <Text className="text-sm text-gray-500">Travel Dates</Text>
-                  <Text className="text-base font-medium">
-                    {formatDate(quote.TravelDate)} - {formatDate(quote.TravelEndDate)}
-                  </Text>
-                </View>
-              </View>
-              
-              <View className="flex-row justify-between">
-                <View>
-                  <Text className="text-sm text-gray-500">Travelers</Text>
-                  <Text className="text-base font-medium">
-                    {quote.NoOfPax} Adults
-                    {parseInt(quote.Child) > 0 && `, ${quote.Child} Children`}
-                    {parseInt(quote.Infant) > 0 && `, ${quote.Infant} Infants`}
-                  </Text>
-                </View>
-                <View className="items-end">
-                  <Text className="text-sm text-gray-500">Duration</Text>
-                  <Text className="text-base font-medium">
-                    {quote.Days} Days / {quote.Nights} Nights
-                  </Text>
-                </View>
-              </View>
-              
-              <View className="bg-blue-50 p-3 rounded-lg mt-2">
-                <Text className="text-blue-800 text-center font-medium">
-                  Total Package Price: {formatCurrency(quote.Costs?.TotalCost)}
-                </Text>
-              </View>
-            </View>
-          ), <Ionicons name="airplane" size={20} color="#6366f1" />)}
+          <ScrollView className="flex-1 p-4">
+            {/* Trip Summary */}
 
-          {/* Itinerary */}
-      
-          {/* Hotels */}
-      
-          {/* Inclusions & Exclusions */}
-        
-          {/* Price Breakdown */}
-          {quote.Costs && renderSection('Price Breakdown', (
-            <View className="space-y-2">
-              <DetailRow 
-                label="Package Cost" 
-                value={formatCurrency(quote.Costs.LandPackageCost)} 
-              />
-              <DetailRow 
-                label="Flight Cost" 
-                value={formatCurrency(quote.Costs.FlightCost)} 
-              />
-              <DetailRow 
-                label="Visa Cost" 
-                value={formatCurrency(quote.Costs.VisaCost)} 
-              />
-              {quote.Costs.GSTAmount > 0 && (
-                <DetailRow 
-                  label="GST" 
-                  value={formatCurrency(quote.Costs.GSTAmount)} 
+            {/* Contact Information */}
+            {renderSection('Contact Information', (
+              <View className="space-y-2">
+                <DetailRow
+                  label="Customer Name"
+                  value={quote['Client-Name']}
                 />
-              )}
-              {quote.Costs.TCSAmount > 0 && (
-                <DetailRow 
-                  label="TCS" 
-                  value={formatCurrency(quote.Costs.TCSAmount)} 
+                <DetailRow
+                  label="Email"
+                  value={quote['Client-Email']}
                 />
-              )}
-              <View className="border-t border-gray-200 mt-2 pt-2">
-                <DetailRow 
-                  label="Total Amount" 
-                  value={formatCurrency(quote.Costs.TotalCost)} 
+                <DetailRow
+                  label="Phone"
+                  value={quote['Client-Contact']}
                   isLast={true}
                 />
               </View>
-            </View>
-          ), <Ionicons name="receipt" size={20} color="#6366f1" />)}
+            ), <Ionicons name="person" size={20} color="#6366f1" />)}
+            {renderSection('Trip Summary', (
+              <View className="space-y-3">
+                <View className="flex-row justify-between items-center">
+                  <View>
+                    <Text className="text-sm text-gray-500">Destination</Text>
+                    <Text className="text-base font-medium">{quote.DestinationName}</Text>
+                  </View>
+                  <View className="items-end">
+                    <Text className="text-sm text-gray-500">Travel Dates</Text>
+                    <Text className="text-base font-medium">
+                      {formatDate(quote.TravelDate)} - {formatDate(quote.TravelEndDate)}
+                    </Text>
+                  </View>
+                </View>
 
-          <View className="h-8" /> {/* Bottom padding */}
-        </ScrollView>
+                <View className="flex-row justify-between">
+                  <View>
+                    <Text className="text-sm text-gray-500">Travelers</Text>
+                    <Text className="text-base font-medium">
+                      {quote.NoOfPax} Adults
+                      {parseInt(quote.Child) > 0 && `, ${quote.Child} Children`}
+                      {parseInt(quote.Infant) > 0 && `, ${quote.Infant} Infants`}
+                    </Text>
+                  </View>
+                  <View className="items-end">
+                    <Text className="text-sm text-gray-500">Duration</Text>
+                    <Text className="text-base font-medium">
+                      {quote.Days} Days / {quote.Nights} Nights
+                    </Text>
+                  </View>
+                </View>
 
-        {/* Footer Actions */}
-        <View className="bg-white border-t border-gray-100 p-4 flex-row space-x-3">
-          <TouchableOpacity 
-            className="flex-1 bg-white border border-purple-600 py-3 rounded-lg items-center"
-            onPress={onClose}
-          >
-            <Text className="text-purple-600 font-medium">Close</Text>
-          </TouchableOpacity>
-          <TouchableOpacity 
-            className="flex-1 bg-purple-600 py-3 rounded-lg items-center"
-            onPress={() => onViewQuotation(quote)}
-            disabled={isPrinting}
-          >
-            {isPrinting ? (
-              <ActivityIndicator color="white" />
-            ) : (
-              <Text className="text-white font-medium">Share Quote</Text>
-            )}
-          </TouchableOpacity>
+                <View className="bg-blue-50 p-3 rounded-lg mt-2">
+                  <Text className="text-blue-800 text-center font-medium">
+                    Total Package Price: {formatCurrency(quote.Costs?.TotalCost)}
+                  </Text>
+                </View>
+              </View>
+            ), <Ionicons name="airplane" size={20} color="#6366f1" />)}
+
+            {/* Itinerary */}
+
+            {/* Hotels */}
+
+            {/* Inclusions & Exclusions */}
+
+            {/* Price Breakdown */}
+            {quote.Costs && renderSection('Price Breakdown', (
+              <View className="space-y-2">
+                <DetailRow
+                  label="Package Cost"
+                  value={formatCurrency(quote.Costs.LandPackageCost)}
+                />
+                <DetailRow
+                  label="Flight Cost"
+                  value={formatCurrency(quote.Costs.FlightCost)}
+                />
+                <DetailRow
+                  label="Visa Cost"
+                  value={formatCurrency(quote.Costs.VisaCost)}
+                />
+                {quote.Costs.GSTAmount > 0 && (
+                  <DetailRow
+                    label="GST"
+                    value={formatCurrency(quote.Costs.GSTAmount)}
+                  />
+                )}
+                {quote.Costs.TCSAmount > 0 && (
+                  <DetailRow
+                    label="TCS"
+                    value={formatCurrency(quote.Costs.TCSAmount)}
+                  />
+                )}
+                <View className="border-t border-gray-200 mt-2 pt-2">
+                  <DetailRow
+                    label="Total Amount"
+                    value={formatCurrency(quote.Costs.TotalCost)}
+                    isLast={true}
+                  />
+                </View>
+              </View>
+            ), <Ionicons name="receipt" size={20} color="#6366f1" />)}
+
+            <View className="h-8" /> {/* Bottom padding */}
+          </ScrollView>
+
+          {/* Footer Actions */}
+          <View className="bg-white border-t border-gray-100 p-4 flex-row space-x-3">
+            <TouchableOpacity
+              className="flex-1 bg-white border border-purple-600 py-3 rounded-lg items-center"
+              onPress={onClose}
+            >
+              <Text className="text-purple-600 font-medium">Close</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              className="flex-1 bg-purple-600 py-3 rounded-lg items-center"
+              onPress={() => onViewQuotation(quote)}
+              disabled={isPrinting}
+            >
+              {isPrinting ? (
+                <ActivityIndicator color="white" />
+              ) : (
+                <Text className="text-white font-medium">Share Quote</Text>
+              )}
+            </TouchableOpacity>
+          </View>
         </View>
-      </View>
       </Modal>
 
       <PdfPreviewModal

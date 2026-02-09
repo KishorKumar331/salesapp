@@ -55,7 +55,10 @@ export default function ProfileScreen() {
             <Ionicons name="chevron-forward" size={20} color="#9ca3af" />
           </TouchableOpacity>
 
-          <TouchableOpacity className="flex-row items-center py-3 border-b border-gray-100">
+          <TouchableOpacity 
+            className="flex-row items-center py-3 border-b border-gray-100"
+            onPress={() => router.push('/(tabs)/settings')}
+          >
             <Ionicons name="settings-outline" size={24} color="#7c3aed" />
             <Text className="text-gray-900 font-medium ml-3 flex-1">Settings</Text>
             <Ionicons name="chevron-forward" size={20} color="#9ca3af" />
