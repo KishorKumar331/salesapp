@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import {
   View,
@@ -10,13 +9,10 @@ import {
   ActivityIndicator,
   StyleSheet,
 } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
-import DatePicker from "@/components/ui/DatePicker";
-import CustomPicker from "@/components/ui/CustomPicker";
-import { getUserProfile } from "@/utils/userProfile";
+
 import axios from "axios";
 import { useQueryClient } from "@tanstack/react-query";
-import PdfPreviewModal from "@/components/pdf/PdfPreviewModal";
+;
 
 const styles = StyleSheet.create({
   loadingOverlay: {
@@ -56,7 +52,7 @@ export default function InvoiceForm({
   defaultPax = "",
   defaultTravelDate = "",
 }) {
-  console.log(initialData)
+  console.log(initialData);
   const [step, setStep] = useState("fillForm"); // 'selectQuotation' or 'fillForm'
   const [quotations, setQuotations] = useState([]);
   const [selectedQuotation, setSelectedQuotation] = useState(null);
@@ -232,7 +228,9 @@ export default function InvoiceForm({
   // Prefill from navigation params (customer, dest, pax, date)
   useEffect(() => {
     setFormData((prev) => {
-      const pax = defaultPax ? parseInt(defaultPax, 10) || 0 : prev.travelerSummary.totalTravelers;
+      const pax = defaultPax
+        ? parseInt(defaultPax, 10) || 0
+        : prev.travelerSummary.totalTravelers;
       return {
         ...prev,
         customer: {
@@ -475,25 +473,6 @@ export default function InvoiceForm({
     return newNumber;
   };
 
-  const generatePreviewHtml = () => {
-    const invoiceNumber = ensureInvoiceNumber();
-    const today = new Date().toISOString().split("T")[0];
-    const dueDate = new Date(
-      Date.now() + 30 * 24 * 60 * 60 * 1000
-    )
-      .toISOString()
-      .split("T")[0];
-
-    const previewData = {
-      ...formData,
-      InvoiceNumber: invoiceNumber,
-      InvoiceDate: today,
-      DueDate: dueDate,
-    };
-
-    return generateInvoiceHtml(previewData);
-  };
-
   const handleOpenPreview = async () => {
     if (!validateForm()) return;
     if (isGeneratingPdf) return;
@@ -502,9 +481,7 @@ export default function InvoiceForm({
     try {
       const invoiceNumber = ensureInvoiceNumber();
       const today = new Date().toISOString().split("T")[0];
-      const dueDate = new Date(
-        Date.now() + 30 * 24 * 60 * 60 * 1000
-      )
+      const dueDate = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
         .toISOString()
         .split("T")[0];
 
@@ -517,14 +494,15 @@ export default function InvoiceForm({
       };
 
       console.log("Invoice data with user:", dataWithUser);
-      
+
       // Call the API endpoint to get HTML
       const response = await axios.post(
-        'https://0rq0f90i05.execute-api.ap-south-1.amazonaws.com/salesapp/packages-pdf-html',
+        "https://0rq0f90i05.execute-api.ap-south-1.amazonaws.com/salesapp/packages-pdf-html",
         {
+          type: "invoice",
           renderOnly: true,
           data: dataWithUser,
-          templateName: 'jr_pdf.hbs',
+          templateName: "invoiceip.hbs",
         }
       );
 
@@ -532,12 +510,16 @@ export default function InvoiceForm({
         console.log("HTML Content received from API");
         setPdfHtml(response.data);
         setPdfUri(null);
-        setFormDataToSubmit({ ...dataWithUser, CompanyId: userProfile?.companyId, CompanyEmail: userProfile?.email });
+        setFormDataToSubmit({
+          ...dataWithUser,
+          CompanyId: userProfile?.companyId,
+          CompanyEmail: userProfile?.email,
+        });
         setShowPdfModal(true);
         setRefreshKey((prev) => prev + 1);
         console.log("✅ HTML set for preview");
       } else {
-        throw new Error('Invalid response format from server');
+        throw new Error("Invalid response format from server");
       }
     } catch (error) {
       console.error("❌ Error generating preview:", error);
@@ -562,10 +544,12 @@ export default function InvoiceForm({
       await handleSubmitInvoice();
     } catch (error) {
       console.error("❌ Error submitting:", error);
-      Alert.alert("Error", "Failed to submit invoice: " + (error?.message || error));
+      Alert.alert(
+        "Error",
+        "Failed to submit invoice: " + (error?.message || error)
+      );
     }
   };
-
 
   const handleSelectQuotation = (quotation) => {
     if (!quotation) return;
@@ -618,7 +602,7 @@ export default function InvoiceForm({
     }
     return true;
   };
-const query=useQueryClient()
+  const query = useQueryClient();
   const handleSubmitInvoice = async () => {
     if (!validateForm()) return;
 
@@ -685,12 +669,15 @@ const query=useQueryClient()
       try {
         data = await response.json();
         console.log(data);
-        await axios.put(`https://0rq0f90i05.execute-api.ap-south-1.amazonaws.com/salesapp/lead-managment/create-quote`, {
-          invoiceId: data?.invoiceId,
-          TripId: initialData?.TripId,
-          LeadId: initialData?.leadId,
-          LatestQuotationId: cleanedData?.finalPackageQuotationId
-        });
+        await axios.put(
+          `https://0rq0f90i05.execute-api.ap-south-1.amazonaws.com/salesapp/lead-managment/create-quote`,
+          {
+            invoiceId: data?.invoiceId,
+            TripId: initialData?.TripId,
+            LeadId: initialData?.leadId,
+            LatestQuotationId: cleanedData?.finalPackageQuotationId,
+          }
+        );
       } catch {
         // if no json body
       }
@@ -704,8 +691,8 @@ const query=useQueryClient()
             if (onSubmit) {
               onSubmit(data || cleanedData);
             }
-          }
-        }
+          },
+        },
       ]);
     } catch (error) {
       console.error("Error saving invoice:", error);
@@ -716,11 +703,11 @@ const query=useQueryClient()
   };
 
   const quotationOptions = quotations.map((q) => ({
-    label: `${q.QuoteId} - ₹${q.Costs?.TotalCost?.toLocaleString("en-IN") || 0
-      }`,
+    label: `${q.QuoteId} - ₹${
+      q.Costs?.TotalCost?.toLocaleString("en-IN") || 0
+    }`,
     value: q.QuoteId,
   }));
-
 
   // Form Filling Step
   return (
@@ -732,7 +719,6 @@ const query=useQueryClient()
               Using Quotation #
               {selectedQuotation?.QuoteId || selectedQuotation?.id}
             </Text>
-          
           </View>
         )}
 
@@ -770,9 +756,7 @@ const query=useQueryClient()
             Customer Details
           </Text>
 
-          <Text className="text-sm font-medium text-gray-700 mb-2">
-            Name *
-          </Text>
+          <Text className="text-sm font-medium text-gray-700 mb-2">Name *</Text>
           <TextInput
             className="border border-gray-300 rounded-lg p-3 mb-3 bg-white"
             value={formData?.customer?.name || ""}
@@ -782,9 +766,7 @@ const query=useQueryClient()
             placeholder="Customer name"
           />
 
-          <Text className="text-sm font-medium text-gray-700 mb-2">
-            Email
-          </Text>
+          <Text className="text-sm font-medium text-gray-700 mb-2">Email</Text>
           <TextInput
             className="border border-gray-300 rounded-lg p-3 mb-3 bg-white"
             value={formData?.customer?.email || ""}
@@ -813,9 +795,7 @@ const query=useQueryClient()
             Address
           </Text>
 
-          <Text className="text-sm font-medium text-gray-700 mb-2">
-            Street
-          </Text>
+          <Text className="text-sm font-medium text-gray-700 mb-2">Street</Text>
           <TextInput
             className="border border-gray-300 rounded-lg p-3 mb-3 bg-white"
             value={formData?.customer?.address?.street || ""}
@@ -886,9 +866,9 @@ const query=useQueryClient()
             <Text className="text-sm text-gray-600 mb-1">Package Amount</Text>
             <Text className="text-2xl font-bold text-gray-900">
               ₹
-              {parseFloat(
-                formData?.pricing?.totalAmount || 0
-              ).toLocaleString("en-IN")}
+              {parseFloat(formData?.pricing?.totalAmount || 0).toLocaleString(
+                "en-IN"
+              )}
             </Text>
             <Text className="text-xs text-gray-500 mt-1">
               From selected quotation
@@ -958,18 +938,18 @@ const query=useQueryClient()
                 <Text className="text-gray-700">GST:</Text>
                 <Text className="font-semibold text-gray-900">
                   ₹
-                  {parseFloat(
-                    formData?.pricing?.gstAmount || 0
-                  ).toLocaleString("en-IN")}
+                  {parseFloat(formData?.pricing?.gstAmount || 0).toLocaleString(
+                    "en-IN"
+                  )}
                 </Text>
               </View>
               <View className="flex-row justify-between">
                 <Text className="text-gray-700">TCS:</Text>
                 <Text className="font-semibold text-gray-900">
                   ₹
-                  {parseFloat(
-                    formData?.pricing?.tcsAmount || 0
-                  ).toLocaleString("en-IN")}
+                  {parseFloat(formData?.pricing?.tcsAmount || 0).toLocaleString(
+                    "en-IN"
+                  )}
                 </Text>
               </View>
               <View className="border-t border-purple-300 pt-2 mt-2">
@@ -978,8 +958,7 @@ const query=useQueryClient()
                     Invoice Total:
                   </Text>
                   <Text className="text-lg font-bold text-purple-700">
-                    ₹
-                    {calculateInvoiceTotal().toLocaleString("en-IN")}
+                    ₹{calculateInvoiceTotal().toLocaleString("en-IN")}
                   </Text>
                 </View>
               </View>
@@ -1058,10 +1037,7 @@ const query=useQueryClient()
               <Text className="font-semibold text-gray-900">
                 ₹
                 {(formData?.payment?.installments || [])
-                  .reduce(
-                    (sum, inst) => sum + (inst.installmentAmount || 0),
-                    0
-                  )
+                  .reduce((sum, inst) => sum + (inst.installmentAmount || 0), 0)
                   .toLocaleString("en-IN")}
               </Text>
             </View>
@@ -1079,7 +1055,7 @@ const query=useQueryClient()
                 0
               ) !== calculateInvoiceTotal() && (
                 <Text className="text-red-600 text-xs mt-2">
-                  ⚠️ Installments don't match invoice total (₹
+                  ⚠️ Installments don&apos;t match invoice total (₹
                   {calculateInvoiceTotal().toLocaleString("en-IN")})
                 </Text>
               )}
@@ -1165,9 +1141,7 @@ const query=useQueryClient()
                 <TextInput
                   className="border border-gray-300 rounded-lg p-3 mb-3 bg-white"
                   value={claim.name}
-                  onChangeText={(value) =>
-                    updateTcsClaim(index, "name", value)
-                  }
+                  onChangeText={(value) => updateTcsClaim(index, "name", value)}
                   placeholder="Name"
                 />
 
@@ -1178,11 +1152,7 @@ const query=useQueryClient()
                   className="border border-gray-300 rounded-lg p-3 bg-white"
                   value={claim.percentage.toString()}
                   onChangeText={(value) =>
-                    updateTcsClaim(
-                      index,
-                      "percentage",
-                      parseFloat(value) || 0
-                    )
+                    updateTcsClaim(index, "percentage", parseFloat(value) || 0)
                   }
                   placeholder="Percentage"
                   keyboardType="numeric"
@@ -1219,9 +1189,7 @@ const query=useQueryClient()
             onPress={handleOpenPreview}
             className="bg-purple-600 rounded-xl p-4 flex-1 ml-2 items-center"
           >
-            <Text className="text-white font-bold">
-              Preview & Save
-            </Text>
+            <Text className="text-white font-bold">Preview & Save</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -1246,4 +1214,4 @@ const query=useQueryClient()
       />
     </ScrollView>
   );
-};
+}

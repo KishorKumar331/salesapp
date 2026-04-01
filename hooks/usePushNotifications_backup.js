@@ -426,7 +426,7 @@ export async function registerDeviceWithBackend({ userId, pushToken }) {
 
     const payload = {
       UserId: userId,
-      DeviceId: deviceId,
+      DeviceId: '-dev-deviceid',
       Platform: Platform.OS,              // "android" / "ios"
       PushToken: pushToken,
       AppVersion: resolveAppVersion(),

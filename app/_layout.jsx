@@ -99,6 +99,11 @@ import { Stack, router } from "expo-router";
 import { useEffect, useRef, useState } from "react";
 import "../global.css";
 import { Platform } from "react-native";
+import { Amplify } from 'aws-amplify';
+import amplifyconfig from './src/amplifyconfiguration.json';
+import { AuthProvider } from "@/components/auth/AuthManager";
+
+Amplify.configure(amplifyconfig);
 
 /* ==================== CONFIG ==================== */
 
@@ -112,6 +117,8 @@ async function registerDeviceWithBackend({ userId, pushToken }) {
     const payload = {
       UserId: userId,
       Platform: Platform.OS,
+            DeviceId: '-dev-deviceid',
+
       PushToken: pushToken,
       AppVersion: "1.0.0",
       LastActiveAt: new Date().toISOString(),
@@ -130,6 +137,8 @@ async function registerDeviceWithBackend({ userId, pushToken }) {
     console.error("❌ Device registration failed:", e);
   }
 }
+
+
 
 /* ==================== ROOT ==================== */
 
@@ -202,11 +211,13 @@ export default function RootLayout() {
   const queryClient = new QueryClient();
 
   return (
-    <QueryClientProvider client={queryClient}>
-      <Stack>
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="(auth)" options={{ headerShown: false }} />
-      </Stack>
-    </QueryClientProvider>
+    <AuthProvider>
+      <QueryClientProvider client={queryClient}>
+        <Stack>
+          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+          <Stack.Screen name="(auth)" options={{ headerShown: false }} />
+        </Stack>
+      </QueryClientProvider>
+    </AuthProvider>
   );
 }

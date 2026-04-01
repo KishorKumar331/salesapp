@@ -1,19 +1,9 @@
-
-
-
 import React, { useState } from "react";
-import {
-  Alert,
-  View,
-  ActivityIndicator,
-  Text,
-  StyleSheet,
-} from "react-native";
+import { Alert, View, ActivityIndicator, Text, StyleSheet } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
 import IntegratedQuotationForm from "@/components/form/IntegratedQuotationForm";
 import { clearQuotationDraft } from "@/storage/quotationDrafts";
 import PdfPreviewModal from "@/components/pdf/PdfPreviewModal";
-import { getInstantHtmlPreview } from "../../utils/pdfUtils";
 import { useUserProfile } from "@/hooks/useUserProfile";
 import axios from "axios";
 
@@ -21,7 +11,6 @@ const QuotationScreen = () => {
   const router = useRouter();
   const params = useLocalSearchParams();
   const { user, loading: userLoading } = useUserProfile();
-  console.log(user)
   const [isPrinting, setIsPrinting] = useState(false);
   const [pdfUri, setPdfUri] = useState(null);
   const [pdfHtml, setPdfHtml] = useState(null);
@@ -31,8 +20,9 @@ const QuotationScreen = () => {
 
   const leadData = params.leadData ? JSON.parse(params.leadData) : null;
 
-  const followUpData = params.FollowleadData ? JSON.parse(params.FollowleadData) : null;
-
+  const followUpData = params.FollowleadData
+    ? JSON.parse(params.FollowleadData)
+    : null;
 
   const handleFormSubmit = async (data) => {
     if (isPrinting) return;
@@ -41,17 +31,18 @@ const QuotationScreen = () => {
     try {
       const dataWithUser = {
         ...data,
-        user
+        user,
       };
 
       console.log("Data with user:", dataWithUser);
       // Call the new API endpoint to get HTML
       const response = await axios.post(
-        'https://0rq0f90i05.execute-api.ap-south-1.amazonaws.com/salesapp/packages-pdf-html',
+        "https://0rq0f90i05.execute-api.ap-south-1.amazonaws.com/salesapp/packages-pdf-html",
         {
+          type: "quotation",
           renderOnly: true,
           data: dataWithUser,
-          templateName: 'ip_pdf.hbs',
+          templateName: "ip_pdf.hbs",
         }
       );
 
@@ -59,12 +50,16 @@ const QuotationScreen = () => {
         console.log("HTML Content received from API");
         setPdfHtml(response.data);
         setPdfUri(null);
-        setFormDataToSubmit({ ...data, CompanyId: user?.CompanyId, CompanyEmail: user?.Email });
+        setFormDataToSubmit({
+          ...data,
+          CompanyId: user?.CompanyId,
+          CompanyEmail: user?.Email,
+        });
         setShowPdfModal(true);
         setRefreshKey((prev) => prev + 1);
         console.log("✅ HTML set for preview");
       } else {
-        throw new Error('Invalid response format from server');
+        throw new Error("Invalid response format from server");
       }
     } catch (error) {
       console.error("❌ Error generating preview:", error);
@@ -119,12 +114,15 @@ const QuotationScreen = () => {
           onPress: () => {
             setShowPdfModal(false);
             router.replace("/(tabs)");
-          }
-        }
+          },
+        },
       ]);
     } catch (error) {
       console.error("❌ Error submitting:", error);
-      Alert.alert("Error", "Failed to submit quotation: " + (error?.message || error));
+      Alert.alert(
+        "Error",
+        "Failed to submit quotation: " + (error?.message || error)
+      );
     }
   };
 
