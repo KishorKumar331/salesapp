@@ -1,10 +1,16 @@
-import { View, Text, Pressable, ScrollView, Dimensions, TextInput, Alert, Modal, ActivityIndicator, Platform, ToastAndroid } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { Amplify } from "aws-amplify";
+import { signIn, signOut } from "aws-amplify/auth";
 import { LinearGradient } from "expo-linear-gradient";
 import { router } from "expo-router";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import {  useSafeAreaInsets } from "react-native-safe-area-context";
-import { useState, useRef } from "react";
-import { Ionicons } from "@expo/vector-icons";
+import { useRef, useState } from "react";
+import { ActivityIndicator, Alert, Dimensions, Modal, Platform, Pressable, ScrollView, Text, TextInput, ToastAndroid, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import awsExports from "../../aws-exports";
+
+// Ensure Amplify is configured locally for the auth chunk
+Amplify.configure(awsExports);
 
 const OnBoardingPage = () => {
   const insets = useSafeAreaInsets();
@@ -13,8 +19,9 @@ const OnBoardingPage = () => {
   const scrollViewRef = useRef(null);
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [loginInput, setLoginInput] = useState('');
+  const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  
+
   // Carousel data
   const carouselImages = [
     { id: 1, title: "Welcome to Our Platform", bgColor: "#DCEAF7" },
@@ -49,59 +56,89 @@ const OnBoardingPage = () => {
   };
 
   const handleLogin = async () => {
-    if (!loginInput.trim()) {
-      Alert.alert('Error', 'Please enter your email or phone number');
+    console.log("---- Login Button Clicked ----");
+
+    if (!loginInput.trim() || !password.trim()) {
+      if (Platform.OS === 'web') window.alert("Error: Please enter your email/phone and password");
+      else Alert.alert('Error', 'Please enter your email/phone and password');
+      console.log("Aborted: Empty fields");
       return;
     }
 
+    console.log("Inputs provided:", loginInput, "Password length:", password.length);
     setIsLoading(true);
-    
-    try {
-      let apiUrl = 'https://sg76vqy4vi.execute-api.ap-south-1.amazonaws.com/salesapp/Auth?';
-      
-      // Determine if input is email or phone
-      if (isValidEmail(loginInput)) {
-        apiUrl += `Email=${encodeURIComponent(loginInput)}`;
-      } else if (isValidPhone(loginInput)) {
-        apiUrl += `Phone=${encodeURIComponent(loginInput)}`;
-      } else {
-        Alert.alert('Error', 'Please enter a valid email or phone number');
-        setIsLoading(false);
-        return;
-      }
 
-      const response = await fetch(apiUrl, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+    try {
+      // Force clear any stuck local sessions before starting fresh
+      try { await signOut(); } catch (e) { }
+
+      console.log("Attempting Cognito signIn...");
+      const { isSignedIn } = await signIn({
+        username: loginInput.trim(),
+        password
       });
 
-      const result = await response.json();
-      
-      if (response.ok) {
-        if (Array.isArray(result) && result.length === 0) {
-          // Empty array means no profile found
-          Alert.alert('Not Found', 'No account found with this email/phone. Please create an account first.');
-        } else if (result && (Array.isArray(result) ? result.length > 0 : Object.keys(result).length > 0)) {
-          // Profile found, store to localStorage and navigate
-          await AsyncStorage.setItem('userProfile', JSON.stringify(result));
-          await AsyncStorage.setItem('createAccount', 'true');
-          
-          showToast('Login successful!');
-          setShowLoginModal(false);
-          router.replace('/(tabs)');
+      console.log("Cognito SignIn response:", isSignedIn);
+
+      if (isSignedIn) {
+        console.log("User successfully signed into Cognito. Calling DB API...");
+        let apiUrl = 'https://sg76vqy4vi.execute-api.ap-south-1.amazonaws.com/profile/Auth?';
+
+        if (isValidEmail(loginInput)) {
+          console.log("Detected Email input");
+          apiUrl += `Email=${encodeURIComponent(loginInput)}`;
+        } else if (isValidPhone(loginInput)) {
+          apiUrl += `Phone=${encodeURIComponent(loginInput)}`;
+        }
+
+        const response = await fetch(apiUrl, {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        });
+
+        const result = await response.json();
+
+        if (response.ok) {
+          const hasProfile = result && (Array.isArray(result) ? result.length > 0 : Object.keys(result).length > 0);
+
+          if (!hasProfile) {
+            await signOut();
+            setShowLoginModal(false);
+            router.replace('/(auth)/unauthorized');
+          } else {
+            await AsyncStorage.setItem('userProfile', JSON.stringify(result));
+            showToast('Login successful!');
+            setShowLoginModal(false);
+            router.replace('/(tabs)');
+          }
         } else {
-          Alert.alert('Error', 'Invalid response from server');
+          console.error("API Error: invalid response from server");
+          if (Platform.OS === 'web') window.alert("Error: Invalid response from external Database");
+          else Alert.alert('Error', 'Invalid response from server');
         }
       } else {
-        Alert.alert('Error', result.message || 'Login failed. Please try again.');
+        console.log("Cognito returned unexpected state (MFA required?)");
+        if (Platform.OS === 'web') window.alert("Cognito sign in returned false. Multi-factor authentication might be required.");
       }
     } catch (error) {
-      Alert.alert('Error', 'Network error. Please check your connection and try again.');
-      console.error('Login error:', error);
+      console.error("---- COGNITO CRASH TRACE ----");
+      console.error(error);
+
+      const errorMessage = error.message || 'Network error. Please try again.';
+      if (Platform.OS === 'web') {
+        window.alert(`Login Failed: ${errorMessage}`);
+      } else {
+        if (error.name === 'NotAuthorizedException') {
+          Alert.alert('Login Failed', 'Incorrect username or password.');
+        } else {
+          Alert.alert('Login Failed', errorMessage);
+        }
+      }
     } finally {
       setIsLoading(false);
+      console.log("---- Login Flow End ----");
     }
   };
 
@@ -115,7 +152,7 @@ const OnBoardingPage = () => {
   };
 
   return (
-    <View style={{marginBottom:insets.bottom}} className="flex-1 bg-gray-50">
+    <View style={{ marginBottom: insets.bottom }} className="flex-1 bg-gray-50">
       <LinearGradient
         colors={['#7c3aed', '#5b21b6']}
         start={{ x: 0, y: 0 }}
@@ -128,9 +165,6 @@ const OnBoardingPage = () => {
           <View className="flex-row gap-2">
             <Pressable onPress={() => setShowLoginModal(true)} className="px-4 py-2 rounded-full bg-white/20">
               <Text className="text-white font-medium">Login</Text>
-            </Pressable>
-            <Pressable onPress={()=>router.replace("/(auth)/createAccount")} className="px-4 py-2 rounded-full bg-white/20">
-              <Text className="text-white font-medium">Sign Up</Text>
             </Pressable>
           </View>
         </View>
@@ -169,9 +203,8 @@ const OnBoardingPage = () => {
           {carouselImages.map((_, index) => (
             <View
               key={index}
-              className={`h-2 rounded-full ${
-                index === currentIndex ? 'w-8 bg-purple-500' : 'w-2 bg-gray-300'
-              }`}
+              className={`h-2 rounded-full ${index === currentIndex ? 'w-8 bg-purple-500' : 'w-2 bg-gray-300'
+                }`}
             />
           ))}
         </View>
@@ -208,23 +241,34 @@ const OnBoardingPage = () => {
                 value={loginInput}
                 onChangeText={setLoginInput}
                 placeholder="Enter your email or phone number"
-                keyboardType="email-address"
                 autoCapitalize="none"
                 className="bg-gray-50 rounded-xl px-4 py-3 text-gray-900 border border-gray-200"
                 editable={!isLoading}
               />
             </View>
 
+            <View className="mb-6">
+              <Text className="text-gray-700 font-medium mb-2">Password</Text>
+              <TextInput
+                value={password}
+                onChangeText={setPassword}
+                placeholder="Enter your password"
+                secureTextEntry
+                className="bg-gray-50 rounded-xl px-4 py-3 text-gray-900 border border-gray-200"
+                editable={!isLoading}
+              />
+            </View>
+
             <View className="space-y-3">
-              <Pressable 
+              <Pressable
                 onPress={handleLogin}
                 disabled={isLoading}
                 className="overflow-hidden rounded-full"
               >
-                <LinearGradient 
-                  colors={["#7c3aed", "#5b21b6"]} 
-                  start={{ x: 0, y: 0 }} 
-                  end={{ x: 1, y: 1 }} 
+                <LinearGradient
+                  colors={["#7c3aed", "#5b21b6"]}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
                   style={{ paddingVertical: 16, borderRadius: 9999 }}
                 >
                   <View className="flex-row items-center justify-center">
@@ -234,17 +278,6 @@ const OnBoardingPage = () => {
                     </Text>
                   </View>
                 </LinearGradient>
-              </Pressable>
-
-              <Pressable 
-                onPress={() => {
-                  setShowLoginModal(false);
-                  router.push('/(auth)/createAccount');
-                }}
-                className="bg-gray-200 rounded-full py-4"
-                disabled={isLoading}
-              >
-                <Text className="text-center text-gray-700 font-semibold">Create New Account</Text>
               </Pressable>
             </View>
           </View>

@@ -49,7 +49,7 @@ const QuotationCards = ({ leadData }) => {
               LeadId:leadData?.LeadId,
               Quotations:leadData?.Quotations,
               ClientLeadDetails: {
-                FullName: leadData?.['Client-Name'] || '',
+                FullName: leadData?.clientName || leadData?.['Client-Name'] || '',
                 Contact: leadData?.['Client-Contact'] || '',
                 Email: leadData?.['Client-Email'] || '',
                 TravelDate: leadData?.['Client-TravelDate'] || '',
@@ -100,7 +100,7 @@ const QuotationCards = ({ leadData }) => {
                 {leadData?.CompanyId || 'Lead'} - {leadData?.SalesStatus || 'New'}
               </Text>
               <Text className="text-gray-500 text-sm">
-                {leadData?.['Client-Name'] || 'Unknown Client'}
+                {leadData?.clientName || leadData?.['Client-Name'] || 'Unknown Client'}
               </Text>
             </View>
           </View>
@@ -236,7 +236,7 @@ const QuotationCards = ({ leadData }) => {
         onClose={() => setIsModalVisible(false)}
         onSubmit={() => setIsModalVisible(false)}
         initialData={{
-          customerName: leadData?.['Client-Name'] || '',
+          customerName: leadData?.clientName || leadData?.['Client-Name'] || '',
           contactNumber: leadData?.['Client-Contact'] || '',
           destination: leadData?.['Client-Destination'] || '',
           departure: leadData?.['Client-DepartureCity'] || '',

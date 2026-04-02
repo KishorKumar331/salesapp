@@ -79,23 +79,11 @@ export default function CreateInvoiceScreen() {
 
   const handleSubmit = async (formData) => {
     try {
-      setLoading(true);
-      // Here you would typically save the invoice to your backend
-      console.log('Submitting invoice:', formData);
-
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-
-      // After successful submission, navigate back
+      // InvoiceForm already saved the invoice to the backend
+      console.log('Invoice successfully generated:', formData);
       router.back();
-
-      // Show success message
-      alert('Invoice created successfully!');
     } catch (error) {
-      console.error('Error saving invoice:', error);
-      alert('Failed to save invoice. Please try again.');
-    } finally {
-      setLoading(false);
+      console.error('Error handling invoice submission:', error);
     }
   };
 

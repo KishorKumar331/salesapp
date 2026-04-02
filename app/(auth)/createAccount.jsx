@@ -1,4 +1,4 @@
-import { View, Text, TextInput, Pressable, ScrollView, Alert, Image, KeyboardAvoidingView, Platform, ToastAndroid } from 'react-native';
+import { View, Text, TextInput, Pressable, ScrollView, Alert, Image, KeyboardAvoidingView, Platform, ToastAndroid, Modal, ActivityIndicator } from 'react-native';
 import React, { useState, useEffect } from 'react';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -7,13 +7,18 @@ import { router } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as ImagePicker from 'expo-image-picker';
 import * as FileSystem from 'expo-file-system/legacy';
+import { signUp, confirmSignUp } from 'aws-amplify/auth';
 
 const CreateAccountPage = () => {
   const insets = useSafeAreaInsets();
   const [currentStep, setCurrentStep] = useState(1);
   const [isLoading, setIsLoading] = useState(true);
+  const [showOtpModal, setShowOtpModal] = useState(false);
+  const [otp, setOtp] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     Email: '',
+    Password: '',
     Phone: '',
     FullName: '',
     Role: 'Salesperson',
@@ -204,7 +209,7 @@ const CreateAccountPage = () => {
   const validateStep = (step) => {
     switch (step) {
       case 1:
-        return formData.FullName && formData.Email && formData.Phone && formData.Role;
+        return formData.FullName && formData.Email && formData.Password && formData.Phone && formData.Role;
       case 2:
         return formData.CompanyName && formData.CompanyAddress;
       case 3:
@@ -279,22 +284,79 @@ const CreateAccountPage = () => {
 
   const handleSubmit = async () => {
     try {
+      setIsSubmitting(true);
+      const email = formData.Email.trim().toLowerCase();
+      // Prefix +91 for India as default if missing (+ needed by AWS)
+      const phoneNumber = formData.Phone.startsWith('+') ? formData.Phone : `+91${formData.Phone}`;
+      
+      const { isSignUpComplete, nextStep } = await signUp({
+        username: email,
+        password: formData.Password,
+        options: {
+          userAttributes: {
+            email,
+            phone_number: phoneNumber
+          }
+        }
+      });
+      
+      if (nextStep?.signUpStep === 'CONFIRM_SIGN_UP') {
+        setShowOtpModal(true);
+      } else if (isSignUpComplete) {
+        await pushToBackendAndNavigate();
+      }
+    } catch (error) {
+       Alert.alert('Sign Up Error', error.message || 'Failed to sign up.');
+       console.error('Cognito sign up error:', error);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleVerifyOtp = async () => {
+    if (!otp.trim()) {
+      Alert.alert('Error', 'Please enter the verification code');
+      return;
+    }
+    
+    try {
+      setIsSubmitting(true);
+      const email = formData.Email.trim().toLowerCase();
+      
+      const { isSignUpComplete } = await confirmSignUp({
+        username: email,
+        confirmationCode: otp
+      });
+      
+      if (isSignUpComplete) {
+        setShowOtpModal(false);
+        await pushToBackendAndNavigate();
+      }
+    } catch (error) {
+      Alert.alert('Verification Failed', 'Invalid code or it has expired.');
+      console.error('OTP error:', error);
+    } finally {
+       setIsSubmitting(false);
+    }
+  };
+
+  const pushToBackendAndNavigate = async () => {
+    try {
       const completeFormData = fillEmptyFields(formData);
+      const { Password, ...backendData } = completeFormData;
       
       const response = await fetch('https://sg76vqy4vi.execute-api.ap-south-1.amazonaws.com/salesapp/Auth', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(completeFormData),
+        body: JSON.stringify(backendData),
       });
 
       const result = await response.json();
       
       if (response.ok) {
-        // Save account data locally for payment gateway
-        
-        await AsyncStorage.setItem('userProfile', JSON.stringify(completeFormData));
+        await AsyncStorage.setItem('userProfile', JSON.stringify(backendData));
         await AsyncStorage.removeItem('createAccountFormData');
         await AsyncStorage.setItem('accountCreated', 'true');
         
@@ -302,7 +364,7 @@ const CreateAccountPage = () => {
         
         router.push('/(auth)/PaymentGateway/payment');
       } else {
-        Alert.alert('Error', result.message || 'Failed to create account. Please try again.');
+        Alert.alert('Error', result.message || 'Failed to sync account profile. Please try again.');
         console.error('API Error:', result);
       }
     } catch (error) {
@@ -365,6 +427,17 @@ const CreateAccountPage = () => {
               placeholder="Enter your email"
               keyboardType="email-address"
               autoCapitalize="none"
+              className="bg-gray-50 rounded-xl px-4 py-3 text-gray-900"
+            />
+          </View>
+
+          <View>
+            <Text className="text-gray-700 font-medium mb-2">Password *</Text>
+            <TextInput
+              value={formData.Password}
+              onChangeText={(value) => updateFormData('Password', value)}
+              placeholder="Enter your password"
+              secureTextEntry
               className="bg-gray-50 rounded-xl px-4 py-3 text-gray-900"
             />
           </View>
@@ -648,6 +721,61 @@ const CreateAccountPage = () => {
 
         {renderButtons()}
       </KeyboardAvoidingView>
+
+      {/* OTP Modal */}
+      <Modal
+        visible={showOtpModal}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={() => setShowOtpModal(false)}
+      >
+        <View className="flex-1 bg-black/50 justify-center px-6">
+          <View className="bg-white rounded-2xl p-6">
+            <View className="flex-row items-center justify-between mb-6">
+              <Text className="text-xl font-bold text-gray-900">Verify Email</Text>
+              <Pressable onPress={() => setShowOtpModal(false)}>
+                <Ionicons name="close" size={24} color="#6b7280" />
+              </Pressable>
+            </View>
+
+            <Text className="text-gray-600 mb-4">
+              We've sent a verification code to {formData.Email}. Please enter it below.
+            </Text>
+
+            <View className="mb-6">
+              <TextInput
+                value={otp}
+                onChangeText={setOtp}
+                placeholder="Enter 6-digit code"
+                keyboardType="numeric"
+                className="bg-gray-50 rounded-xl px-4 py-3 text-gray-900 border border-gray-200 text-center tracking-widest text-lg"
+                editable={!isSubmitting}
+                maxLength={6}
+              />
+            </View>
+
+            <Pressable 
+              onPress={handleVerifyOtp}
+              disabled={isSubmitting}
+              className="overflow-hidden rounded-full"
+            >
+              <LinearGradient 
+                colors={["#7c3aed", "#5b21b6"]} 
+                start={{ x: 0, y: 0 }} 
+                end={{ x: 1, y: 1 }} 
+                style={{ paddingVertical: 16, borderRadius: 9999 }}
+              >
+                <View className="flex-row items-center justify-center">
+                  {isSubmitting && <ActivityIndicator size="small" color="white" className="mr-2" />}
+                  <Text className="text-center text-white font-semibold text-base">
+                    {isSubmitting ? 'Verifying...' : 'Verify Code'}
+                  </Text>
+                </View>
+              </LinearGradient>
+            </Pressable>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 };
