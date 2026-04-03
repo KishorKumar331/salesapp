@@ -116,17 +116,17 @@ const FollowUpCards = ({ data }) => {
                 </View>
                 <View className="flex-row items-center">
                   <Text className="text-gray-900 font-medium text-base mr-2">
-                    {data["Client-Name"]}
+                    {data.clientName || data["Client-Name"]}
                   </Text>
                   <Text className="text-gray-500 text-sm">
-                    {data["Client-Email"]}
+                    {data.clientEmail || data["Client-Email"]}
                   </Text>
                 </View>
                 <View className="flex-row items-center mt-1">
                   <TouchableOpacity
                     className="flex-row items-center"
                     onPress={() => {
-                      const phoneNumber = data["Client-Contact"];
+                      const phoneNumber = data.clientContact || data["Client-Contact"];
                       if (phoneNumber) {
                         Linking.openURL(`tel:${phoneNumber}`);
                       } else {
@@ -136,7 +136,7 @@ const FollowUpCards = ({ data }) => {
                   >
                     <Ionicons name="call" size={16} color="#10B981" />
                     <Text className="text-green-500 ml-1">
-                      {data["Client-Contact"] || "No contact"}
+                      {data.clientContact || data["Client-Contact"] || "No contact"}
                     </Text>
                   </TouchableOpacity>
                 </View>
@@ -155,21 +155,21 @@ const FollowUpCards = ({ data }) => {
                 <View className="flex-1">
                   <Text className="text-gray-500 text-xs">From</Text>
                   <Text className="text-gray-900 font-medium">
-                    {data["Client-DepartureCity"] || 'N/A'}
+                    {data.departureCity || data["Client-DepartureCity"] || 'N/A'}
                   </Text>
                 </View>
                 <Ionicons className='relative right-5' name="arrow-forward" size={16} color="#6b7280" />
                 <View className="flex-1 ml-2">
                   <Text className="text-gray-500 text-xs">To</Text>
                   <Text className="text-gray-900 font-medium">
-                    {data["Client-Destination"] || data.DestinationName || 'N/A'}
+                    {data.destination || data["Client-Destination"] || data.DestinationName || 'N/A'}
                   </Text>
                 </View>
                 <View className=" flex-row justify-end">
                   <View className="bg-blue-50 px-3 py-1 rounded-full flex-row items-center">
                     <Ionicons name="calendar" size={12} color="#3b82f6" style={{ marginRight: 4 }} />
                     <Text className="text-blue-700 font-semibold text-xs">
-                      {new Date(data["Client-TravelDate"]).toLocaleDateString('en-US', {
+                      {new Date(data.travelDate || data["Client-TravelDate"]).toLocaleDateString('en-US', {
                         month: 'short',
                         day: 'numeric',
                         year: 'numeric'
@@ -188,7 +188,7 @@ const FollowUpCards = ({ data }) => {
               <View>
                 <Text className="text-gray-500 text-xs">Budget</Text>
                 <Text className="text-purple-600 text-lg font-bold">
-                  ₹{data["Client-Budget"]?.toLocaleString() || 'N/A'}
+                  ₹{data.budget?.toLocaleString() || data["Client-Budget"]?.toLocaleString() || 'N/A'}
                 </Text>
               </View>
 
@@ -196,19 +196,19 @@ const FollowUpCards = ({ data }) => {
                 <View className="mx-2">
                   <Text className="text-gray-500 text-xs">PAX</Text>
                   <Text className="text-gray-900 font-medium">
-                    {data["Client-Adults"] || 0}
+                    {data.pax || data["Client-Adults"] || 0}
                   </Text>
                 </View>
                 <View className='mx-2'>
                   <Text className="text-gray-500 text-xs">Child</Text>
                   <Text className="text-gray-900 font-medium">
-                    {data["Client-Children"] || 0}
+                    {data.child || data["Client-Children"] || 0}
                   </Text>
                 </View>
                 <View className='mx-2'>
                   <Text className="text-gray-500 text-xs">Infants</Text>
                   <Text className="text-gray-900 font-medium">
-                    {data["Client-Infants"] || 0}
+                    {data.infant || data["Client-Infants"] || 0}
                   </Text>
                 </View>
               </View>
@@ -306,17 +306,17 @@ const FollowUpCards = ({ data }) => {
                   </View>
                   <View className="flex-row items-center">
                     <Text className="text-gray-900 font-medium text-base mr-2">
-                      {data["Client-Name"]}
+                      {data.clientName || data["Client-Name"]}
                     </Text>
                     <Text className="text-gray-500 text-sm">
-                      {data["Client-Email"]}
+                      {data.clientEmail || data["Client-Email"]}
                     </Text>
                   </View>
                   <View className="flex-row items-center mt-1">
                     <TouchableOpacity
                       className="flex-row items-center"
                       onPress={() => {
-                        const phoneNumber = data["Client-Contact"];
+                        const phoneNumber = data.clientContact || data["Client-Contact"];
                         if (phoneNumber) {
                           Linking.openURL(`tel:${phoneNumber}`);
                         } else {
@@ -326,7 +326,7 @@ const FollowUpCards = ({ data }) => {
                     >
                       <Ionicons name="call" size={16} color="#10B981" />
                       <Text className="text-green-500 ml-1">
-                        {data["Client-Contact"] || "No contact"}
+                        {data.clientContact || data["Client-Contact"] || "No contact"}
                       </Text>
                     </TouchableOpacity>
                   </View>

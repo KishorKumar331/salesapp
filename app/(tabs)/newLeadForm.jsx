@@ -10,6 +10,7 @@ import {
 } from "react-native";
 import { useForm, Controller } from "react-hook-form";
 import { Ionicons } from "@expo/vector-icons";
+import { router } from "expo-router";
 import Navbar from "@/components/Navbar";
 import DatePicker from "@/components/ui/DatePicker";
 import CustomPicker from "@/components/ui/CustomPicker";
@@ -67,32 +68,31 @@ export default function NewLeadForm() {
       const salesPersonInfo = await getUserProfile();
       console.log(salesPersonInfo);
 
-      // Create the lead object matching your JSON structure
       const leadData = {
-        CompanyId: salesPersonInfo.companyId,
-        CompanyName: salesPersonInfo.companyName,
+        company: salesPersonInfo?.organization?.company || salesPersonInfo?.companyId || salesPersonInfo?.companyName,
 
-        "Client-Name": data["Client-Name"],
-        "Client-Email": data["Client-Email"],
-        "Client-Contact": data["Client-Contact"],
-        "Client-DepartureCity": data["Client-DepartureCity"],
-        "Client-Destination": isMultiDestination
+        "clientName": data["Client-Name"],
+        "clientEmail": data["Client-Email"],
+        "clientContact": data["Client-Contact"],
+        "departureCity": data["Client-DepartureCity"],
+        "destination": isMultiDestination
           ? selectedDestinations.length > 0
             ? selectedDestinations[0]
             : data["Client-Destination"]
           : data["Client-Destination"],
-        "Client-Destinations": isMultiDestination
+        "otherDestinations": isMultiDestination
           ? selectedDestinations
           : [data["Client-Destination"]],
-        IsMultiDestination: isMultiDestination,
-        "Client-Pax": parseInt(data["Client-Pax"]) || 0,
-        "Client-Child": parseInt(data["Client-Child"]) || 0,
-        "Client-Infant": parseInt(data["Client-Infant"]) || 0,
-        "Client-Days": parseInt(data["Client-Days"]) || 0,
-        "Client-Budget": parseInt(data["Client-Budget"]) || 0,
-        "Client-TravelDate":
-          data["Client-TravelDate"]?.date || data["Client-TravelDate"],
-        "Client-TravelEndDate": data["Client-TravelDate"]?.date
+        isMultiDestination: isMultiDestination,
+        "pax": parseInt(data["Client-Pax"]) || 0,
+        "child": parseInt(data["Client-Child"]) || 0,
+        "infant": parseInt(data["Client-Infant"]) || 0,
+        "days": parseInt(data["Client-Days"]) || 0,
+        "budget": parseInt(data["Client-Budget"]) || 0,
+        "travelDate": data["Client-TravelDate"]?.date
+          ? data["Client-TravelDate"]?.date
+          : data["Client-TravelDate"],
+        "travelEndDate": data["Client-TravelDate"]?.date
           ? calculateEndDate(
               data["Client-TravelDate"].date,
               parseInt(data["Client-Days"]) || 0
@@ -102,21 +102,16 @@ export default function NewLeadForm() {
               parseInt(data["Client-Days"]) || 0
             ),
 
-        LeadSource: data.LeadSource || "WebApp",
-        LeadPotential: data.LeadPotential || "Medium",
-        LeadRating: data.LeadRating || "Warm",
+        leadSource: data.LeadSource || "MobileApp",
+        leadRating: data.LeadRating || "Warm",
+        latestStatus: "LeadCreate",
+        salesPersonUid: salesPersonInfo?.Email || salesPersonInfo?.FullName,
 
-        SalesStatus: "LeadCreate",
-        LatestStatus: "LeadCreate",
-        SalesPersonUid: salesPersonInfo.FullName,
-        SalesPersonName: salesPersonInfo.FullName,
-        SalesPersonEmail: salesPersonInfo.Email,
+        quotations: [],
 
-        Quotations: [],
-
-        Comments: [
+        comments: [
           {
-            By: salesPersonInfo.salesPersonEmail,
+            By: salesPersonInfo?.Email,
             Role: "Sales",
             Message: data.Comments || "Initial lead created",
             At: new Date().toISOString(),
@@ -140,28 +135,39 @@ export default function NewLeadForm() {
       const responseData = await response.json();
 
       if (response.ok) {
-        Alert.alert("Success", "Lead created successfully!", [
+        // Construct the lead data to pass to the Quotation screen
+        // The API might return the created ID, so we merge it
+        const completeLeadData = { ...leadData, ...responseData };
+        
+        Alert.alert("Success", "Lead created! Proceeding to Quotation...", [
           {
             text: "OK",
             onPress: () => {
               reset();
               setSelectedDestinations([]);
               setIsMultiDestination(false);
+              
+              // Proceed to quotation generation flow
+              router.push({
+                pathname: "/(tabs)/QuotationScreen",
+                params: { leadData: JSON.stringify(completeLeadData) }
+              });
             },
           },
         ]);
       } else {
         Alert.alert(
           "Error",
-          responseData.message || "Failed to create lead. Please try again.",
+          (responseData.message || responseData.error || JSON.stringify(responseData) || "Failed to create lead") + 
+          (`\n\nSent company: ${salesPersonInfo?.companyId || salesPersonInfo?.companyName}`),
           [{ text: "OK" }]
         );
       }
     } catch (error) {
       console.error("Error creating lead:", error);
       Alert.alert(
-        "Error",
-        "Network error. Please check your connection and try again.",
+        "Network Error",
+        error.message || "Please check your connection and try again.",
         [{ text: "OK" }]
       );
     } finally {

@@ -97,6 +97,9 @@ import { useUserProfile } from "@/hooks/useUserProfile";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Stack, router } from "expo-router";
 import { useEffect, useRef, useState } from "react";
+import { Amplify } from 'aws-amplify';
+import { getCurrentUser } from 'aws-amplify/auth';
+import awsExports from '../aws-exports';
 import "../global.css";
 import { Platform } from "react-native";
 import { Amplify } from 'aws-amplify';
@@ -106,6 +109,7 @@ import { AuthProvider } from "@/components/auth/AuthManager";
 Amplify.configure(amplifyconfig);
 
 /* ==================== CONFIG ==================== */
+Amplify.configure(awsExports);
 
 const REGISTRATION_URL =
   "https://azlekhl3z9.execute-api.ap-south-1.amazonaws.com/registration/push-notification";
@@ -156,8 +160,13 @@ export default function RootLayout() {
 
   useEffect(() => {
     (async () => {
-      const userProfile = await AsyncStorage.getItem("userProfile");
-      setIsAuthenticated(!!userProfile);
+      try {
+        await getCurrentUser();
+        const userProfile = await AsyncStorage.getItem("userProfile");
+        setIsAuthenticated(!!userProfile);
+      } catch (error) {
+        setIsAuthenticated(false);
+      }
       setIsReady(true);
     })();
   }, []);
