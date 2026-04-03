@@ -102,7 +102,6 @@ import { getCurrentUser } from 'aws-amplify/auth';
 import awsExports from '../aws-exports';
 import "../global.css";
 import { Platform } from "react-native";
-import { Amplify } from 'aws-amplify';
 import amplifyconfig from './src/amplifyconfiguration.json';
 import { AuthProvider } from "@/components/auth/AuthManager";
 
