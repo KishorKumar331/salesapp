@@ -1,16 +1,17 @@
-import React, { useRef, useState, useCallback, useMemo } from "react";
-import { View, Text, TouchableOpacity, ActivityIndicator, Animated, FlatList } from "react-native";
+import { useAuth } from "@/components/auth/AuthManager";
 import Navbar from "@/components/Navbar";
 import QuotationCards from "@/components/ui/cards/QuotationCards";
 import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect } from "@react-navigation/native";
-import { useUserProfile } from "@/hooks/useUserProfile";
+import React, { useCallback, useMemo, useRef, useState } from "react";
+import { ActivityIndicator, Animated, FlatList, Text, TouchableOpacity, View } from "react-native";
 
 const AnimatedFlatList = Animated.createAnimatedComponent(FlatList);
 
 export default function HomeScreen() {
+  const { user } = useAuth();
+  console.log(user)
   const scrollY = useRef(new Animated.Value(0)).current;
-  const { user, loading: userLoading } = useUserProfile();
 
   const [leads, setLeads] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -26,7 +27,7 @@ export default function HomeScreen() {
 
   const fetchLeads = useCallback(
     async (mode = "initial", signal) => {
-      if (!user?.FullName) {
+      if (!user?.user?.Email) {
         return;
       }
 
@@ -36,7 +37,7 @@ export default function HomeScreen() {
       try {
         setError(null);
 
-        const url = `https://0rq0f90i05.execute-api.ap-south-1.amazonaws.com/salesapp/lead-managment/create-quote?SalesPersonUid=${user.FullName}&SalesStatus=LeadCreate`;
+        const url = `https://0rq0f90i05.execute-api.ap-south-1.amazonaws.com/salesapp/lead-managment/create-quote?salesPersonUid=${user.user?.Email}&latestStatus=LeadCreate&case=maxcase`;
 
         const res = await fetch(url, { signal });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -60,11 +61,11 @@ export default function HomeScreen() {
   // Refetch on focus; cancel on blur
   useFocusEffect(
     useCallback(() => {
-      if (!user?.FullName) {
+      if (!user?.user?.Email) {
         console.log("⏳ User not loaded yet, skipping fetch");
         return;
       }
-      
+
       const controller = new AbortController();
       fetchLeads("initial", controller.signal);
       return () => controller.abort();

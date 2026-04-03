@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { Amplify } from 'aws-amplify';
 import { signIn, signOut, signUp, confirmSignUp, resendSignUpCode, fetchUserAttributes } from 'aws-amplify/auth';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const AuthContext = createContext();
 
@@ -15,6 +16,7 @@ export const useAuth = () => {
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [isReady, setIsReady] = useState(false);
   const [error, setError] = useState(null);
 
   // Check current authenticated user on mount
@@ -26,7 +28,16 @@ export const AuthProvider = ({ children }) => {
     try {
       setLoading(true);
       const attributes = await fetchUserAttributes();
-      setUser(attributes);
+      
+      // Also get profile from AsyncStorage
+      const profileData = await AsyncStorage.getItem("userProfile");
+      let profile = {};
+      if (profileData) {
+        const parsed = JSON.parse(profileData);
+        profile = Array.isArray(parsed) ? parsed[0] : parsed;
+      }
+      
+      setUser({ ...attributes, ...profile });
       setError(null);
     } catch (error) {
       // User is not signed in
@@ -34,6 +45,7 @@ export const AuthProvider = ({ children }) => {
       setError(null);
     } finally {
       setLoading(false);
+      setIsReady(true);
     }
   };
 
@@ -144,6 +156,7 @@ export const AuthProvider = ({ children }) => {
     try {
       setLoading(true);
       await signOut();
+      await AsyncStorage.removeItem('userProfile');
       setUser(null);
       setError(null);
       return { success: true };
@@ -162,7 +175,9 @@ export const AuthProvider = ({ children }) => {
 
   const value = {
     user,
+    setUser,
     loading,
+    isReady,
     error,
     isAuthenticated: !!user,
     signIn: signInUser,

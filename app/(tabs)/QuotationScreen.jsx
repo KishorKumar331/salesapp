@@ -4,13 +4,13 @@ import { useRouter, useLocalSearchParams } from "expo-router";
 import IntegratedQuotationForm from "@/components/form/IntegratedQuotationForm";
 import { clearQuotationDraft } from "@/storage/quotationDrafts";
 import PdfPreviewModal from "@/components/pdf/PdfPreviewModal";
-import { useUserProfile } from "@/hooks/useUserProfile";
 import axios from "axios";
+import { useAuth } from "@/components/auth/AuthManager";
 
 const QuotationScreen = () => {
   const router = useRouter();
   const params = useLocalSearchParams();
-  const { user, loading: userLoading } = useUserProfile();
+  const { user } = useAuth();
   const [isPrinting, setIsPrinting] = useState(false);
   const [pdfUri, setPdfUri] = useState(null);
   const [pdfHtml, setPdfHtml] = useState(null);

@@ -7,6 +7,7 @@ import { router } from "expo-router";
 import { useRef, useState } from "react";
 import { ActivityIndicator, Alert, Dimensions, Modal, Platform, Pressable, ScrollView, Text, TextInput, ToastAndroid, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useAuth } from "@/components/auth/AuthManager";
 import awsExports from "../../aws-exports";
 
 // Ensure Amplify is configured locally for the auth chunk
@@ -21,6 +22,7 @@ const OnBoardingPage = () => {
   const [loginInput, setLoginInput] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const { setUser } = useAuth();
 
   // Carousel data
   const carouselImages = [
@@ -109,6 +111,11 @@ const OnBoardingPage = () => {
             router.replace('/(auth)/unauthorized');
           } else {
             await AsyncStorage.setItem('userProfile', JSON.stringify(result));
+            
+            // Update the AuthManager state
+            const userObj = Array.isArray(result) ? result[0] : result;
+            setUser(userObj);
+            
             showToast('Login successful!');
             setShowLoginModal(false);
             router.replace('/(tabs)');

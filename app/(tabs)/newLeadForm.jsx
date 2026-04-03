@@ -14,7 +14,7 @@ import { router } from "expo-router";
 import Navbar from "@/components/Navbar";
 import DatePicker from "@/components/ui/DatePicker";
 import CustomPicker from "@/components/ui/CustomPicker";
-import { getUserProfile } from "@/utils/userProfile";
+import { useAuth } from "@/components/auth/AuthManager";
 
 const DestinationList = [
   "Bali",
@@ -44,6 +44,7 @@ export default function NewLeadForm() {
     formState: { errors },
     reset,
   } = useForm();
+  const { user } = useAuth();
 
   // State for multi-select destinations
   const [selectedDestinations, setSelectedDestinations] = useState([]);
@@ -65,11 +66,10 @@ export default function NewLeadForm() {
       };
       // make commment on this
       // Get sales person info from AsyncStorage
-      const salesPersonInfo = await getUserProfile();
-      console.log(salesPersonInfo);
+
 
       const leadData = {
-        company: salesPersonInfo?.organization?.company || salesPersonInfo?.companyId || salesPersonInfo?.companyName,
+        company: user?.user?.company,
 
         "clientName": data["Client-Name"],
         "clientEmail": data["Client-Email"],
@@ -105,13 +105,13 @@ export default function NewLeadForm() {
         leadSource: data.LeadSource || "MobileApp",
         leadRating: data.LeadRating || "Warm",
         latestStatus: "LeadCreate",
-        salesPersonUid: salesPersonInfo?.Email || salesPersonInfo?.FullName,
+        salesPersonUid: user?.user?.Email,
 
         quotations: [],
 
         comments: [
           {
-            By: salesPersonInfo?.Email,
+            By: user?.user?.Email,
             Role: "Sales",
             Message: data.Comments || "Initial lead created",
             At: new Date().toISOString(),
@@ -159,7 +159,7 @@ export default function NewLeadForm() {
         Alert.alert(
           "Error",
           (responseData.message || responseData.error || JSON.stringify(responseData) || "Failed to create lead") + 
-          (`\n\nSent company: ${salesPersonInfo?.companyId || salesPersonInfo?.companyName}`),
+          (`\n\nSent company: ${user?.user?.company}`),
           [{ text: "OK" }]
         );
       }
