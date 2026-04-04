@@ -1,19 +1,20 @@
 
 
-import  { useRef, useState, useCallback, useMemo } from "react";
-import { View, Text, TouchableOpacity, ActivityIndicator, Animated, FlatList } from "react-native";
 import Navbar from "@/components/Navbar";
 import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect } from "@react-navigation/native";
-import { useUserProfile } from "@/hooks/useUserProfile";
+import { useCallback, useMemo, useRef, useState } from "react";
+import { ActivityIndicator, Animated, FlatList, Text, TouchableOpacity, View } from "react-native";
+import { useAuth } from "../../components/auth/AuthManager";
 import ConvertedCards from "../../components/ui/cards/ConvertedCards";
-
 const AnimatedFlatList = Animated.createAnimatedComponent(FlatList);
 
 export default function ConvertedPage() {
   const scrollY = useRef(new Animated.Value(0)).current;
-  const { user, loading: userLoading } = useUserProfile();
-
+  const { user } = useAuth();
+  console.log("👤 Current user object:", user);
+  console.log("👤 User email:", user?.email || user?.Email);
+  
   const [leads, setLeads] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -28,53 +29,59 @@ export default function ConvertedPage() {
 
   const fetchLeads = useCallback(
     async (mode = "initial", signal) => {
-      if (!user?.FullName) {
+      const userEmail = user?.email || user?.Email;
+      
+      if (!userEmail) {
+        console.log("❌ No user email found. User object:", user);
         return [];
       }
 
-      
       if (mode === "initial") setLoading(true);
       else setRefreshing(true);
 
       try {
         setError(null);
 
-        const url = `https://0rq0f90i05.execute-api.ap-south-1.amazonaws.com/salesapp/lead-managment/create-quote?SalesPersonUid=${user.FullName}&SalesStatus=Converted`;
+        const url = `https://0rq0f90i05.execute-api.ap-south-1.amazonaws.com/salesapp/lead-managment/create-quote?salesPersonUid=${user.user?.Email}&latestStatus=Converted&case=maxcase`;
 
-        const response = await fetch(url, { 
+        console.log("🌐 Fetching URL:", url);
+
+        const response = await fetch(url, {
           signal,
           headers: {
             'Content-Type': 'application/json',
             'Cache-Control': 'no-cache'
           }
         });
-                
+
         if (!response.ok) {
           const errorText = await response.text();
           console.error("❌ API Error Response:", errorText);
           throw new Error(`HTTP ${response.status}: ${errorText}`);
         }
-        
+
         const responseData = await response.json();
+        console.log("📊 API Response:", responseData);
 
         const data = parseLeads(responseData);
-        
+        console.log("📋 Parsed data:", data);
+
         setLeads(Array.isArray(data) ? data : []);
         return data;
       } catch (error) {
         if (error?.name === "AbortError") {
           return [];
         }
-        
+
         console.error("❌ Error in fetchLeads:", {
           error,
           message: error?.message,
           stack: error?.stack
         });
-        
+
         setError(error?.message || "Failed to fetch leads. Please try again.");
         setLeads([]);
-        throw error; // Re-throw to handle in the caller if needed
+        throw error;
       } finally {
         if (mode === "initial") setLoading(false);
         setRefreshing(false);
@@ -86,22 +93,24 @@ export default function ConvertedPage() {
   // Refetch on focus; cancel on blur
   useFocusEffect(
     useCallback(() => {
+      const userEmail = user?.email || user?.Email;
       
-      if (!user?.FullName) {
+      if (!userEmail) {
+        console.log("❌ No user email, skipping fetch. User object:", user);
         return;
       }
-      
+
       const controller = new AbortController();
-      
+
       const timer = setTimeout(() => {
         fetchLeads("initial", controller.signal).catch(console.error);
       }, 100);
-      
+
       return () => {
         clearTimeout(timer);
         controller.abort();
       };
-    }, [fetchLeads, user?.FullName]) // Only depend on FullName to prevent unnecessary re-renders
+    }, [fetchLeads, user?.email, user?.Email])
   );
 
   const onRefresh = useCallback(() => fetchLeads("refresh"), [fetchLeads]);
