@@ -3,9 +3,9 @@ import { View, Text, TouchableOpacity, FlatList, Dimensions } from 'react-native
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import QuotationModal from '../../modals/QuotationModal';
-import LastQuotesModal from '../LastQuotesModal';
 
 const QuotationCards = ({ leadData }) => {
+  console.log(leadData)
   const router = useRouter();
   const screenWidth = Dimensions.get('window').width;
   const cardWidth = useMemo(() => screenWidth - 32, [screenWidth]); // margins
@@ -13,8 +13,6 @@ const QuotationCards = ({ leadData }) => {
 
   const [page, setPage] = useState(0);
   const [isModalVisible, setIsModalVisible] = useState(false);
-  const [isLastQuotesModalVisible, setIsLastQuotesModalVisible] = useState(false);
-
   const pages = useMemo(() => ['main', 'details'], []);
 
   const scrollToPage = useCallback((idx) => {
@@ -38,35 +36,35 @@ const QuotationCards = ({ leadData }) => {
         <TouchableOpacity
           onPress={() => {
             // Generate a truly unique TripId using lead data + timestamp + random
-            const uniqueId = leadData?.TripId || 
-              leadData?.id || 
-              leadData?._id || 
+            const uniqueId = leadData?.TripId ||
+              leadData?.id ||
+              leadData?._id ||
               `${leadData?.['Client-Contact'] || 'LEAD'}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-            
+
             // Convert lead data to the format expected by the form
             const formattedLeadData = {
               TripId: uniqueId,
-              LeadId:leadData?.LeadId,
-              Quotations:leadData?.Quotations,
+              LeadId: leadData?.LeadId,
+              Quotations: leadData?.quotations || leadData?.Quotations,
               ClientLeadDetails: {
                 FullName: leadData?.clientName || leadData?.['Client-Name'] || '',
-                Contact: leadData?.['Client-Contact'] || '',
-                Email: leadData?.['Client-Email'] || '',
-                TravelDate: leadData?.['Client-TravelDate'] || '',
-                Pax: leadData?.['Client-Pax'] || '1',
-                Child: leadData?.['Client-Child'] || '0',
-                Infant: '0',
-                Budget: leadData?.['Client-Budget'] || '',
-                DepartureCity: leadData?.['Client-DepartureCity'] || '',
-                DestinationName: leadData?.['Client-Destination'] || '',
-                Days: leadData?.['Client-Days'] || 2,
+                Contact: leadData?.clientContact || leadData?.['Client-Contact'] || '',
+                Email: leadData?.clientEmail || leadData?.['Client-Email'] || '',
+                TravelDate: leadData?.travelDate || leadData?.['Client-TravelDate'] || '',
+                Pax: leadData?.pax || leadData?.['Client-Pax'] || '1',
+                Child: leadData?.child || leadData?.['Client-Child'] || '0',
+                Infant: leadData?.infant || leadData?.['Client-Infant'] || '0',
+                Budget: leadData?.budget || leadData?.['Client-Budget'] || '',
+                DepartureCity: leadData?.departureCity || leadData?.['Client-DepartureCity'] || '',
+                DestinationName: leadData?.destination || leadData?.['Client-Destination'] || '',
+                Days: leadData?.days || leadData?.['Client-Days'] || 2,
               },
               AssignDate: new Date().toISOString().split('T')[0],
             };
-            
+
             router.push({
               pathname: '/(tabs)/QuotationScreen',
-              params: { 
+              params: {
                 leadData: JSON.stringify(formattedLeadData)
               }
             });
@@ -97,7 +95,7 @@ const QuotationCards = ({ leadData }) => {
             </View>
             <View className="flex flex-col">
               <Text className="text-gray-500 text-sm">
-                {leadData?.CompanyId || 'Lead'} - {leadData?.SalesStatus || 'New'}
+                {leadData?.company || leadData?.CompanyId || 'Lead'} - {leadData?.latestStatus || leadData?.SalesStatus || 'New'}
               </Text>
               <Text className="text-gray-500 text-sm">
                 {leadData?.clientName || leadData?.['Client-Name'] || 'Unknown Client'}
@@ -117,20 +115,20 @@ const QuotationCards = ({ leadData }) => {
           <>
             <Text className="text-gray-600 text-sm mb-1">Contact</Text>
             <Text className="text-gray-900 font-semibold mb-3">
-              {leadData?.['Client-Contact'] || 'No contact'}
+              {leadData?.clientContact || leadData?.['Client-Contact'] || 'No contact'}
             </Text>
 
             <View className="flex-row justify-between mb-3">
               <View>
                 <Text className="text-gray-500 text-xs">Destination</Text>
                 <Text className="text-gray-900 font-medium">
-                  {leadData?.['Client-Destination'] || 'Not specified'}
+                  {leadData?.destination || leadData?.['Client-Destination'] || 'Not specified'}
                 </Text>
               </View>
               <View>
                 <Text className="text-gray-500 text-xs">Departure</Text>
                 <Text className="text-gray-900 font-medium">
-                  {leadData?.['Client-DepartureCity'] || 'Not specified'}
+                  {leadData?.departureCity || leadData?.['Client-DepartureCity'] || 'Not specified'}
                 </Text>
               </View>
             </View>
@@ -138,15 +136,15 @@ const QuotationCards = ({ leadData }) => {
             <View className="flex-row justify-between mb-4">
               <View>
                 <Text className="text-gray-500 text-xs">Adults</Text>
-                <Text className="text-gray-900 font-medium">{leadData?.['Client-Pax'] || 0}</Text>
+                <Text className="text-gray-900 font-medium">{leadData?.pax || leadData?.['Client-Pax'] || 0}</Text>
               </View>
               <View>
                 <Text className="text-gray-500 text-xs">Children</Text>
-                <Text className="text-gray-900 font-medium">{leadData?.['Client-Child'] || 0}</Text>
+                <Text className="text-gray-900 font-medium">{leadData?.child || leadData?.['Client-Child'] || 0}</Text>
               </View>
               <View>
                 <Text className="text-gray-500 text-xs">Days</Text>
-                <Text className="text-gray-900 font-medium">{leadData?.['Client-Days'] || 0}</Text>
+                <Text className="text-gray-900 font-medium">{leadData?.days || leadData?.['Client-Days'] || 0}</Text>
               </View>
             </View>
 
@@ -154,21 +152,21 @@ const QuotationCards = ({ leadData }) => {
               <View>
                 <Text className="text-gray-500 text-xs">Travel Date</Text>
                 <Text className="text-gray-900 font-medium">
-                  {leadData?.['Client-TravelDate']
-                    ? new Date(leadData['Client-TravelDate']).toLocaleDateString()
+                  {leadData?.travelDate || leadData?.['Client-TravelDate']
+                    ? new Date(leadData.travelDate || leadData['Client-TravelDate']).toLocaleDateString()
                     : 'Not set'}
                 </Text>
               </View>
               <View>
                 <Text className="text-gray-500 text-xs">Lead Source</Text>
-                <Text className="text-gray-900 font-medium">{leadData?.LeadSource || 'Unknown'}</Text>
+                <Text className="text-gray-900 font-medium">{leadData?.leadSource || leadData?.LeadSource || 'Unknown'}</Text>
               </View>
             </View>
 
             <Text className="text-gray-600 text-sm mb-1">Budget</Text>
             <Text className="text-purple-600 text-2xl font-bold mb-4">
-              {leadData?.['Client-Budget'] > 0
-                ? `₹${Number(leadData['Client-Budget']).toLocaleString()}`
+              {(leadData?.budget || leadData?.['Client-Budget']) > 0
+                ? `₹${Number(leadData.budget || leadData['Client-Budget']).toLocaleString()}`
                 : 'Budget not specified'}
             </Text>
 
@@ -179,15 +177,15 @@ const QuotationCards = ({ leadData }) => {
             <View className="bg-gray-50 rounded-lg p-3 mb-4">
               <Text className="text-gray-600 text-sm mb-2">Email</Text>
               <Text className="text-gray-900 font-medium">
-                {leadData?.['Client-Email'] || 'No email provided'}
+                {leadData?.clientEmail || leadData?.['Client-Email'] || 'No email provided'}
               </Text>
             </View>
 
             <View className="bg-gray-50 rounded-lg p-3">
               <Text className="text-gray-600 text-sm mb-2">Comments</Text>
               <Text className="text-gray-900 font-medium min-h-[6rem]">
-                {leadData?.Comments?.length
-                  ? String(leadData.Comments[leadData.Comments.length - 1]?.Message ?? '')
+                {(leadData?.comments || leadData?.Comments)?.length
+                  ? String((leadData?.comments || leadData?.Comments)[(leadData?.comments || leadData?.Comments).length - 1]?.Message ?? '')
                   : 'No comments available'}
               </Text>
             </View>

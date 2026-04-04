@@ -14,6 +14,7 @@ export default function HomeScreen() {
   const scrollY = useRef(new Animated.Value(0)).current;
 
   const [leads, setLeads] = useState([]);
+  console.log(leads)
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [refreshing, setRefreshing] = useState(false);

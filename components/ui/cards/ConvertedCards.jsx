@@ -1,11 +1,9 @@
-import { useRef, useState, useEffect } from 'react';
+import { useState } from 'react';
 import {
   View,
   Text,
   TouchableOpacity,
-  ScrollView,
   Dimensions,
-  ActivityIndicator,
   Alert,
   Linking
 } from 'react-native';
@@ -19,12 +17,9 @@ const ConvertedCards = ({ data, onStatusChange }) => {
   const [quoteDetails, setQuoteDetails] = useState(null);
   const [isModalVisible, setIsModalVisible] = useState(false);
 
-  const [currentPage, setCurrentPage] = useState(0);
-
-  const scrollViewRef = useRef(null);
   const screenWidth = Dimensions.get("window").width;
   const cardWidth = screenWidth - 32;
-  const { status } = useStatusChange(data?.SalesStatus || 'Converted', data);
+  const { status } = useStatusChange(data?.latestStatus || data?.SalesStatus || 'Converted', data);
 
   const fetchLatestQuote = async () => {
     if (!data?.TripId) return;
@@ -54,11 +49,7 @@ const ConvertedCards = ({ data, onStatusChange }) => {
     }
   };
 
-  const handleScrollEnd = (event) => {
-    const contentOffset = event.nativeEvent.contentOffset;
-    const pageIndex = Math.round(contentOffset.x / cardWidth);
-    setCurrentPage(pageIndex);
-  };
+
 
   const handleCall = (phoneNumber) => {
   if (!phoneNumber) {
@@ -104,16 +95,16 @@ const handleWhatsApp = (phoneNumber) => {
                       Trip #{data.TripId}
                     </Text>
                     <Text className="text-gray-900 font-medium">
-                      {data["Client-Name"]}
+                      {data.clientName || data["Client-Name"]}
                     </Text>
                   </View>
                 </View>
                 <View className="flex flex-row gap-2">
                   <TouchableOpacity className="bg-gray-100 rounded-full p-2">
-                    <Ionicons     onPress={() => handleCall(data["Client-Contact"])}
+                    <Ionicons     onPress={() => handleCall(data.clientContact || data["Client-Contact"])}
  name="call" size={16} color="#4b5563" />
                   </TouchableOpacity>
-                  <TouchableOpacity     onPress={() => handleWhatsApp(data["Client-Contact"])}
+                  <TouchableOpacity     onPress={() => handleWhatsApp(data.clientContact || data["Client-Contact"])}
  className="bg-gray-100 rounded-full p-2">
                     <Ionicons  name="chatbubbles" size={16} color="#4b5563" />
                   </TouchableOpacity>
@@ -124,13 +115,13 @@ const handleWhatsApp = (phoneNumber) => {
                 <View>
                   <Text className="text-gray-500 text-xs">Email</Text>
                   <Text className="text-gray-900 font-medium">
-                    {data["Client-Email"] || 'N/A'}
+                    {data.clientEmail || data["Client-Email"] || 'N/A'}
                   </Text>
                 </View>
                 <View>
                   <Text className="text-gray-500 text-xs">Contact</Text>
                   <Text className="text-gray-900 font-medium">
-                    {data["Client-Contact"] || 'N/A'}
+                    {data.clientContact || data["Client-Contact"] || 'N/A'}
                   </Text>
                 </View>
               </View>
@@ -139,13 +130,13 @@ const handleWhatsApp = (phoneNumber) => {
                 <View>
                   <Text className="text-gray-500 text-xs">Destination</Text>
                   <Text className="text-gray-900 font-medium">
-                    {data["Client-Destination"] || 'N/A'}
+                    {data.destination || data["Client-Destination"] || 'N/A'}
                   </Text>
                 </View>
                 <View>
                   <Text className="text-gray-500 text-xs">Travel Date</Text>
                   <Text className="text-gray-900 font-medium">
-                    {data["Client-TravelDate"] || 'N/A'}
+                    {data.travelDate || data["Client-TravelDate"] || 'N/A'}
                   </Text>
                 </View>
               </View>
@@ -154,13 +145,13 @@ const handleWhatsApp = (phoneNumber) => {
                 <View>
                   <Text className="text-gray-500 text-xs">Pax</Text>
                   <Text className="text-gray-900 font-medium">
-                    {data["Client-Pax"] || '0'}A {data["Client-Child"] || '0'}C
+                    {data.pax || data["Client-Pax"] || '0'}A {data.child || data["Client-Child"] || '0'}C
                   </Text>
                 </View>
                 <View>
                   <Text className="text-gray-500 text-xs">Budget</Text>
                   <Text className="text-gray-900 font-medium">
-                    {data["Client-Budget"] ? `₹${Number(data["Client-Budget"]).toLocaleString()}` : 'N/A'}
+                    {(data.budget || data["Client-Budget"]) ? `₹${Number(data.budget || data["Client-Budget"]).toLocaleString()}` : 'N/A'}
                   </Text>
                 </View>
                 <View>

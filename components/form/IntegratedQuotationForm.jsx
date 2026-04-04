@@ -28,7 +28,6 @@ const IntegratedQuotationForm = ({ onSubmit, initialData = {}, lead, followUpDat
   const tripId = followUpData?.TripId || lead?.TripId || "";
 
   const userData = {
-    CompanyId: "12345",
     AssignDate: new Date().toISOString(),
     AssignDateKey: +new Date().toISOString().slice(0, 10).replace(/-/g, ""),
   };
@@ -37,20 +36,20 @@ const IntegratedQuotationForm = ({ onSubmit, initialData = {}, lead, followUpDat
   const sourceData = followUpData || lead;
   const client = followUpData
     ? {
-        FullName: followUpData["Client-Name"],
-        Contact: followUpData["Client-Contact"],
-        Email: followUpData["Client-Email"],
-        TravelDate: followUpData.TravelDate,
-        Pax: followUpData.NoOfPax,
-        Child: followUpData.Child,
-        Infant: followUpData.Infant,
-        Budget: followUpData.Budget,
-        DepartureCity: followUpData.DepartureCity,
-        DestinationName: followUpData.DestinationName,
-        Destinations: followUpData.Destinations || [followUpData.DestinationName],
-        Days: followUpData.Days,
-        IsMultiDestination: followUpData.IsMultiDestination,
-      }
+      FullName: followUpData["Client-Name"],
+      Contact: followUpData["Client-Contact"],
+      Email: followUpData["Client-Email"],
+      TravelDate: followUpData.TravelDate,
+      Pax: followUpData.NoOfPax,
+      Child: followUpData.Child,
+      Infant: followUpData.Infant,
+      Budget: followUpData.Budget,
+      DepartureCity: followUpData.DepartureCity,
+      DestinationName: followUpData.DestinationName,
+      Destinations: followUpData.Destinations || [followUpData.DestinationName],
+      Days: followUpData.Days,
+      IsMultiDestination: followUpData.IsMultiDestination,
+    }
     : sourceData?.ClientLeadDetails || {};
 
   // ------------------ Default form values -------------------
@@ -136,8 +135,8 @@ const IntegratedQuotationForm = ({ onSubmit, initialData = {}, lead, followUpDat
   // Skip loading cached draft when opening existing quotation (followUpData exists)
   // Pass QuoteId as uniqueId to track when quotation changes
   const { methods, loading } = useQuotationDraft(
-    tripId, 
-    defaults, 
+    tripId,
+    defaults,
     !!followUpData,
     followUpData?.QuoteId
   );

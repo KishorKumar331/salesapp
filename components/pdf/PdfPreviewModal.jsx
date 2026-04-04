@@ -6,6 +6,8 @@ import * as Sharing from 'expo-sharing';
 import { generatePdfFromHtml } from '../../utils/pdfUtils';
 
 const PdfPreviewModal = ({ visible, pdfUri, pdfHtml, onClose, onShare, clientName = 'Quotation' }) => {
+  const API_URL = "https://0rq0f90i05.execute-api.ap-south-1.amazonaws.com/salesapp/packages-pdf-html";
+
   const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState(false);
   const [isGeneratingPdf, setIsGeneratingPdf] = React.useState(false);

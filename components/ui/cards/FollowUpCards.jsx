@@ -10,7 +10,6 @@ import {
   View,
   Dimensions,
   FlatList,
-  ActivityIndicator,
   Linking,
 } from "react-native";
 import DocumentModal from "../DocumentModal";
@@ -23,7 +22,7 @@ const FollowUpCards = ({ data }) => {
   const [currentPage, setCurrentPage] = useState(0);
 
   const [notes, setNotes] = useState(
-    data?.Comments?.[0]?.Message || "No notes yet."
+    (data?.comments || data?.Comments)?.[0]?.Message || "No notes yet."
   );
   const [isEditingNotes, setIsEditingNotes] = useState(false);
 
@@ -47,7 +46,7 @@ const FollowUpCards = ({ data }) => {
 
   // Use the useStatusChange hook with quotation data
   const { status, isLoading, updateStatus } = useStatusChange(
-    data?.Status || 'New',
+    data?.latestStatus || data?.Status || 'New',
     data // Pass the full quotation data
   );
 
@@ -99,6 +98,11 @@ const FollowUpCards = ({ data }) => {
   // -------------------- MAIN RENDER ITEM --------------------
 
   const renderItem = ({ item, index }) => {
+    const travelerPax = data.pax || data["Client-Pax"] || data["Client-Adults"] || 0;
+    const travelerChild = data.child || data["Client-Child"] || data["Client-Children"] || 0;
+    const travelerInfant = data.infant || data["Client-Infant"] || data["Client-Infants"] || 0;
+    const travelerBudget = data.budget || data["Client-Budget"];
+
     return (
       <View style={{ width: cardWidth }} className="p-4">
         {/* ------------------ PAGE 1 (Your EXACT UI) ------------------ */}
@@ -188,7 +192,7 @@ const FollowUpCards = ({ data }) => {
               <View>
                 <Text className="text-gray-500 text-xs">Budget</Text>
                 <Text className="text-purple-600 text-lg font-bold">
-                  ₹{data.budget?.toLocaleString() || data["Client-Budget"]?.toLocaleString() || 'N/A'}
+                  ₹{Number(travelerBudget || 0).toLocaleString() || 'N/A'}
                 </Text>
               </View>
 
@@ -196,19 +200,19 @@ const FollowUpCards = ({ data }) => {
                 <View className="mx-2">
                   <Text className="text-gray-500 text-xs">PAX</Text>
                   <Text className="text-gray-900 font-medium">
-                    {data.pax || data["Client-Adults"] || 0}
+                    {travelerPax}
                   </Text>
                 </View>
                 <View className='mx-2'>
                   <Text className="text-gray-500 text-xs">Child</Text>
                   <Text className="text-gray-900 font-medium">
-                    {data.child || data["Client-Children"] || 0}
+                    {travelerChild}
                   </Text>
                 </View>
                 <View className='mx-2'>
                   <Text className="text-gray-500 text-xs">Infants</Text>
                   <Text className="text-gray-900 font-medium">
-                    {data.infant || data["Client-Infants"] || 0}
+                    {travelerInfant}
                   </Text>
                 </View>
               </View>
@@ -404,7 +408,7 @@ const FollowUpCards = ({ data }) => {
                     <TouchableOpacity
                       onPress={() => {
                         setIsEditingNotes(false);
-                        setNotes(data?.Comments?.[0]?.Message || ""); // Reset to original notes
+                        setNotes((data?.comments || data?.Comments)?.[0]?.Message || ""); // Reset to original notes
                       }}
                       className="px-4 py-2 bg-gray-200 rounded-lg"
                     >

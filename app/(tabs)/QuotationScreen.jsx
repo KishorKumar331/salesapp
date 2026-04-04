@@ -31,7 +31,7 @@ const QuotationScreen = () => {
     try {
       const dataWithUser = {
         ...data,
-        user,
+        company: user?.user?.company || user?.company
       };
 
       console.log("Data with user:", dataWithUser);
@@ -39,10 +39,10 @@ const QuotationScreen = () => {
       const response = await axios.post(
         "https://0rq0f90i05.execute-api.ap-south-1.amazonaws.com/salesapp/packages-pdf-html",
         {
+          mode: "html",
           type: "quotation",
-          renderOnly: true,
           data: dataWithUser,
-          templateName: "ip_pdf.hbs",
+          templateName: user?.preferences?.quotationpdf || user?.Preference?.quotationpdf || user?.quotationpdf
         }
       );
 
@@ -52,8 +52,8 @@ const QuotationScreen = () => {
         setPdfUri(null);
         setFormDataToSubmit({
           ...data,
-          CompanyId: user?.CompanyId,
-          CompanyEmail: user?.Email,
+          company: user?.user?.company || user?.company,
+          CompanyEmail: user?.user?.Email || user?.Email,
         });
         setShowPdfModal(true);
         setRefreshKey((prev) => prev + 1);
@@ -86,18 +86,20 @@ const QuotationScreen = () => {
 
       const res = await axios.post(
         "https://0rq0f90i05.execute-api.ap-south-1.amazonaws.com/salesapp/lead-managment/quotations",
-        formDataToSubmit
+        { ...formDataToSubmit, CompanyEmail: user?.user?.Email || user?.Email }
       );
 
       console.log("✅ Quotation created:", res.data);
 
       const updateData = {
-        TripId: res?.data?.TripId,
-        Quotations: Array.isArray(leadData?.Quotations)
-          ? [...leadData.Quotations, res.data.QuoteId]
+        TripId: leadData?.TripId || followUpData?.TripId,
+        CreatedAt: leadData?.CreatedAt || followUpData?.CreatedAt,
+        company: leadData?.company || followUpData?.company,
+        quotations: Array.isArray(leadData?.quotations) || Array.isArray(followUpData?.quotations)
+          ? [...(leadData?.quotations || followUpData?.quotations || []), res.data.QuoteId]
           : [res.data.QuoteId],
-        SalesStatus: "Cold",
-        LatestQuotationId: res.data.QuoteId,
+        latestStatus: "Cold",
+        latestQuotationId: res.data.QuoteId,
         LeadId: leadData?.LeadId || followUpData?.LeadId,
       };
 
@@ -145,6 +147,7 @@ const QuotationScreen = () => {
       )}
 
       <PdfPreviewModal
+        data={formDataToSubmit}
         key={refreshKey}
         visible={showPdfModal}
         pdfUri={pdfUri}
@@ -154,6 +157,7 @@ const QuotationScreen = () => {
       />
     </View>
   );
+
 };
 
 const styles = StyleSheet.create({
