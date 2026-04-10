@@ -710,7 +710,7 @@ export default function InvoiceForm({
         );
 
         setTimeout(() => {
-          router.replace("/followup");
+          router.replace("/(tabs)/invoices");
         }, 1000);
       } catch (err) {
         console.error("Error updating lead after invoice:", err);
