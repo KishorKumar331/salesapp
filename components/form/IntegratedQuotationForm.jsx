@@ -1,14 +1,14 @@
 
 
-import React, { useMemo } from "react";
-import { View, ActivityIndicator } from "react-native";
+import { useMemo } from "react";
 import { FormProvider } from "react-hook-form";
-import SimpleQuotationWrapper from "./SimpleQuotationWrapper";
+import { ActivityIndicator, View } from "react-native";
 import BasicDetails from "./BasicDetails";
 import CostCalculator from "./CostCalculator";
+import FlightSection from "./FlightSection";
 import HotelsSection from "./HotelsSection";
 import InclusionsExclusions from "./InclusionsExclusionsNew";
-import FlightSection from "./FlightSection";
+import SimpleQuotationWrapper from "./SimpleQuotationWrapper";
 
 import { useQuotationDraft } from "@/hooks/useQuotationDraft";
 import { clearQuotationDraft } from "@/storage/quotationDrafts";
@@ -50,7 +50,7 @@ const IntegratedQuotationForm = ({ onSubmit, initialData = {}, lead, followUpDat
       Days: followUpData.Days,
       IsMultiDestination: followUpData.IsMultiDestination,
     }
-    : sourceData?.ClientLeadDetails || {};
+    : (sourceData?.ClientLeadDetails || sourceData?.clientLeadDetails || {});
 
   // ------------------ Default form values -------------------
   const defaults = useMemo(
@@ -128,7 +128,7 @@ const IntegratedQuotationForm = ({ onSubmit, initialData = {}, lead, followUpDat
         : null,
       ...initialData,
     }),
-    [followUpData?.QuoteId, lead?.TripId, tripId, initialData]
+    [followUpData, lead, tripId, initialData, sourceData, client]
   );
 
   // ------------------ Hook for autosave draft -------------------
@@ -137,7 +137,7 @@ const IntegratedQuotationForm = ({ onSubmit, initialData = {}, lead, followUpDat
   const { methods, loading } = useQuotationDraft(
     tripId,
     defaults,
-    !!followUpData,
+    true, // skipDraftLoad: true removes the caching/draft feature
     followUpData?.QuoteId
   );
 

@@ -1,28 +1,23 @@
-import React, { useEffect, useState, useMemo } from "react";
+import React, { useEffect, useState } from "react";
 import {
   View,
   Text,
   TextInput,
   TouchableOpacity,
-  StyleSheet,
   Image,
+  ActivityIndicator,
+  ScrollView,
 } from "react-native";
 import { useFormContext, Controller, useFieldArray } from "react-hook-form";
 import { Ionicons } from "@expo/vector-icons";
 import ActivitySelector from "@/components/ui/ActivitySelector";
-import DatePicker from "@/components/ui/DatePicker";
 import { styles } from "./Styles";
 
 const ItinerarySection = () => {
-  const [activity, setActivity] = useState([])
+  const [activities, setActivities] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
 
-  const {
-    control,
-    watch,
-    formState: { errors },
-    getValues,
-    setValue,
-  } = useFormContext();
+  const { control, watch, setValue, getValues } = useFormContext();
 
   const { fields, append, remove } = useFieldArray({
     control,
@@ -33,330 +28,316 @@ const ItinerarySection = () => {
   const destinations = watch("Destinations");
   const travelDate = watch("TravelDate");
 
-  // Format date to YYYY-MM-DD
-  const formatDate = (dateString) => {
-    if (!dateString) return '';
-    const date = new Date(dateString);
-    return date.toISOString().split('T')[0];
+  /* ------------------ Helpers ------------------ */
+
+  const formatDate = (date) => {
+    if (!date) return "";
+    const d = new Date(date);
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
   };
 
-  // Generate dates for the itinerary based on travel date
   const getItineraryDate = (index) => {
-    if (!travelDate) return '';
-    const date = new Date(travelDate);
-    date.setDate(date.getDate() + index);
-    return formatDate(date);
+    if (!travelDate) return "";
+    const d = new Date(travelDate);
+    d.setDate(d.getDate() + index);
+    return formatDate(d);
   };
+
+  /* ------------------ Add Day ------------------ */
+
   const addDay = () => {
     const nextDay = fields.length + 1;
-    const baseDate = travelDate ? new Date(travelDate) : new Date();
-    const futureDate = new Date(baseDate);
-    futureDate.setDate(baseDate.getDate() + (nextDay - 1));
+    const base = travelDate ? new Date(travelDate) : new Date();
+    const date = new Date(base);
+    date.setDate(base.getDate() + (nextDay - 1));
 
-    const formattedDate = formatDate(futureDate);
-    const dateKey = parseInt(formattedDate.replace(/-/g, ''));
+    const formattedDate = formatDate(date);
+    const dateKey = Number(formattedDate.replace(/-/g, ""));
 
     append({
+      day: nextDay,
       Date: formattedDate,
       DateKey: dateKey,
-      Title: `Day ${nextDay} Itinearies`,
+      Title: `Day ${nextDay} Itinerary`,
       Activity: "",
       ImageUrl: "",
-      Description: ""
-    });
+      Description: "",
+    }, { shouldFocus: false });
   };
 
-  const handleActivitySelect = (activity, index) => {
-    // Use setValue to properly update form fields
-    setValue(`Itinearies.${index}.Title`, activity.Title || `Day ${index + 1} Itinerary`);
-    setValue(`Itinearies.${index}.Description`, activity.Description || "");
-    setValue(`Itinearies.${index}.ImageUrl`, activity.ImageUrl || "");
-    setValue(`Itinearies.${index}.Activity`, activity.Title || "");
-
-    // Trigger re-render
-    forceUpdate({});
-  };
+  /* ------------------ Remove Day ------------------ */
 
   const removeDay = (index) => {
-    if (fields.length > 1) {
-      // Remove the day at the specified index
-      remove(index);
+    if (fields.length <= 1) return;
 
-      // Update the day numbers for remaining items
-      const updatedItineraries = [...control._formValues.Itinearies];
-      updatedItineraries.splice(index, 1);
+    remove(index);
 
-      // Update the day numbers for remaining items
-      updatedItineraries.forEach((item, idx) => {
-        item.day = idx + 1;
-        item.Title = `Day ${idx + 1} Itinerary`;
-      });
+    const updated = [...getValues("Itinearies")];
+    // RHF remove already worked on fields, but we need to update the rest of the values
+    updated.forEach((item, idx) => {
+      item.day = idx + 1;
+      item.Title = `Day ${idx + 1} Itinerary`;
+    });
 
-      // Update the form values
-      control._formValues.Itinearies = updatedItineraries;
-      forceUpdate();
-    }
+    setValue("Itinearies", updated, { shouldDirty: true });
   };
 
-  const FormField = ({
-    label,
-    children,
-    required = false,
-    error,
-  }) => (
-    <View style={{ marginBottom: 24 }}>
-      <Text style={{ color: "#374151", fontWeight: "600", marginBottom: 8 }}>
-        {label} {required && <Text style={{ color: "red" }}>*</Text>}
-      </Text>
-      {children}
-      {error && (
-        <Text style={{ color: "red", fontSize: 12, marginTop: 4 }}>
-          {error.message}
-        </Text>
-      )}
-    </View>
-  );
+  /* ------------------ Activity Select ------------------ */
 
-  // Auto-generate days based on trip duration and travel date
-  React.useEffect(() => {
-    const currentDays = fields.length;
-    const targetDays = parseInt(days) || 1;
-    const baseDate = travelDate ? new Date(travelDate) : new Date();
+  const handleActivitySelect = (activity, index) => {
+    console.log('Activity Selected for Day', index + 1, ':', activity);
 
-    if (targetDays > currentDays) {
-      // Add missing days
-      for (let i = currentDays; i < targetDays; i++) {
-        const dayNumber = i + 1;
-        const futureDate = new Date(baseDate);
-        futureDate.setDate(baseDate.getDate() + i);
+    const itineraryDate = getItineraryDate(index);
+    const dateKey = Number(itineraryDate.replace(/-/g, ""));
 
-        const formattedDate = formatDate(futureDate);
-        const dateKey = parseInt(formattedDate.replace(/-/g, ''));
+    // Use Title or fall back to Activity name
+    const finalTitle = activity.Title || activity.Activity || `Day ${index + 1} Itinerary`;
+    const finalDescription = activity.Description || activity.DetailDescription || "";
+    const finalImageUrl = activity.ImageUrl || activity.Url || "";
+
+    setValue(`Itinearies.${index}.Title`, finalTitle, { shouldDirty: true });
+    setValue(`Itinearies.${index}.Activity`, activity.Activity || activity.Title || "", { shouldDirty: true });
+    setValue(`Itinearies.${index}.ImageUrl`, finalImageUrl, { shouldDirty: true });
+    setValue(`Itinearies.${index}.Description`, finalDescription, { shouldDirty: true });
+    setValue(`Itinearies.${index}.Date`, itineraryDate, { shouldDirty: true });
+    setValue(`Itinearies.${index}.DateKey`, dateKey, { shouldDirty: true });
+
+    console.log('Form values updated for index', index);
+  };
+
+  /* ------------------ Auto-generate Days ------------------ */
+
+  useEffect(() => {
+    const current = fields.length;
+    const target = Number(days) || 1;
+    const base = travelDate ? new Date(travelDate) : new Date();
+
+    if (target > current) {
+      for (let i = current; i < target; i++) {
+        const date = new Date(base);
+        date.setDate(base.getDate() + i);
+
+        const formattedDate = formatDate(date);
+        const dateKey = Number(formattedDate.replace(/-/g, ""));
 
         append({
-          day: dayNumber,
+          day: i + 1,
           Date: formattedDate,
           DateKey: dateKey,
-          Title: `Day ${dayNumber} Itinerary`,
+          Title: `Day ${i + 1} Itinerary`,
           Activity: "",
           ImageUrl: "",
           Description: "",
-        });
+        }, { shouldFocus: false });
       }
-    } else if (targetDays < currentDays) {
-      // Remove extra days
-      for (let i = currentDays - 1; i >= targetDays; i--) {
+    } else if (target < current) {
+      for (let i = current - 1; i >= target; i--) {
         remove(i);
       }
     }
   }, [days, travelDate]);
 
-  // Force update hook
-  const [, forceUpdate] = React.useReducer(x => x + 1, 0);
-
-  // Initialize with one day if empty
-  React.useEffect(() => {
-    if (fields.length === 0) {
-      addDay();
-    }
-  }, []);
+  /* ------------------ Init ------------------ */
 
   useEffect(() => {
+    if (fields.length === 0) addDay();
+  }, []);
+
+  /* ============================================================
+     FETCH ACTIVITIES FROM CLOUDFRONT JSON
+  ============================================================ */
+
+  useEffect(() => {
+    if (!Array.isArray(destinations) || destinations.length === 0) {
+      setActivities([]);
+      return;
+    }
+
+    let isMounted = true;
+
     const fetchActivities = async (destination) => {
       try {
         const response = await fetch(
-          `https://2rltmjilx9.execute-api.ap-south-1.amazonaws.com/DataTransaction/activitysightseen?DestinationName=${destination}`,
+          `https://cdn.infinitepackages.com/activity-storage/${destination.toLowerCase().trim()}.json`
         );
+
+        if (!response.ok) {
+          throw new Error(`Failed fetching ${destination}`);
+        }
+
         const data = await response.json();
-        return data?.Items || [];
+
+        return data.map((item) => ({
+          Title: item.activity,
+          Activity: item.activity,
+          Description: item.description || "",
+          Destination: item.destination,
+          ImageUrl: `https://d38jn0rpth8ttn.cloudfront.net/${item.activitykey}`,
+        }));
       } catch (error) {
-        console.error(`Error fetching activities for ${destination}:`, error);
+        console.error("Activity fetch error:", error);
         return [];
       }
     };
 
     const fetchAllActivities = async () => {
-      let allActivities = [];
-      if (destinations?.length) {
-        const otherActivitiesPromises =
-          destinations?.map(fetchActivities);
-        const otherActivitiesArray = await Promise.all(otherActivitiesPromises);
-        otherActivitiesArray.forEach((items) => {
-          allActivities = [...allActivities, ...items];
-        });
+      try {
+        setIsLoading(true);
+
+        const results = await Promise.all(
+          destinations.map((dest) => fetchActivities(dest))
+        );
+
+        console.log(results)
+
+        const merged = results.flat();
+
+        if (isMounted) {
+          setActivities(merged);
+        }
+      } catch (error) {
+        console.error("Fetch all error:", error);
+      } finally {
+        if (isMounted) {
+          setIsLoading(false);
+        }
       }
-      setActivity(allActivities);
     };
 
     fetchAllActivities();
-  }, [
-    destinations
-  ]);
+
+    return () => {
+      isMounted = false;
+    };
+  }, [destinations]);
 
   return (
     <View style={styles.card}>
-      {/* Section Header */}
       <View style={styles.sectionHeader}>
-        <View style={[styles.iconWrapper, { backgroundColor: "#ecfdf5" }]}>
-          <Ionicons name="calendar" size={20} color="#10b981" />
+        <View style={styles.iconWrapper}>
+          <Ionicons name="calendar" size={20} color="#047857" />
         </View>
-        <Text style={styles.sectionTitle}>Day-wise Itinerary</Text>
+        <View>
+          <Text style={styles.sectionTitle}>Day-wise Itinerary</Text>
+          <Text style={styles.sectionSubtitle}>Plan each day of the trip</Text>
+        </View>
       </View>
 
-      <View style={styles.infoBox}>
-        <Ionicons name="information-circle" size={20} color="#3b82f6" />
-        <Text style={styles.infoText}>
-          Itinerary will auto-generate based on trip duration ({days} days)
-        </Text>
-      </View>
-
-      {fields.map((field, index) => (
-        <View key={field.id} style={styles.dayCard}>
-          {/* Day Header */}
-          <View style={styles.dayHeader}>
-            <View style={styles.dayBadge}>
-              <Text style={styles.dayNumber}>Day {index + 1}</Text>
-            </View>
-            {fields.length > 1 && (
-              <TouchableOpacity
-                onPress={() => removeDay(index)}
-                style={styles.removeButton}
-              >
-                <Ionicons name="trash-outline" size={20} color="#ef4444" />
-              </TouchableOpacity>
-            )}
-          </View>
-
-          {/* Selected Image Link */}
-          <Controller
-            control={control}
-            name={`Itinearies.${index}.ImageUrl`}
-            render={({ field: { onChange, value } }) => (
-              <View>
-
-                {value ? (
-                  <Image
-                    source={{ uri: value }}
-                    style={{ width: 290, height: 180, marginTop: 8, borderRadius: 8, marginBottom: 18 }}
-                    resizeMode="cover"
-                  />
-                ) : null}
+      <View style={styles.daysList}>
+        {fields.map((field, index) => (
+          <View key={field.id} style={styles.dayCard}>
+            <View style={styles.dayHeader}>
+              <View style={styles.dayLabelContainer}>
+                <View style={styles.dayBadge}>
+                  <Text style={styles.dayBadgeText}>Day {index + 1}</Text>
+                </View>
+                <Text style={styles.dayDateText}>
+                  {getItineraryDate(index) || "No date set"}
+                </Text>
               </View>
-            )}
-          />
 
-          {/* Date Picker */}
-          <FormField label="Date">
-            <Controller
-              control={control}
-              name={`Itinearies.${index}.Date`}
-              render={({ field: { onChange, value } }) => (
-                <DatePicker
-                  value={value || getItineraryDate(index)}
-                  onDateChange={(date) => {
-                    onChange(date);
-                    // Update the DateKey when date changes
-                    const dateKey = parseInt(date.replace(/-/g, ''));
-                    if (control._formValues.Itinearies && control._formValues.Itinearies[index]) {
-                      control._formValues.Itinearies[index].DateKey = dateKey;
-                    }
-                  }}
-                  placeholder="Select date"
-                  style={styles.input}
-                />
-              )}
-            />
-          </FormField>
-
-          {/* Activity Selector */}
-          <FormField label="Select Activity">
-            <View style={{ marginBottom: 15 }}>
-              <Controller
-                control={control}
-                name={`Itinearies.${index}`}
-                render={({ field: { value } }) => (
-                  <ActivitySelector
-                    onSelectActivity={(activity) => handleActivitySelect(activity, index)}
-                    selectedActivity={{
-                      Title: value?.Title || '',
-                      Description: value?.Description || '',
-                      ImageUrl: value?.ImageUrl || '',
-                    }}
-                    destination={destinations?.[0]} // Assuming first destination for activity search
-                  />
+              <View style={styles.headerActions}>
+                {fields.length > 1 && (
+                  <TouchableOpacity
+                    onPress={() => removeDay(index)}
+                    style={styles.removeButton}
+                  >
+                    <Ionicons name="trash" size={18} color="#ef4444" />
+                  </TouchableOpacity>
                 )}
+              </View>
+            </View>
+
+            <View style={styles.activitySelectorWrapper}>
+              <ActivitySelector
+                onSelectActivity={(a) => handleActivitySelect(a, index)}
+                selectedActivity={{
+                  Title: watch(`Itinearies.${index}.Title`) || "",
+                  ImageUrl: watch(`Itinearies.${index}.ImageUrl`) || "",
+                }}
+                activities={activities}
+                loading={isLoading}
+                destination={destinations?.[0]}
               />
             </View>
-          </FormField>
 
-          {/* Title */}
-          <FormField label="Title">
-            <Controller
-              control={control}
-              name={`Itinearies.${index}.Title`}
-              render={({ field: { onChange, value } }) => (
-                <TextInput
-                  style={styles.input}
-                  placeholder="Enter day title (e.g., Halong Bay Cruise)"
-                  value={value}
-                  onChangeText={onChange}
-                  placeholderTextColor="#9ca3af"
-                />
-              )}
-            />
-          </FormField>
+            <View style={styles.contentContainer}>
+              <Controller
+                control={control}
+                name={`Itinearies.${index}.ImageUrl`}
+                render={({ field: { value } }) => (
+                  <View style={styles.imageWrapper}>
+                    {value ? (
+                      <Image
+                        source={{ uri: value }}
+                        style={styles.itineraryImage}
+                        resizeMode="cover"
+                      />
+                    ) : (
+                      <View style={styles.imagePlaceholder}>
+                        <Ionicons name="camera" size={32} color="#9ca3af" />
+                      </View>
+                    )}
+                  </View>
+                )}
+              />
 
-          {/* Activities */}
-          <FormField label="Activity">
-            <Controller
-              control={control}
-              name={`Itinearies.${index}.Activity`}
-              render={({ field: { onChange, value } }) => (
-                <TextInput
-                  style={[styles.input, styles.textArea]}
-                  placeholder="List activities (e.g., Cruise, cave visit, kayak)"
-                  value={value}
-                  onChangeText={onChange}
-                  multiline
-                  numberOfLines={2}
-                  placeholderTextColor="#9ca3af"
-                />
-              )}
-            />
-          </FormField>
+              <View style={styles.inputsWrapper}>
+                <View style={styles.inputGroup}>
+                  <Text style={styles.label}>
+                    <Ionicons name="create-outline" size={14} color="#9ca3af" /> Day Title
+                  </Text>
+                  <Controller
+                    control={control}
+                    name={`Itinearies.${index}.Title`}
+                    render={({ field: { onChange, value } }) => (
+                      <TextInput
+                        style={styles.textInput}
+                        value={value}
+                        onChangeText={onChange}
+                        placeholder="Enter day title"
+                        placeholderTextColor="#9ca3af"
+                      />
+                    )}
+                  />
+                </View>
 
-          {/* Description */}
-          <FormField label="Description">
-            <Controller
-              control={control}
-              name={`Itinearies.${index}.Description`}
-              render={({ field: { onChange, value } }) => (
-                <TextInput
-                  style={[styles.input, styles.textArea]}
-                  placeholder="Enter detailed description of the day's activities"
-                  value={value}
-                  onChangeText={onChange}
-                  multiline
-                  numberOfLines={3}
-                  placeholderTextColor="#9ca3af"
-                />
-              )}
-            />
-          </FormField>
+                <View style={styles.inputGroup}>
+                  <Text style={styles.label}>
+                    <Ionicons name="create-outline" size={14} color="#9ca3af" /> Description
+                  </Text>
+                  <Controller
+                    control={control}
+                    name={`Itinearies.${index}.Description`}
+                    render={({ field: { onChange, value } }) => (
+                      <TextInput
+                        style={[styles.textInput, styles.textArea]}
+                        value={value}
+                        onChangeText={onChange}
+                        placeholder="Detailed description of the day"
+                        placeholderTextColor="#9ca3af"
+                        multiline
+                        numberOfLines={3}
+                        textAlignVertical="top"
+                      />
+                    )}
+                  />
+                </View>
+              </View>
+            </View>
+          </View>
+        ))}
+      </View>
 
-
-        </View>
-      ))}
-
-      {/* Add Day Button */}
       <TouchableOpacity onPress={addDay} style={styles.addButton}>
-        <Ionicons name="add-circle" size={24} color="#10b981" />
+        <Ionicons name="add-circle" size={20} color="#047857" />
         <Text style={styles.addButtonText}>Add Another Day</Text>
       </TouchableOpacity>
     </View>
   );
 };
-
-
 
 export default ItinerarySection;

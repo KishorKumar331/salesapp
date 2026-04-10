@@ -1,14 +1,17 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Modal, FlatList, Image, ScrollView } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Modal, FlatList, Image, ScrollView, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
 const ActivitySelector = ({ 
   onSelectActivity, 
   selectedActivity, 
   destination,
+  activities: externalActivities,
+  loading,
   style 
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
+  const [selectedActivityLoading, setSelectedActivityLoading] = useState(null);
   const [activities, setActivities] = useState([]);
   const [filteredActivities, setFilteredActivities] = useState([]);
   const [showModal, setShowModal] = useState(false);
@@ -19,8 +22,13 @@ const ActivitySelector = ({
     ImageUrl: '',
   });
 
-  // Fetch activities based on destination
+  // Fetch activities based on destination (if externalActivities is not provided)
   useEffect(() => {
+    if (externalActivities) {
+      setActivities(externalActivities);
+      return;
+    }
+
     const fetchActivities = async () => {
       if (!destination) return;
       
@@ -36,7 +44,7 @@ const ActivitySelector = ({
     };
 
     fetchActivities();
-  }, [destination]);
+  }, [destination, externalActivities]);
 
   // Filter activities based on search query
   useEffect(() => {
@@ -44,22 +52,68 @@ const ActivitySelector = ({
       setFilteredActivities(activities);
     } else {
       const filtered = activities.filter(activity => 
-        activity.Title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        activity.Description?.toLowerCase().includes(searchQuery.toLowerCase())
+        (activity.Title || activity.Activity || activity.activity)?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (activity.Description || activity.description || '')?.toLowerCase().includes(searchQuery.toLowerCase())
       );
       setFilteredActivities(filtered);
     }
   }, [searchQuery, activities]);
 
-  const handleSelectActivity = (activity) => {
-    onSelectActivity({
-      Title: activity.Title,
-      Description: activity.Description || activity.DetailDescription || '',
-      ImageUrl: activity.Url || activity.ImageUrl || '',
-      ActivityId: activity.ActivityId
-    });
-    setShowModal(false);
-    setSearchQuery('');
+  const generateActivityDescription = async (activity) => {
+    try {
+      const response = await fetch(
+        "https://0rq0f90i05.execute-api.ap-south-1.amazonaws.com/salesapp/ai",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            activitykey: activity.ImageUrl || activity.Url || `${(activity.Title || activity.Activity || 'activity').toLowerCase().replace(/\s+/g, '_')}.jpg`,
+            destination: activity.Destination || destination || "bali",
+            activityName: activity.Title || activity.Activity || "Activity"
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(`AI API request failed: ${response.status}`);
+      }
+
+      const data = await response.json();
+      return {
+        title: data.title || activity.Title || activity.Activity,
+        description: data.description || activity.Description || activity.DetailDescription || ""
+      };
+    } catch (error) {
+      console.error("AI API error:", error);
+      return {
+        title: activity.Title || activity.Activity,
+        description: activity.Description || activity.DetailDescription || "No description available"
+      };
+    }
+  };
+
+  const handleSelectActivity = async (activity) => {
+    const activityName = activity.Title || activity.Activity || activity.activity;
+    setSelectedActivityLoading(activityName);
+
+    try {
+      const generated = await generateActivityDescription(activity);
+      
+      onSelectActivity({
+        ...activity,
+        Title: generated.title,
+        Activity: activity.Activity || activity.Title || "",
+        Description: generated.description,
+        ImageUrl: activity.ImageUrl || activity.Url || (activity.activitykey ? `https://d38jn0rpth8ttn.cloudfront.net/${activity.activitykey}` : ''),
+      });
+
+      setShowModal(false);
+      setSearchQuery('');
+    } finally {
+      setSelectedActivityLoading(null);
+    }
   };
 
   const handleAddNewActivity = () => {
@@ -106,35 +160,51 @@ const ActivitySelector = ({
             </TouchableOpacity>
           </View>
 
-          {!showAddForm ? (
+          {loading ? (
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator size="large" color="#007AFF" />
+              <Text style={styles.loadingText}>Fetching activities...</Text>
+            </View>
+          ) : !showAddForm ? (
             <>
               <FlatList
                 data={filteredActivities}
-                keyExtractor={(item) => item.ActivityId || item.Title}
-                renderItem={({ item }) => (
+                keyExtractor={(item, index) => item.ActivityId || item.activitykey || item.Title || index.toString()}
+                renderItem={({ item }) => {
+                  const activityName = item.Title || item.Activity || item.activity;
+                  const isProcessing = selectedActivityLoading === activityName;
+                  
+                  return (
                   <TouchableOpacity 
-                    style={styles.activityItem}
-                    onPress={() => handleSelectActivity(item)}
+                    style={[styles.activityItem, isProcessing && styles.processingItem]}
+                    onPress={() => !isProcessing && handleSelectActivity(item)}
+                    disabled={!!selectedActivityLoading}
                   >
-                    {item.Url && (
+                    {(item.Url || item.ImageUrl) && (
                       <Image 
-                        source={{ uri: item.Url }} 
+                        source={{ uri: item.Url || item.ImageUrl }} 
                         style={styles.activityImage}
                         resizeMode="cover"
                       />
                     )}
                     <View style={styles.activityInfo}>
-                      <Text style={styles.activityTitle}>{item.Title}</Text>
+                      <Text style={styles.activityTitle}>{item.Title || item.Activity || item.activity}</Text>
                       <Text 
                         style={styles.activityDescription} 
                         numberOfLines={2}
                         ellipsizeMode="tail"
                       >
-                        {item.Description || item.DetailDescription || 'No description available'}
+                        {item.Description || item.DetailDescription || item.description || 'No description available'}
                       </Text>
                     </View>
+                    {isProcessing && (
+                      <View style={styles.itemLoadingOverlay}>
+                        <ActivityIndicator size="small" color="#fff" />
+                        <Text style={styles.itemLoadingText}>AI Generating...</Text>
+                      </View>
+                    )}
                   </TouchableOpacity>
-                )}
+                )}}
                 ListEmptyComponent={
                   <View style={styles.noResultsContainer}>
                     <Text style={styles.noResultsText}>No activities found</Text>
@@ -342,10 +412,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  cancelButton: {
-    backgroundColor: '#f1f1f1',
-    marginRight: 10,
-  },
   saveButton: {
     backgroundColor: '#007AFF',
   },
@@ -355,6 +421,39 @@ const styles = StyleSheet.create({
   buttonText: {
     color: '#fff',
     fontWeight: '600',
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  loadingText: {
+    marginTop: 10,
+    fontSize: 14,
+    color: '#666',
+  },
+  processingItem: {
+    opacity: 0.8,
+  },
+  itemLoadingOverlay: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    top: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 8,
+    zIndex: 20,
+  },
+  itemLoadingText: {
+    color: 'white',
+    fontSize: 12,
+    fontWeight: 'bold',
+    marginLeft: 10,
   },
 });
 

@@ -1,18 +1,18 @@
-import { useState, useEffect } from "react";
+import { Ionicons } from "@expo/vector-icons";
+import axios from "axios";
+import { router } from "expo-router";
+import { useEffect, useState } from "react";
 import {
+  ActivityIndicator,
+  Alert,
+  FlatList,
   Modal,
-  View,
   Text,
   TouchableOpacity,
-  ActivityIndicator,
-  FlatList,
-  Alert,
+  View,
 } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
-import { router } from "expo-router";
 import { FetchQuoteByTripID } from "../../api/leads/FetchLeads";
 import PdfPreviewModal from "../pdf/PdfPreviewModal";
-import axios from "axios";
 
 // Header
 const QuotationHeader = ({ onClose }) => {
@@ -32,7 +32,8 @@ const QuotationHeader = ({ onClose }) => {
   );
 };
 
-export default function QuotationListModal({ visible, onClose, tripId, user }) {
+export default function QuotationListModal({ visible, onClose, tripId, user, data }) {
+  console.log(data)
   const [quotations, setQuotations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -98,12 +99,10 @@ export default function QuotationListModal({ visible, onClose, tripId, user }) {
       const response = await axios.post(
         "https://0rq0f90i05.execute-api.ap-south-1.amazonaws.com/salesapp/packages-pdf-html",
         {
-          renderOnly: true,
-          data: {
-            ...quotation,
-            user,
-          },
-          templateName: "ip_pdf.hbs",
+          "type": "quotation",
+          "mode": "html",
+          "tripId": tripId,
+          "quoteId": quotation.QuoteId
         }
       );
 
@@ -180,7 +179,7 @@ export default function QuotationListModal({ visible, onClose, tripId, user }) {
                               router.push({
                                 pathname: "/(tabs)/QuotationScreen",
                                 params: {
-                                  FollowleadData: JSON.stringify(latest),
+                                  FollowleadData: JSON.stringify({ ...latest, tripdata: data }),
                                 },
                               });
                             }}
@@ -254,7 +253,7 @@ export default function QuotationListModal({ visible, onClose, tripId, user }) {
                                 router.push({
                                   pathname: "/(tabs)/QuotationScreen",
                                   params: {
-                                    FollowleadData: JSON.stringify(quotation),
+                                    FollowleadData: JSON.stringify({ ...quotation, tripdata: data }),
                                   },
                                 });
                               }}

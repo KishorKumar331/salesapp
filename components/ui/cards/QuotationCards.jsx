@@ -1,7 +1,7 @@
-import React, { useMemo, useRef, useState, useCallback } from 'react';
-import { View, Text, TouchableOpacity, FlatList, Dimensions } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import React, { useCallback, useMemo, useRef, useState } from 'react';
+import { Dimensions, FlatList, Text, TouchableOpacity, View } from 'react-native';
 import QuotationModal from '../../modals/QuotationModal';
 
 const QuotationCards = ({ leadData }) => {
@@ -29,49 +29,44 @@ const QuotationCards = ({ leadData }) => {
 
   const viewabilityConfig = useRef({ itemVisiblePercentThreshold: 60 }).current;
 
-  const QuotaionButton = React.useMemo(
-    () => () => (
+  const QuotationButton = React.useMemo(
+    () => (
       <View className="flex-row justify-between">
-
         <TouchableOpacity
           onPress={() => {
-            // Generate a truly unique TripId using lead data + timestamp + random
-            const uniqueId = leadData?.TripId ||
-              leadData?.id ||
-              leadData?._id ||
-              `${leadData?.['Client-Contact'] || 'LEAD'}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-
-            // Convert lead data to the format expected by the form
-            const formattedLeadData = {
-              TripId: uniqueId,
-              LeadId: leadData?.LeadId,
-              Quotations: leadData?.quotations || leadData?.Quotations,
-              ClientLeadDetails: {
-                FullName: leadData?.clientName || leadData?.['Client-Name'] || '',
-                Contact: leadData?.clientContact || leadData?.['Client-Contact'] || '',
-                Email: leadData?.clientEmail || leadData?.['Client-Email'] || '',
-                TravelDate: leadData?.travelDate || leadData?.['Client-TravelDate'] || '',
-                Pax: leadData?.pax || leadData?.['Client-Pax'] || '1',
-                Child: leadData?.child || leadData?.['Client-Child'] || '0',
-                Infant: leadData?.infant || leadData?.['Client-Infant'] || '0',
-                Budget: leadData?.budget || leadData?.['Client-Budget'] || '',
-                DepartureCity: leadData?.departureCity || leadData?.['Client-DepartureCity'] || '',
-                DestinationName: leadData?.destination || leadData?.['Client-Destination'] || '',
-                Days: leadData?.days || leadData?.['Client-Days'] || 2,
-              },
-              AssignDate: new Date().toISOString().split('T')[0],
-            };
 
             router.push({
               pathname: '/(tabs)/QuotationScreen',
               params: {
-                leadData: JSON.stringify(formattedLeadData)
+                createdAt: leadData?.CreatedAt || '',
+                tripId: leadData?.TripId || 
+                        leadData?.id || 
+                        leadData?._id || 
+                        `LEAD-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`,
+                company: leadData?.company || '',
+                sk: leadData?.sk || '',
+                leadId: leadData?.LeadId || '',
+                quotations: JSON.stringify(leadData?.Quotations || leadData?.quotations || []),
+                clientLeadDetails: JSON.stringify({
+                  FullName: leadData?.clientName || leadData?.['Client-Name'] || '',
+                  Contact: leadData?.clientContact || leadData?.['Client-Contact'] || '',
+                  Email: leadData?.clientEmail || leadData?.['Client-Email'] || '',
+                  TravelDate: leadData?.travelDate || leadData?.['Client-TravelDate'] || '',
+                  Pax: leadData?.pax || leadData?.['Client-Pax'] || '1',
+                  Child: leadData?.child || leadData?.['Client-Child'] || '0',
+                  Infant: leadData?.infant || leadData?.['Client-Infant'] || '0',
+                  Budget: leadData?.budget || leadData?.['Client-Budget'] || '',
+                  DepartureCity: leadData?.departureCity || leadData?.['Client-DepartureCity'] || '',
+                  DestinationName: leadData?.destination || leadData?.['Client-Destination'] || '',
+                  Days: leadData?.days || leadData?.['Client-Days'] || 2,
+                }),
+                assignDate: new Date().toISOString().split('T')[0],
               }
             });
           }}
-          className="bg-green-500 rounded-lg px-4 py-2 flex-1 ml-2"
+          className="bg-green-500 rounded-lg px-4 py-3 flex-1"
         >
-          <Text className="text-white font-medium text-center">Create Quote</Text>
+          <Text className="text-white font-bold text-center">Create Quote</Text>
         </TouchableOpacity>
       </View>
     ),
@@ -170,7 +165,7 @@ const QuotationCards = ({ leadData }) => {
                 : 'Budget not specified'}
             </Text>
 
-            <QuotaionButton />
+            {QuotationButton}
           </>
         ) : (
           <>
@@ -190,12 +185,12 @@ const QuotationCards = ({ leadData }) => {
               </Text>
             </View>
 
-            <QuotaionButton />
+            {QuotationButton}
           </>
         )}
       </View>
     ),
-    [cardWidth, leadData, scrollToPage]
+    [cardWidth, leadData, scrollToPage, QuotationButton]
   );
 
   return (

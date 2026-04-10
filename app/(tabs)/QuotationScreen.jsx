@@ -1,41 +1,75 @@
-import React, { useState } from "react";
-import { Alert, View, ActivityIndicator, Text, StyleSheet } from "react-native";
-import { useRouter, useLocalSearchParams } from "expo-router";
-import IntegratedQuotationForm from "@/components/form/IntegratedQuotationForm";
-import { clearQuotationDraft } from "@/storage/quotationDrafts";
-import PdfPreviewModal from "@/components/pdf/PdfPreviewModal";
-import axios from "axios";
 import { useAuth } from "@/components/auth/AuthManager";
+import IntegratedQuotationForm from "@/components/form/IntegratedQuotationForm";
+import PdfPreviewModal from "@/components/pdf/PdfPreviewModal";
+import { clearQuotationDraft } from "@/storage/quotationDrafts";
+import axios from "axios";
+import { useLocalSearchParams, useRouter } from "expo-router";
+import { useMemo, useState } from "react";
+import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
 
 const QuotationScreen = () => {
   const router = useRouter();
   const params = useLocalSearchParams();
+  console.log("Params in QuotationScreen:", params);
   const { user } = useAuth();
   const [isPrinting, setIsPrinting] = useState(false);
   const [pdfUri, setPdfUri] = useState(null);
+  console.log(pdfUri)
   const [pdfHtml, setPdfHtml] = useState(null);
   const [showPdfModal, setShowPdfModal] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
   const [formDataToSubmit, setFormDataToSubmit] = useState(null);
 
-  const leadData = params.leadData ? JSON.parse(params.leadData) : null;
+  // Reconstruct leadData from flat params
+  const leadData = useMemo(() => {
+    if (!params.tripId) return null;
 
-  const followUpData = params.FollowleadData
-    ? JSON.parse(params.FollowleadData)
-    : null;
+    // Parse nested object if it exists, otherwise use flat params
+    const details = params.clientLeadDetails
+      ? JSON.parse(params.clientLeadDetails)
+      : {
+        FullName: params.clientName || '',
+        Contact: params.clientContact || '',
+        Email: params.clientEmail || '',
+        TravelDate: params.travelDate || '',
+        Pax: params.pax || '1',
+        Child: params.child || '0',
+        Infant: params.infant || '0',
+        Budget: params.budget || '',
+        DepartureCity: params.departureCity || '',
+        DestinationName: params.destination || '',
+        Days: params.days || '2',
+      };
+
+    return {
+      TripId: params.tripId,
+      LeadId: params.leadId,
+      AssignDate: params.assignDate,
+      Quotations: params.quotations ? JSON.parse(params.quotations) : [],
+      CreatedAt: params.createdAt || '',
+      ClientLeadDetails: details
+    };
+  }, [params]);
+
+  console.log("📥 Reconstructed leadData:", leadData);
+
+  const followUpData = useMemo(() => {
+    return params.FollowleadData ? JSON.parse(params.FollowleadData) : null;
+  }, [params.FollowleadData]);
 
   const handleFormSubmit = async (data) => {
+    console.log(data)
     if (isPrinting) return;
     setIsPrinting(true);
 
     try {
       const dataWithUser = {
         ...data,
-        company: user?.user?.company || user?.company
+        company: user?.user?.company
       };
 
       console.log("Data with user:", dataWithUser);
-      // Call the new API endpoint to get HTML
+      // Pdf Api
       const response = await axios.post(
         "https://0rq0f90i05.execute-api.ap-south-1.amazonaws.com/salesapp/packages-pdf-html",
         {
@@ -49,11 +83,12 @@ const QuotationScreen = () => {
       if (response.data) {
         console.log("HTML Content received from API");
         setPdfHtml(response.data);
+
         setPdfUri(null);
         setFormDataToSubmit({
           ...data,
-          company: user?.user?.company || user?.company,
-          CompanyEmail: user?.user?.Email || user?.Email,
+          company: user?.user?.company,
+          CompanyEmail: user?.user?.Email,
         });
         setShowPdfModal(true);
         setRefreshKey((prev) => prev + 1);
@@ -63,7 +98,6 @@ const QuotationScreen = () => {
       }
     } catch (error) {
       console.error("❌ Error generating preview:", error);
-      Alert.alert("Error", "Failed to generate preview. Please try again.");
     } finally {
       setIsPrinting(false);
     }
@@ -77,27 +111,32 @@ const QuotationScreen = () => {
   const handleShare = async () => {
     // This runs when user clicks download/share button
     if (!formDataToSubmit) {
-      Alert.alert("Error", "No quotation data to submit");
       return;
     }
 
     try {
-      console.log("📤 Submitting quotation to API...");
 
       const res = await axios.post(
         "https://0rq0f90i05.execute-api.ap-south-1.amazonaws.com/salesapp/lead-managment/quotations",
-        { ...formDataToSubmit, CompanyEmail: user?.user?.Email || user?.Email }
+        { ...formDataToSubmit, CompanyEmail: user?.user?.Email, company: user?.user?.company }
       );
 
       console.log("✅ Quotation created:", res.data);
 
       const updateData = {
+        CreatedAt: leadData?.CreatedAt ?? followUpData?.tripdata?.CreatedAt,
         TripId: leadData?.TripId || followUpData?.TripId,
-        CreatedAt: leadData?.CreatedAt || followUpData?.CreatedAt,
-        company: leadData?.company || followUpData?.company,
-        quotations: Array.isArray(leadData?.quotations) || Array.isArray(followUpData?.quotations)
-          ? [...(leadData?.quotations || followUpData?.quotations || []), res.data.QuoteId]
-          : [res.data.QuoteId],
+        company: user?.user?.company,
+        quotations: [
+          ...(
+            Array.isArray(leadData?.Quotations)
+              ? leadData.Quotations
+              : Array.isArray(followUpData?.tripdata?.quotations)
+                ? followUpData?.tripdata?.quotations
+                : []
+          ),
+          res.data.QuoteId
+        ],
         latestStatus: "Cold",
         latestQuotationId: res.data.QuoteId,
         LeadId: leadData?.LeadId || followUpData?.LeadId,
@@ -110,27 +149,18 @@ const QuotationScreen = () => {
 
       await clearQuotationDraft(formDataToSubmit.TripId);
 
-      Alert.alert("Success", "Quotation created and shared successfully!", [
-        {
-          text: "OK",
-          onPress: () => {
-            setShowPdfModal(false);
-            router.replace("/(tabs)");
-          },
-        },
-      ]);
+      router.replace("/");
     } catch (error) {
       console.error("❌ Error submitting:", error);
-      Alert.alert(
-        "Error",
-        "Failed to submit quotation: " + (error?.message || error)
-      );
+
     }
   };
+
 
   return (
     <View style={{ flex: 1 }}>
       <IntegratedQuotationForm
+        key={leadData?.TripId || followUpData?.QuoteId || "new-form"}
         onSubmit={handleFormSubmit}
         lead={leadData}
         followUpData={followUpData}
