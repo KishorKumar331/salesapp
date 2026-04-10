@@ -1,17 +1,19 @@
-import { useState, useEffect } from "react";
+import { Ionicons } from "@expo/vector-icons";
+import axios from "axios";
+import * as Print from "expo-print";
+import { router } from "expo-router";
+import { useEffect, useState } from "react";
 import {
-  Modal,
-  View,
-  Text,
-  TouchableOpacity,
-  ScrollView,
   ActivityIndicator,
   Alert,
+  Modal,
+  ScrollView,
   Share,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
-import { router } from "expo-router";
-import * as Print from "expo-print";
+import PdfPreviewModal from "../pdf/PdfPreviewModal";
 
 
 export default function InvoiceListModal({
@@ -24,6 +26,10 @@ export default function InvoiceListModal({
   const [invoices, setInvoices] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
+  const [pdfHtml, setPdfHtml] = useState(null);
+  const [showPdfModal, setShowPdfModal] = useState(false);
+  const [refreshKey, setRefreshKey] = useState(0);
 
   useEffect(() => {
     if (visible && data?.TripId && data?.invoiceId) {
@@ -115,6 +121,44 @@ export default function InvoiceListModal({
         isEdit: 'true'
       },
     });
+  };
+
+  const onViewInvoice = async (invoice) => {
+    if (isGeneratingPdf) return;
+    setIsGeneratingPdf(true);
+
+    try {
+      const response = await axios.post(
+        "https://0rq0f90i05.execute-api.ap-south-1.amazonaws.com/salesapp/packages-pdf-html",
+        {
+          "type": "invoice",
+          "mode": "html",
+          "tripId": invoice.tripId || data?.TripId,
+          "invoiceId": invoice.invoiceId || invoice.invoiceNumber
+        }
+      );
+
+      if (response.data) {
+        setPdfHtml(response.data);
+        setShowPdfModal(true);
+        setRefreshKey((prev) => prev + 1);
+      } else {
+        throw new Error("No data received from server");
+      }
+    } catch (error) {
+      console.error("Error generating preview:", error);
+      Alert.alert(
+        "Error",
+        "Failed to load invoice preview. Please try again."
+      );
+    } finally {
+      setIsGeneratingPdf(false);
+    }
+  };
+
+  const handlePreviewClose = () => {
+    setShowPdfModal(false);
+    setPdfHtml(null);
   };
 
   const handleShareInvoice = async (invoice) => {
@@ -270,32 +314,22 @@ export default function InvoiceListModal({
       <View className="flex-row justify-end mt-3 space-x-2">
         <TouchableOpacity
           className="bg-blue-100 p-2 rounded-full"
+          onPress={() => onViewInvoice(invoice)}
+          disabled={isGeneratingPdf}
+        >
+          {isGeneratingPdf ? (
+            <ActivityIndicator size="small" color="#3b82f6" />
+          ) : (
+            <Ionicons name="eye" size={18} color="#3b82f6" />
+          )}
+        </TouchableOpacity>
+        <TouchableOpacity
+          className="bg-purple-100 p-2 rounded-full"
           onPress={() => handleEditInvoice(invoice)}
         >
-          <Ionicons name="pencil" size={18} color="#3b82f6" />
+          <Ionicons name="pencil" size={18} color="#7c3aed" />
         </TouchableOpacity>
-        <TouchableOpacity
-          className="bg-green-100 p-2 rounded-full"
-          onPress={() => handleShareInvoice(invoice)}
-        >
-          <Ionicons name="share-social" size={18} color="#10b981" />
-        </TouchableOpacity>
-        <TouchableOpacity
-          className="bg-gray-100 p-2 rounded-full"
-          onPress={() => {
-            onClose();
-            setTimeout(() => {
-              router.push({
-                pathname: `/(tabs)/invoices/${invoice.invoiceId || invoice.invoiceNumber}`,
-                params: {
-                  invoiceData: JSON.stringify(invoice),
-                },
-              });
-            }, 100);
-          }}
-        >
-          <Ionicons name="document-text" size={18} color="#6b7280" />
-        </TouchableOpacity>
+
       </View>
     </View>
   );
@@ -306,7 +340,7 @@ export default function InvoiceListModal({
         {/* Header */}
         <View className="bg-purple-600 p-4 pt-12 rounded-b-3xl">
           <View className="flex-row items-center justify-between">
-            <Text className="text-white text-xl font-bold">Journey Routers</Text>
+            <Text className="text-white text-xl font-bold">Quick Quotes</Text>
             <TouchableOpacity onPress={onClose} className="bg-white/20 p-2 rounded-full">
               <Ionicons name="close" size={20} color="white" />
             </TouchableOpacity>
@@ -381,6 +415,16 @@ export default function InvoiceListModal({
           )}
         </View>
       </View>
+
+      <PdfPreviewModal
+        key={refreshKey}
+        visible={showPdfModal}
+        pdfHtml={pdfHtml}
+        onClose={handlePreviewClose}
+        onShare={() => {
+          // Additional onShare logic if needed
+        }}
+      />
     </Modal>
   );
 }

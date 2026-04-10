@@ -1,20 +1,20 @@
-import React, { useState } from 'react';
+import { Ionicons } from "@expo/vector-icons";
+import React, { useState } from "react";
 import {
+  Alert,
   Modal,
-  View,
+  ScrollView,
   Text,
   TouchableOpacity,
-  ScrollView,
-  Alert,
-} from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+  View,
+} from "react-native";
 
 interface Document {
   id: string;
   name: string;
   size: string;
   date: string;
-  type: 'pdf' | 'jpg' | 'png' | 'doc';
+  type: "pdf" | "jpg" | "png" | "doc";
 }
 
 interface DocumentCategory {
@@ -33,37 +33,79 @@ interface DocumentModalProps {
 }
 
 const DocumentModal: React.FC<DocumentModalProps> = ({ visible, onClose }) => {
-  const [selectedCategory, setSelectedCategory] = useState<DocumentCategory | null>(null);
+  const [selectedCategory, setSelectedCategory] =
+    useState<DocumentCategory | null>(null);
 
   const documentCategories: DocumentCategory[] = [
     {
-      id: '1',
-      name: 'Passport',
+      id: "1",
+      name: "Passport",
       count: 3,
-      icon: 'document-text',
-      color: '#3b82f6',
-      bgColor: '#dbeafe',
+      icon: "document-text",
+      color: "#3b82f6",
+      bgColor: "#dbeafe",
       documents: [
-        { id: '1', name: 'passport_front.pdf', size: '2.3 MB', date: '2025-01-16', type: 'pdf' },
-        { id: '2', name: 'passport_back.pdf', size: '1.8 MB', date: '2025-01-16', type: 'pdf' },
-        { id: '3', name: 'passport_photo.jpg', size: '856 KB', date: '2025-01-15', type: 'jpg' },
-      ]
+        {
+          id: "1",
+          name: "passport_front.pdf",
+          size: "2.3 MB",
+          date: "2025-01-16",
+          type: "pdf",
+        },
+        {
+          id: "2",
+          name: "passport_back.pdf",
+          size: "1.8 MB",
+          date: "2025-01-16",
+          type: "pdf",
+        },
+        {
+          id: "3",
+          name: "passport_photo.jpg",
+          size: "856 KB",
+          date: "2025-01-15",
+          type: "jpg",
+        },
+      ],
     },
     {
-      id: '2',
-      name: 'Identity',
+      id: "2",
+      name: "Identity",
       count: 4,
-      icon: 'person',
-      color: '#10b981',
-      bgColor: '#d1fae5',
+      icon: "person",
+      color: "#10b981",
+      bgColor: "#d1fae5",
       documents: [
-        { id: '4', name: 'aadhar_front.pdf', size: '1.2 MB', date: '2025-01-14', type: 'pdf' },
-        { id: '5', name: 'aadhar_back.pdf', size: '1.1 MB', date: '2025-01-14', type: 'pdf' },
-        { id: '6', name: 'pan_card.jpg', size: '654 KB', date: '2025-01-13', type: 'jpg' },
-        { id: '7', name: 'driving_license.pdf', size: '2.1 MB', date: '2025-01-12', type: 'pdf' },
-      ]
+        {
+          id: "4",
+          name: "aadhar_front.pdf",
+          size: "1.2 MB",
+          date: "2025-01-14",
+          type: "pdf",
+        },
+        {
+          id: "5",
+          name: "aadhar_back.pdf",
+          size: "1.1 MB",
+          date: "2025-01-14",
+          type: "pdf",
+        },
+        {
+          id: "6",
+          name: "pan_card.jpg",
+          size: "654 KB",
+          date: "2025-01-13",
+          type: "jpg",
+        },
+        {
+          id: "7",
+          name: "driving_license.pdf",
+          size: "2.1 MB",
+          date: "2025-01-12",
+          type: "pdf",
+        },
+      ],
     },
-   
   ];
 
   const handleCategoryPress = (category: DocumentCategory) => {
@@ -75,40 +117,42 @@ const DocumentModal: React.FC<DocumentModalProps> = ({ visible, onClose }) => {
   };
 
   const handleUploadDocument = () => {
-    Alert.alert('Upload Document', 'Document upload functionality would be implemented here', [
-      { text: 'OK' }
-    ]);
+    Alert.alert(
+      "Upload Document",
+      "Document upload functionality would be implemented here",
+      [{ text: "OK" }],
+    );
   };
 
   const handleDocumentPress = (document: Document) => {
-    Alert.alert('Document', `Opening ${document.name}`, [{ text: 'OK' }]);
+    Alert.alert("Document", `Opening ${document.name}`, [{ text: "OK" }]);
   };
 
   const getFileIcon = (type: string) => {
     switch (type) {
-      case 'pdf':
-        return 'document-text';
-      case 'jpg':
-      case 'png':
-        return 'image';
-      case 'doc':
-        return 'document';
+      case "pdf":
+        return "document-text";
+      case "jpg":
+      case "png":
+        return "image";
+      case "doc":
+        return "document";
       default:
-        return 'document';
+        return "document";
     }
   };
 
   const getFileIconColor = (type: string) => {
     switch (type) {
-      case 'pdf':
-        return '#dc2626';
-      case 'jpg':
-      case 'png':
-        return '#059669';
-      case 'doc':
-        return '#2563eb';
+      case "pdf":
+        return "#dc2626";
+      case "jpg":
+      case "png":
+        return "#059669";
+      case "doc":
+        return "#2563eb";
       default:
-        return '#6b7280';
+        return "#6b7280";
     }
   };
 
@@ -121,7 +165,7 @@ const DocumentModal: React.FC<DocumentModalProps> = ({ visible, onClose }) => {
             <View className="bg-white/20 rounded-full p-2 mr-3">
               <Ionicons name="folder" size={20} color="white" />
             </View>
-            <Text className="text-white text-xl font-bold">Journey Routers</Text>
+            <Text className="text-white text-xl font-bold">Quick Quotes</Text>
           </View>
           <TouchableOpacity
             onPress={onClose}
@@ -135,8 +179,10 @@ const DocumentModal: React.FC<DocumentModalProps> = ({ visible, onClose }) => {
 
       {/* Document Categories */}
       <View className="p-4">
-        <Text className="text-lg font-bold text-gray-900 mb-4">Document Categories</Text>
-        
+        <Text className="text-lg font-bold text-gray-900 mb-4">
+          Document Categories
+        </Text>
+
         <View className="space-y-3">
           {documentCategories.map((category) => (
             <TouchableOpacity
@@ -145,15 +191,23 @@ const DocumentModal: React.FC<DocumentModalProps> = ({ visible, onClose }) => {
               className="bg-white rounded-lg p-4 shadow-sm border border-gray-100 flex-row items-center justify-between"
             >
               <View className="flex-row items-center">
-                <View 
+                <View
                   className="rounded-full p-3 mr-4"
                   style={{ backgroundColor: category.bgColor }}
                 >
-                  <Ionicons name={category.icon as any} size={24} color={category.color} />
+                  <Ionicons
+                    name={category.icon as any}
+                    size={24}
+                    color={category.color}
+                  />
                 </View>
                 <View>
-                  <Text className="text-gray-900 font-semibold text-lg">{category.name}</Text>
-                  <Text className="text-gray-500 text-sm">{category.count} documents stored</Text>
+                  <Text className="text-gray-900 font-semibold text-lg">
+                    {category.name}
+                  </Text>
+                  <Text className="text-gray-500 text-sm">
+                    {category.count} documents stored
+                  </Text>
                   <View className="flex-row items-center mt-1">
                     <Ionicons name="cloud-upload" size={12} color="#10b981" />
                     <Text className="text-green-600 text-xs ml-1">Secure</Text>
@@ -168,7 +222,9 @@ const DocumentModal: React.FC<DocumentModalProps> = ({ visible, onClose }) => {
 
         {/* Quick Overview */}
         <View className="mt-6">
-          <Text className="text-lg font-bold text-gray-900 mb-4">Quick Overview</Text>
+          <Text className="text-lg font-bold text-gray-900 mb-4">
+            Quick Overview
+          </Text>
           <View className="flex-row justify-between">
             <TouchableOpacity className="bg-purple-100 rounded-lg p-3 flex-1 mr-2 items-center">
               <Ionicons name="grid" size={20} color="#7c3aed" />
@@ -205,9 +261,15 @@ const DocumentModal: React.FC<DocumentModalProps> = ({ visible, onClose }) => {
           </TouchableOpacity>
           <View className="flex-row items-center">
             <View className="bg-white/20 rounded-full p-2 mr-3">
-              <Ionicons name={selectedCategory?.icon as any} size={20} color="white" />
+              <Ionicons
+                name={selectedCategory?.icon as any}
+                size={20}
+                color="white"
+              />
             </View>
-            <Text className="text-white text-xl font-bold">{selectedCategory?.name}</Text>
+            <Text className="text-white text-xl font-bold">
+              {selectedCategory?.name}
+            </Text>
           </View>
           <TouchableOpacity
             onPress={onClose}
@@ -216,7 +278,9 @@ const DocumentModal: React.FC<DocumentModalProps> = ({ visible, onClose }) => {
             <Ionicons name="close" size={20} color="white" />
           </TouchableOpacity>
         </View>
-        <Text className="text-white/80 text-sm">{selectedCategory?.count} documents • Updated today</Text>
+        <Text className="text-white/80 text-sm">
+          {selectedCategory?.count} documents • Updated today
+        </Text>
       </View>
 
       {/* Upload Button */}
@@ -226,7 +290,9 @@ const DocumentModal: React.FC<DocumentModalProps> = ({ visible, onClose }) => {
           className="bg-blue-500 rounded-lg p-4 flex-row items-center justify-center mb-4"
         >
           <Ionicons name="cloud-upload" size={20} color="white" />
-          <Text className="text-white font-medium ml-2">Upload New Document</Text>
+          <Text className="text-white font-medium ml-2">
+            Upload New Document
+          </Text>
         </TouchableOpacity>
 
         {/* Documents List */}
@@ -239,17 +305,23 @@ const DocumentModal: React.FC<DocumentModalProps> = ({ visible, onClose }) => {
             >
               <View className="flex-row items-center flex-1">
                 <View className="bg-red-50 rounded-lg p-3 mr-4">
-                  <Ionicons 
-                    name={getFileIcon(document.type) as any} 
-                    size={20} 
-                    color={getFileIconColor(document.type)} 
+                  <Ionicons
+                    name={getFileIcon(document.type) as any}
+                    size={20}
+                    color={getFileIconColor(document.type)}
                   />
                 </View>
                 <View className="flex-1">
-                  <Text className="text-gray-900 font-medium">{document.name}</Text>
+                  <Text className="text-gray-900 font-medium">
+                    {document.name}
+                  </Text>
                   <View className="flex-row items-center mt-1">
-                    <Text className="text-gray-500 text-sm">{document.size}</Text>
-                    <Text className="text-gray-400 text-sm ml-4">{document.date}</Text>
+                    <Text className="text-gray-500 text-sm">
+                      {document.size}
+                    </Text>
+                    <Text className="text-gray-400 text-sm ml-4">
+                      {document.date}
+                    </Text>
                   </View>
                 </View>
               </View>

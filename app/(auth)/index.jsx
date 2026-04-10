@@ -1,3 +1,4 @@
+import { useAuth } from "@/components/auth/AuthManager";
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Amplify } from "aws-amplify";
@@ -7,7 +8,6 @@ import { router } from "expo-router";
 import { useRef, useState } from "react";
 import { ActivityIndicator, Alert, Dimensions, Modal, Platform, Pressable, ScrollView, Text, TextInput, ToastAndroid, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useAuth } from "@/components/auth/AuthManager";
 import awsExports from "../../aws-exports";
 
 // Ensure Amplify is configured locally for the auth chunk
@@ -111,11 +111,11 @@ const OnBoardingPage = () => {
             router.replace('/(auth)/unauthorized');
           } else {
             await AsyncStorage.setItem('userProfile', JSON.stringify(result));
-            
+
             // Update the AuthManager state
             const userObj = Array.isArray(result) ? result[0] : result;
             setUser(userObj);
-            
+
             showToast('Login successful!');
             setShowLoginModal(false);
             router.replace('/(tabs)');
@@ -168,7 +168,7 @@ const OnBoardingPage = () => {
         style={{ paddingTop: insets.top + 16, }}
       >
         <View className="flex-row items-center justify-between">
-          <Text className="text-xl font-semibold text-white">Journey Routers</Text>
+          <Text className="text-xl font-semibold text-white">Quick Quotes</Text>
           <View className="flex-row gap-2">
             <Pressable onPress={() => setShowLoginModal(true)} className="px-4 py-2 rounded-full bg-white/20">
               <Text className="text-white font-medium">Login</Text>
