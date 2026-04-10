@@ -1,22 +1,22 @@
-import React, { useState, useEffect } from "react";
+import { Ionicons } from "@expo/vector-icons";
+import { useQueryClient } from "@tanstack/react-query";
+import axios from "axios";
+import { useRouter } from "expo-router";
+import { useEffect, useState } from "react";
 import {
-  View,
+  ActivityIndicator,
+  Alert,
+  ScrollView,
+  StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
-  ScrollView,
-  Alert,
-  ActivityIndicator,
-  StyleSheet,
+  View,
 } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
-import axios from "axios";
-import { useQueryClient } from "@tanstack/react-query";
-import { useRouter } from "expo-router";
 import { useAuth } from "../auth/AuthManager";
-import DatePicker from "../ui/DatePicker";
-import CustomPicker from "../ui/CustomPicker";
 import PdfPreviewModal from "../pdf/PdfPreviewModal";
+import CustomPicker from "../ui/CustomPicker";
+import DatePicker from "../ui/DatePicker";
 
 const styles = StyleSheet.create({
   loadingOverlay: {
@@ -66,6 +66,7 @@ export default function InvoiceForm({
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { user: userProfile } = useAuth();
+  console.log(userProfile?.user?.company)
   const router = useRouter();
   const [pdfUri, setPdfUri] = useState(null);
   const [pdfHtml, setPdfHtml] = useState(null);
@@ -284,6 +285,8 @@ export default function InvoiceForm({
     if (userProfile) {
       setFormData((prev) => ({
         ...prev,
+        company: userProfile?.user?.company,
+
         meta: {
           ...prev.meta,
           lastUpdatedBy: userProfile?.user?.Email,
@@ -637,7 +640,7 @@ export default function InvoiceForm({
       const auditEntry = {
         action: "Created",
         timestamp: today,
-        performedBy: userProfile?.email || "system",
+        performedBy: userProfile?.user?.Email || "system",
         changes: {
           status: "Pending",
           invoiceNumber,
@@ -648,6 +651,7 @@ export default function InvoiceForm({
         invoiceNumber,
         invoiceId: formData.tripId || tripId,
         tripId: formData.tripId || tripId,
+        company: formData.company,
         finalPackageQuotationId: formData.finalPackageQuotationId,
         customer: formData.customer,
         destination: formData.destination,
@@ -662,10 +666,10 @@ export default function InvoiceForm({
         notes: formData.notes,
         invoiceDate: today.split("T")[0],
         meta: {
-          createdBy: userProfile?.email || "",
-          companyProfileId: userProfile?.companyId || "",
-          companyName: userProfile?.companyName || "",
-          bankDetails: userProfile?.bankDetails || {},
+          createdBy: userProfile?.user?.Email || "",
+          companyProfileId: userProfile?.user?.company || "",
+          companyName: userProfile?.organization?.details?.companyname || "",
+          bankDetails: userProfile?.organization?.financials || {},
           source: "mobile",
         },
         auditTrail: [auditEntry],
@@ -690,7 +694,7 @@ export default function InvoiceForm({
       let data = null;
       try {
         data = await response.json();
-        
+
         await axios.put(
           `https://0rq0f90i05.execute-api.ap-south-1.amazonaws.com/salesapp/lead-managment/create-quote`,
           {
@@ -733,9 +737,8 @@ export default function InvoiceForm({
   };
 
   const quotationOptions = quotations.map((q) => ({
-    label: `${q.QuoteId} - ₹${
-      q.Costs?.TotalCost?.toLocaleString("en-IN") || 0
-    }`,
+    label: `${q.QuoteId} - ₹${q.Costs?.TotalCost?.toLocaleString("en-IN") || 0
+      }`,
     value: q.QuoteId,
   }));
 

@@ -28,9 +28,8 @@ const DetailCard = ({ title, children, icon }) => (
 
 const DetailRow = ({ label, value, isLast = false }) => (
   <View
-    className={`flex-row justify-between py-2 ${
-      !isLast ? "border-b border-gray-100" : ""
-    }`}
+    className={`flex-row justify-between py-2 ${!isLast ? "border-b border-gray-100" : ""
+      }`}
   >
     <Text className="text-gray-600">{label}</Text>
     <Text className="text-gray-800 font-medium text-right flex-1 ml-4">
@@ -56,14 +55,11 @@ export default function QuoteDetailsModal({ visible, onClose, quote, user }) {
       const response = await axios.post(
         "https://0rq0f90i05.execute-api.ap-south-1.amazonaws.com/salesapp/packages-pdf-html",
         {
+          mode: "html",
+          quoteId: quotation.QuoteId,
+          tripId: quotation.TripId,
           type: "quotation",
 
-          renderOnly: true,
-          data: {
-            ...quotation,
-            user,
-          },
-          templateName: "ip_pdf.hbs",
         }
       );
 
