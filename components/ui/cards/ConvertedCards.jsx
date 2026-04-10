@@ -10,12 +10,14 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { FetchQuoteByTripID } from '@/api/leads/FetchLeads';
 import useStatusChange from '@/hooks/useStatusChange';
+import InvoiceListModal from '../InvoiceListModal';
 import QuoteDetailsModal from '../../modals/QuoteDetailsModal';
 
 const ConvertedCards = ({ data, onStatusChange }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [quoteDetails, setQuoteDetails] = useState(null);
   const [isModalVisible, setIsModalVisible] = useState(false);
+  const [isInvoiceModalVisible, setIsInvoiceModalVisible] = useState(false);
 
   const screenWidth = Dimensions.get("window").width;
   const cardWidth = screenWidth - 32;
@@ -169,7 +171,7 @@ const handleWhatsApp = (phoneNumber) => {
             
             {/* View More Button */}
          
-               <TouchableOpacity 
+            <TouchableOpacity
               onPress={handleViewQuote}
               className="flex-row items-center justify-center py-3 border-t border-gray-100"
             >
@@ -177,6 +179,13 @@ const handleWhatsApp = (phoneNumber) => {
               <Ionicons name="chevron-forward" size={16} color="#7c3aed" />
             </TouchableOpacity>
 
+            <TouchableOpacity
+              onPress={() => setIsInvoiceModalVisible(true)}
+              className="flex-row items-center justify-center py-3 border-t border-gray-100"
+            >
+              <Text className="text-green-600 font-medium mr-2">View Invoice Details</Text>
+              <Ionicons name="chevron-forward" size={16} color="#10b981" />
+            </TouchableOpacity>
         </View>
       </View>
 
@@ -184,7 +193,16 @@ const handleWhatsApp = (phoneNumber) => {
       <QuoteDetailsModal
         visible={isModalVisible}
         onClose={() => setIsModalVisible(false)}
-        quote={{...quoteDetails, ...data}}
+        quote={{ ...quoteDetails, ...data }}
+      />
+
+      <InvoiceListModal
+        visible={isInvoiceModalVisible}
+        onClose={() => setIsInvoiceModalVisible(false)}
+        data={data}
+        onCreateNew={() => {
+          Alert.alert("New Invoice", "Use the manage tab to create new invoices.");
+        }}
       />
     </>
   );
