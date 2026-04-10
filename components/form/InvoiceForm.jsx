@@ -9,10 +9,14 @@ import {
   ActivityIndicator,
   StyleSheet,
 } from "react-native";
-
+import { Ionicons } from "@expo/vector-icons";
 import axios from "axios";
 import { useQueryClient } from "@tanstack/react-query";
-;
+import { useRouter } from "expo-router";
+import { useAuth } from "../auth/AuthManager";
+import DatePicker from "../ui/DatePicker";
+import CustomPicker from "../ui/CustomPicker";
+import PdfPreviewModal from "../pdf/PdfPreviewModal";
 
 const styles = StyleSheet.create({
   loadingOverlay: {
@@ -44,7 +48,8 @@ export default function InvoiceForm({
   tripId,
   onSubmit,
   initialData = null,
-  onCancel,
+  tripData = null,
+  isEdit = false,
   defaultCustomerName = "",
   defaultEmail = "",
   defaultContact = "",
@@ -55,12 +60,13 @@ export default function InvoiceForm({
   console.log(initialData);
   const [step, setStep] = useState("fillForm"); // 'selectQuotation' or 'fillForm'
   const [quotations, setQuotations] = useState([]);
+  const [TripDetail, setTripDetail] = useState([]);
   const [selectedQuotation, setSelectedQuotation] = useState(null);
   const [quotationsLoading, setQuotationsLoading] = useState(false);
-  const [showPreview, setShowPreview] = useState(false);
   const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [userProfile, setUserProfile] = useState(null);
+  const { user: userProfile } = useAuth();
+  const router = useRouter();
   const [pdfUri, setPdfUri] = useState(null);
   const [pdfHtml, setPdfHtml] = useState(null);
   const [showPdfModal, setShowPdfModal] = useState(false);
@@ -212,8 +218,24 @@ export default function InvoiceForm({
     if (tripId) {
       setFormData((prev) => ({ ...prev, tripId }));
       fetchQuotations();
+      fetchTrips();
     }
-  }, [tripId]);
+  }, [tripId, userProfile]);
+
+  const fetchTrips = async () => {
+    try {
+      const response = await fetch(
+        `https://0rq0f90i05.execute-api.ap-south-1.amazonaws.com/salesapp/lead-managment/create-quote?company=${userProfile?.user?.company}&tripId=${tripId}`
+      );
+
+      if (!response.ok) throw new Error("Failed to fetch trip details");
+
+      const data = await response.json();
+      setTripDetail(Array.isArray(data) ? data : []);
+    } catch (error) {
+      console.error("Error fetching trip details:", error);
+    }
+  };
 
   // Apply initialData if passed (not used from screen currently, but kept)
   useEffect(() => {
@@ -257,30 +279,22 @@ export default function InvoiceForm({
     defaultTravelDate,
   ]);
 
-  // Load user profile
+  // Load user profile meta
   useEffect(() => {
-    const loadUserProfile = async () => {
-      try {
-        const profile = await getUserProfile();
-        if (profile) {
-          setUserProfile(profile);
-          setFormData((prev) => ({
-            ...prev,
-            meta: {
-              ...prev.meta,
-              createdBy: profile.email || profile.name || "",
-              companyProfileId: profile.companyId || "",
-              companyName: profile.companyName || "",
-              bankDetails: profile.bankDetails || {},
-            },
-          }));
-        }
-      } catch (error) {
-        console.error("Error loading user profile:", error);
-      }
-    };
-    loadUserProfile();
-  }, []);
+    if (userProfile) {
+      setFormData((prev) => ({
+        ...prev,
+        meta: {
+          ...prev.meta,
+          lastUpdatedBy: userProfile?.user?.Email,
+          source: "mobile",
+          companyProfileId: userProfile?.user?.company,
+          companyName: userProfile?.organization?.details?.companyname,
+          bankDetails: userProfile?.organization?.financials || {},
+        },
+      }));
+    }
+  }, [userProfile]);
 
   const fetchQuotations = async () => {
     try {
@@ -479,18 +493,9 @@ export default function InvoiceForm({
     setIsGeneratingPdf(true);
 
     try {
-      const invoiceNumber = ensureInvoiceNumber();
-      const today = new Date().toISOString().split("T")[0];
-      const dueDate = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000)
-        .toISOString()
-        .split("T")[0];
-
       const dataWithUser = {
         ...formData,
-        InvoiceNumber: invoiceNumber,
-        InvoiceDate: today,
-        DueDate: dueDate,
-        user: userProfile,
+        company: userProfile?.user?.company,
       };
 
       console.log("Invoice data with user:", dataWithUser);
@@ -500,9 +505,10 @@ export default function InvoiceForm({
         "https://0rq0f90i05.execute-api.ap-south-1.amazonaws.com/salesapp/packages-pdf-html",
         {
           type: "invoice",
-          renderOnly: true,
           data: dataWithUser,
-          templateName: "invoiceip.hbs",
+          templateName: userProfile?.user?.preferences?.invoicepdf || userProfile?.user?.Preference?.invoicepdf || userProfile?.user?.invoicepdf || "invoiceip.hbs",
+          mode: "html",
+          tripId: formData?.tripId,
         }
       );
 
@@ -512,8 +518,8 @@ export default function InvoiceForm({
         setPdfUri(null);
         setFormDataToSubmit({
           ...dataWithUser,
-          CompanyId: userProfile?.companyId,
-          CompanyEmail: userProfile?.email,
+          CompanyId: userProfile?.user?.company,
+          CompanyEmail: userProfile?.user?.Email,
         });
         setShowPdfModal(true);
         setRefreshKey((prev) => prev + 1);
@@ -555,14 +561,20 @@ export default function InvoiceForm({
     if (!quotation) return;
 
     const totalCost =
-      (quotation.Costs?.FlightCost || 0) +
-      (quotation.Costs?.VisaCost || 0) +
-      (quotation.Costs?.LandPackageCost || 0);
+      (Number(quotation.Costs?.FlightCost) || 0) +
+      (Number(quotation.Costs?.VisaCost) || 0) +
+      (Number(quotation.Costs?.LandPackageCost) || 0);
+
+    const adults =
+      (quotation.NoOfPax || 0) -
+      (quotation.Child || 0) -
+      (parseInt(quotation.Infant) || 0);
 
     setSelectedQuotation(quotation);
     setFormData((prev) => ({
       ...prev,
       finalPackageQuotationId: quotation.QuoteId || "",
+      leadId: quotation.LeadId || "",
       customer: {
         ...prev.customer,
         name: quotation["Client-Name"] || "",
@@ -572,16 +584,26 @@ export default function InvoiceForm({
       destination: quotation.DestinationName || "",
       startDate: quotation.TravelDate || "",
       endDate: quotation.TravelEndDate || "",
-      travelDate: quotation.TravelDate || "",
+      // travelDate: quotation.TravelDate || "",
       travelerSummary: {
         ...prev.travelerSummary,
+        adults: adults,
+        children: quotation.Child || 0,
+        infants: parseInt(quotation.Infant) || 0,
         totalTravelers: quotation.NoOfPax || 0,
+      },
+      packageSummary: {
+        ...prev.packageSummary,
+        nights: quotation.Nights || 0,
+        days: quotation.Days || 0,
+        packageName: quotation.QuoteId || "",
       },
       pricing: {
         ...prev.pricing,
-        totalAmount: totalCost,
+        baseAmount: quotation.Costs?.TotalCost || totalCost,
         gstAmount: quotation.Costs?.GSTAmount || 0,
         tcsAmount: quotation.Costs?.TCSAmount || 0,
+        totalAmount: totalCost,
       },
     }));
     setStep("fillForm");
@@ -668,18 +690,26 @@ export default function InvoiceForm({
       let data = null;
       try {
         data = await response.json();
-        console.log(data);
+        
         await axios.put(
           `https://0rq0f90i05.execute-api.ap-south-1.amazonaws.com/salesapp/lead-managment/create-quote`,
           {
             invoiceId: data?.invoiceId,
-            TripId: initialData?.TripId,
-            LeadId: initialData?.leadId,
+            TripId: TripDetail[0]?.TripId || formData.tripId,
+            LeadId: TripDetail[0]?.LeadId || formData.leadId,
+            company: TripDetail[0]?.company || userProfile?.user?.company,
+            CreatedAt: TripDetail[0]?.CreatedAt,
             LatestQuotationId: cleanedData?.finalPackageQuotationId,
+            InvoiceCreated: true,
+            latestStatus: "Cold"
           }
         );
-      } catch {
-        // if no json body
+
+        setTimeout(() => {
+          router.replace("/followup");
+        }, 1000);
+      } catch (err) {
+        console.error("Error updating lead after invoice:", err);
       }
       await query.invalidateQueries({ queryKey: ["followup"] });
 
