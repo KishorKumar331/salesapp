@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
 import { useFormContext, Controller, useFieldArray } from 'react-hook-form';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -92,11 +92,7 @@ const InclusionsExclusions: React.FC = () => {
 
         {/* Quick Add Inclusions */}
         <Text style={styles.quickAddLabel}>Quick Add:</Text>
-        <ScrollView 
-          horizontal 
-          showsHorizontalScrollIndicator={false}
-          style={styles.quickAddContainer}
-        >
+        <View style={styles.quickAddContainer}>
           {commonInclusions.map((item, index) => (
             <QuickAddButton
               key={index}
@@ -105,7 +101,7 @@ const InclusionsExclusions: React.FC = () => {
               color="#10b981"
             />
           ))}
-        </ScrollView>
+        </View>
 
         {/* Custom Inclusion Input */}
         <View style={styles.addItemContainer}>
@@ -162,11 +158,7 @@ const InclusionsExclusions: React.FC = () => {
 
         {/* Quick Add Exclusions */}
         <Text style={styles.quickAddLabel}>Quick Add:</Text>
-        <ScrollView 
-          horizontal 
-          showsHorizontalScrollIndicator={false}
-          style={styles.quickAddContainer}
-        >
+        <View style={styles.quickAddContainer}>
           {commonExclusions.map((item, index) => (
             <QuickAddButton
               key={index}
@@ -175,7 +167,7 @@ const InclusionsExclusions: React.FC = () => {
               color="#ef4444"
             />
           ))}
-        </ScrollView>
+        </View>
 
         {/* Custom Exclusion Input */}
         <View style={styles.addItemContainer}>
@@ -293,6 +285,9 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   quickAddContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
     marginBottom: 16,
   },
   quickAddButton: {
@@ -300,7 +295,6 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     borderRadius: 16,
     borderWidth: 1,
-    marginRight: 8,
     backgroundColor: 'white',
   },
   quickAddText: {
