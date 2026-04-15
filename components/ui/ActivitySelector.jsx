@@ -13,7 +13,6 @@ const ActivitySelector = ({
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedActivityLoading, setSelectedActivityLoading] = useState(null);
   const [activities, setActivities] = useState([]);
-  const [filteredActivities, setFilteredActivities] = useState([]);
   const [showModal, setShowModal] = useState(false);
   const [showAddForm, setShowAddForm] = useState(false);
   const [newActivity, setNewActivity] = useState({
@@ -46,17 +45,15 @@ const ActivitySelector = ({
     fetchActivities();
   }, [destination, externalActivities]);
 
-  // Filter activities based on search query
-  useEffect(() => {
+  // Filter activities based on search query — max 10 at all times
+  const filteredActivities = React.useMemo(() => {
     if (searchQuery.trim() === '') {
-      setFilteredActivities(activities);
-    } else {
-      const filtered = activities.filter(activity => 
-        (activity.Title || activity.Activity || activity.activity)?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        (activity.Description || activity.description || '')?.toLowerCase().includes(searchQuery.toLowerCase())
-      );
-      setFilteredActivities(filtered);
+      return activities.slice(0, 10);
     }
+    return activities.filter(activity =>
+      (activity.Title || activity.Activity || activity.activity)?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (activity.Description || activity.description || '')?.toLowerCase().includes(searchQuery.toLowerCase())
+    ).slice(0, 10);
   }, [searchQuery, activities]);
 
   const generateActivityDescription = async (activity) => {
