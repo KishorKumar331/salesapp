@@ -1,0 +1,12 @@
+# Ignore large folders that EAS will handle or are not needed for build
+node_modules/
+ios/
+android/
+.expo/
+dist/
+web-build/
+.git/
+*.xcframework
+*.xcworkspace
+*.xcarchive
+*.log

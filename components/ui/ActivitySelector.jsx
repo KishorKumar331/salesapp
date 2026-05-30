@@ -1,5 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Modal, FlatList, Image, ScrollView, ActivityIndicator } from 'react-native';
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  StyleSheet,
+  Modal,
+  FlatList,
+  Image,
+  ScrollView,
+  ActivityIndicator,
+} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
 const ActivitySelector = ({ 
@@ -15,6 +26,7 @@ const ActivitySelector = ({
   const [activities, setActivities] = useState([]);
   const [showModal, setShowModal] = useState(false);
   const [showAddForm, setShowAddForm] = useState(false);
+  const [tempSelectedActivities, setTempSelectedActivities] = useState([]);
   const [newActivity, setNewActivity] = useState({
     Title: '',
     Description: '',
@@ -45,15 +57,15 @@ const ActivitySelector = ({
     fetchActivities();
   }, [destination, externalActivities]);
 
-  // Filter activities based on search query — max 10 at all times
+  // Filter activities based on search query
   const filteredActivities = React.useMemo(() => {
     if (searchQuery.trim() === '') {
-      return activities.slice(0, 10);
+      return activities;
     }
     return activities.filter(activity =>
       (activity.Title || activity.Activity || activity.activity)?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       (activity.Description || activity.description || '')?.toLowerCase().includes(searchQuery.toLowerCase())
-    ).slice(0, 10);
+    );
   }, [searchQuery, activities]);
 
   const generateActivityDescription = async (activity) => {
@@ -66,7 +78,7 @@ const ActivitySelector = ({
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            activitykey: activity.ImageUrl || activity.Url || `${(activity.Title || activity.Activity || 'activity').toLowerCase().replace(/\s+/g, '_')}.jpg`,
+            activitykey: activity.ImageUrl || activity.Url || activity.activitykey || `${(activity.Title || activity.Activity || 'activity').toLowerCase().replace(/\s+/g, '_')}.jpg`,
             destination: activity.Destination || destination || "bali",
             activityName: activity.Title || activity.Activity || "Activity"
           }),
@@ -79,35 +91,68 @@ const ActivitySelector = ({
 
       const data = await response.json();
       return {
-        title: data.title || activity.Title || activity.Activity,
+        title: data.title || activity.Title || activity.Activity || activity.activity,
         description: data.description || activity.Description || activity.DetailDescription || ""
       };
     } catch (error) {
       console.error("AI API error:", error);
       return {
-        title: activity.Title || activity.Activity,
+        title: activity.Title || activity.Activity || activity.activity,
         description: activity.Description || activity.DetailDescription || "No description available"
       };
     }
   };
 
-  const handleSelectActivity = async (activity) => {
+  const handleToggleSelectActivity = (activity) => {
     const activityName = activity.Title || activity.Activity || activity.activity;
-    setSelectedActivityLoading(activityName);
+    setTempSelectedActivities((prev) => {
+      const exists = prev.some((a) => (a.Title || a.Activity || a.activity) === activityName);
+      if (exists) {
+        return prev.filter((a) => (a.Title || a.Activity || a.activity) !== activityName);
+      } else {
+        return [...prev, activity];
+      }
+    });
+  };
+
+  const handleConfirmSelection = async () => {
+    if (tempSelectedActivities.length === 0) return;
 
     try {
-      const generated = await generateActivityDescription(activity);
-      
+      const results = [];
+      for (const activity of tempSelectedActivities) {
+        const activityName = activity.Title || activity.Activity || activity.activity;
+        setSelectedActivityLoading(activityName);
+        const generated = await generateActivityDescription(activity);
+        
+        const imageUrl = activity.ImageUrl || activity.Url || 
+          (activity.activitykey ? `https://d38jn0rpth8ttn.cloudfront.net/${activity.activitykey}` : '');
+
+        results.push({
+          Title: generated.title,
+          Description: generated.description,
+          ImageUrl: imageUrl
+        });
+      }
+
+      const combinedTitle = results.map(r => r.Title).join(", ");
+      const combinedDescription = results.map(r => r.Description).join("\n\n");
+      const combinedImageUrl = results.find(r => r.ImageUrl)?.ImageUrl || "";
+      const imagesArray = results.map(r => r.ImageUrl).filter(Boolean);
+
       onSelectActivity({
-        ...activity,
-        Title: generated.title,
-        Activity: activity.Activity || activity.Title || "",
-        Description: generated.description,
-        ImageUrl: activity.ImageUrl || activity.Url || (activity.activitykey ? `https://d38jn0rpth8ttn.cloudfront.net/${activity.activitykey}` : ''),
+        Title: combinedTitle,
+        Activity: tempSelectedActivities.map(a => a.Activity || a.Title || a.activity).join(", "),
+        Description: combinedDescription,
+        ImageUrl: combinedImageUrl,
+        OtherActivityImages: imagesArray,
       });
 
       setShowModal(false);
       setSearchQuery('');
+      setTempSelectedActivities([]);
+    } catch (error) {
+      console.error("Error confirming selection:", error);
     } finally {
       setSelectedActivityLoading(null);
     }
@@ -118,6 +163,7 @@ const ActivitySelector = ({
       Title: newActivity.Title,
       Description: newActivity.Description,
       ImageUrl: newActivity.ImageUrl,
+      OtherActivityImages: newActivity.ImageUrl ? [newActivity.ImageUrl] : [],
       isCustom: true
     });
     setShowAddForm(false);
@@ -125,14 +171,19 @@ const ActivitySelector = ({
     setShowModal(false);
   };
 
+  const selectedActivityName = selectedActivity?.Title || selectedActivity?.Activity;
+
   return (
     <View style={[styles.container, style]}>
       <TouchableOpacity 
         style={styles.selectorButton}
-        onPress={() => setShowModal(true)}
+        onPress={() => {
+          setTempSelectedActivities([]);
+          setShowModal(true);
+        }}
       >
-        <Text style={styles.selectorText}>
-          {selectedActivity?.Title || 'Select an activity'}
+        <Text style={styles.selectorText} numberOfLines={1}>
+          {selectedActivityName ? (selectedActivityName.length > 32 ? selectedActivityName.slice(0, 32) + '...' : selectedActivityName) : 'Select activities'}
         </Text>
         <Ionicons name="chevron-down" size={20} color="#666" />
       </TouchableOpacity>
@@ -140,7 +191,9 @@ const ActivitySelector = ({
       <Modal
         visible={showModal}
         animationType="slide"
-        onRequestClose={() => setShowModal(false)}
+        onRequestClose={() => {
+          if (!selectedActivityLoading) setShowModal(false);
+        }}
       >
         <View style={styles.modalContainer}>
           <View style={styles.searchContainer}>
@@ -150,9 +203,13 @@ const ActivitySelector = ({
               placeholder="Search activities..."
               value={searchQuery}
               onChangeText={setSearchQuery}
+              editable={selectedActivityLoading === null}
               autoFocus
             />
-            <TouchableOpacity onPress={() => setShowModal(false)}>
+            <TouchableOpacity 
+              onPress={() => setShowModal(false)}
+              disabled={selectedActivityLoading !== null}
+            >
               <Text style={styles.cancelButton}>Cancel</Text>
             </TouchableOpacity>
           </View>
@@ -163,67 +220,104 @@ const ActivitySelector = ({
               <Text style={styles.loadingText}>Fetching activities...</Text>
             </View>
           ) : !showAddForm ? (
-            <>
+            <View style={{ flex: 1 }}>
               <FlatList
                 data={filteredActivities}
                 keyExtractor={(item, index) => item.ActivityId || item.activitykey || item.Title || index.toString()}
+                contentContainerStyle={{ paddingBottom: 100 }}
                 renderItem={({ item }) => {
                   const activityName = item.Title || item.Activity || item.activity;
+                  const isSelected = tempSelectedActivities.some(
+                    (a) => (a.Title || a.Activity || a.activity) === activityName
+                  );
                   const isProcessing = selectedActivityLoading === activityName;
+                  const imageUrl = item.Url || item.ImageUrl || 
+                    (item.activitykey ? `https://d38jn0rpth8ttn.cloudfront.net/${item.activitykey}` : null);
                   
                   return (
-                  <TouchableOpacity 
-                    style={[styles.activityItem, isProcessing && styles.processingItem]}
-                    onPress={() => !isProcessing && handleSelectActivity(item)}
-                    disabled={!!selectedActivityLoading}
-                  >
-                    {(item.Url || item.ImageUrl) && (
-                      <Image 
-                        source={{ uri: item.Url || item.ImageUrl }} 
-                        style={styles.activityImage}
-                        resizeMode="cover"
-                      />
-                    )}
-                    <View style={styles.activityInfo}>
-                      <Text style={styles.activityTitle}>{item.Title || item.Activity || item.activity}</Text>
-                      <Text 
-                        style={styles.activityDescription} 
-                        numberOfLines={2}
-                        ellipsizeMode="tail"
-                      >
-                        {item.Description || item.DetailDescription || item.description || 'No description available'}
-                      </Text>
-                    </View>
-                    {isProcessing && (
-                      <View style={styles.itemLoadingOverlay}>
-                        <ActivityIndicator size="small" color="#fff" />
-                        <Text style={styles.itemLoadingText}>AI Generating...</Text>
+                    <TouchableOpacity 
+                      style={[
+                        styles.activityItem, 
+                        isSelected && styles.selectedActivityItem,
+                        isProcessing && styles.processingItem
+                      ]}
+                      onPress={() => !isProcessing && handleToggleSelectActivity(item)}
+                      disabled={selectedActivityLoading !== null}
+                    >
+                      {imageUrl ? (
+                        <Image 
+                          source={{ uri: imageUrl }} 
+                          style={styles.activityImage}
+                          resizeMode="cover"
+                        />
+                      ) : (
+                        <View style={[styles.activityImage, styles.activityImagePlaceholder]}>
+                          <Ionicons name="image-outline" size={24} color="#9ca3af" />
+                        </View>
+                      )}
+                      <View style={styles.activityInfo}>
+                        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                          <Text style={styles.activityTitle} numberOfLines={1}>{activityName}</Text>
+                          {isSelected && (
+                            <View style={styles.checkBadge}>
+                              <Ionicons name="checkmark-circle" size={18} color="#10b981" />
+                            </View>
+                          )}
+                        </View>
+                        <Text 
+                          style={styles.activityDescription} 
+                          numberOfLines={2}
+                          ellipsizeMode="tail"
+                        >
+                          {item.Description || item.DetailDescription || item.description || 'No description available'}
+                        </Text>
                       </View>
-                    )}
-                  </TouchableOpacity>
-                )}}
+                      {isProcessing && (
+                        <View style={styles.itemLoadingOverlay}>
+                          <ActivityIndicator size="small" color="#fff" />
+                          <Text style={styles.itemLoadingText}>AI Generating...</Text>
+                        </View>
+                      )}
+                    </TouchableOpacity>
+                  );
+                }}
                 ListEmptyComponent={
                   <View style={styles.noResultsContainer}>
                     <Text style={styles.noResultsText}>No activities found</Text>
                     <TouchableOpacity 
-                      style={styles.addButton}
+                      style={styles.addCustomButton}
                       onPress={() => setShowAddForm(true)}
                     >
-                      <Text style={styles.addButtonText}>+ Add New Activity</Text>
+                      <Text style={styles.addCustomButtonText}>+ Add New Activity</Text>
                     </TouchableOpacity>
                   </View>
                 }
               />
               
-              {filteredActivities.length === 0 && activities.length > 0 && (
-                <TouchableOpacity 
-                  style={styles.addButton}
-                  onPress={() => setShowAddForm(true)}
-                >
-                  <Text style={styles.addButtonText}>+ Add New Activity</Text>
-                </TouchableOpacity>
+              {/* Sticky bottom confirm container */}
+              {tempSelectedActivities.length > 0 && (
+                <View style={styles.confirmContainer}>
+                  <TouchableOpacity
+                    style={styles.confirmButton}
+                    onPress={handleConfirmSelection}
+                    disabled={selectedActivityLoading !== null}
+                  >
+                    {selectedActivityLoading ? (
+                      <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                        <ActivityIndicator size="small" color="#fff" style={{ marginRight: 8 }} />
+                        <Text style={styles.confirmButtonText} numberOfLines={1}>
+                          Generating: {selectedActivityLoading}
+                        </Text>
+                      </View>
+                    ) : (
+                      <Text style={styles.confirmButtonText}>
+                        Confirm & Generate AI Itinerary ({tempSelectedActivities.length} selected)
+                      </Text>
+                    )}
+                  </TouchableOpacity>
+                </View>
               )}
-            </>
+            </View>
           ) : (
             <ScrollView style={styles.addForm}>
               <Text style={styles.formTitle}>Add New Activity</Text>
@@ -257,7 +351,7 @@ const ActivitySelector = ({
               
               <View style={styles.buttonContainer}>
                 <TouchableOpacity 
-                  style={[styles.button, styles.cancelButton]}
+                  style={[styles.button, styles.cancelBtn]}
                   onPress={() => setShowAddForm(false)}
                 >
                   <Text style={styles.buttonText}>Cancel</Text>
@@ -296,6 +390,7 @@ const styles = StyleSheet.create({
   selectorText: {
     flex: 1,
     color: '#333',
+    fontSize: 16,
   },
   modalContainer: {
     flex: 1,
@@ -315,14 +410,17 @@ const styles = StyleSheet.create({
   searchInput: {
     flex: 1,
     height: 40,
-    padding: 10,
+    paddingHorizontal: 12,
     backgroundColor: '#f5f5f5',
     borderRadius: 8,
+    fontSize: 16,
+    color: '#333',
   },
   cancelButton: {
     marginLeft: 10,
     color: '#007AFF',
     fontWeight: '600',
+    fontSize: 16,
   },
   activityItem: {
     flexDirection: 'row',
@@ -330,12 +428,23 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#eee',
     alignItems: 'center',
+    backgroundColor: 'white',
+  },
+  selectedActivityItem: {
+    backgroundColor: '#f0fdf4',
+    borderLeftWidth: 3,
+    borderLeftColor: '#10b981',
   },
   activityImage: {
     width: 60,
     height: 60,
     borderRadius: 8,
     marginRight: 12,
+  },
+  activityImagePlaceholder: {
+    backgroundColor: '#f3f4f6',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   activityInfo: {
     flex: 1,
@@ -344,13 +453,19 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '600',
     marginBottom: 4,
+    color: '#1f2937',
+    flex: 1,
+    marginRight: 8,
+  },
+  checkBadge: {
+    marginLeft: 4,
   },
   activityDescription: {
     fontSize: 14,
-    color: '#666',
+    color: '#6b7280',
   },
   noResultsContainer: {
-    padding: 20,
+    padding: 40,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -359,16 +474,44 @@ const styles = StyleSheet.create({
     color: '#666',
     marginBottom: 20,
   },
-  addButton: {
+  addCustomButton: {
     backgroundColor: '#007AFF',
-    padding: 12,
+    paddingHorizontal: 20,
+    paddingVertical: 12,
     borderRadius: 8,
     alignItems: 'center',
-    margin: 15,
   },
-  addButtonText: {
+  addCustomButtonText: {
     color: '#fff',
     fontWeight: '600',
+    fontSize: 15,
+  },
+  confirmContainer: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    padding: 16,
+    backgroundColor: '#fff',
+    borderTopWidth: 1,
+    borderTopColor: '#e5e7eb',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 5,
+  },
+  confirmButton: {
+    backgroundColor: '#10b981',
+    padding: 16,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  confirmButtonText: {
+    color: '#fff',
+    fontWeight: '700',
+    fontSize: 16,
   },
   addForm: {
     padding: 20,
@@ -378,12 +521,13 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     marginBottom: 20,
     textAlign: 'center',
+    color: '#111827',
   },
   label: {
     fontSize: 14,
     fontWeight: '600',
     marginBottom: 8,
-    color: '#333',
+    color: '#374151',
   },
   input: {
     borderWidth: 1,
@@ -392,6 +536,8 @@ const styles = StyleSheet.create({
     padding: 12,
     marginBottom: 15,
     backgroundColor: '#f9f9f9',
+    fontSize: 16,
+    color: '#1f2937',
   },
   textArea: {
     minHeight: 100,
@@ -400,6 +546,7 @@ const styles = StyleSheet.create({
   buttonContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+    gap: 12,
     marginTop: 20,
   },
   button: {
@@ -409,6 +556,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  cancelBtn: {
+    backgroundColor: '#f3f4f6',
+  },
   saveButton: {
     backgroundColor: '#007AFF',
   },
@@ -416,8 +566,8 @@ const styles = StyleSheet.create({
     opacity: 0.5,
   },
   buttonText: {
-    color: '#fff',
     fontWeight: '600',
+    fontSize: 16,
   },
   loadingContainer: {
     flex: 1,
