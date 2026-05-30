@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { Amplify } from 'aws-amplify';
 import { signIn, signOut, signUp, confirmSignUp, resendSignUpCode, fetchUserAttributes } from 'aws-amplify/auth';
+import { Hub } from 'aws-amplify/utils';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const AuthContext = createContext();
@@ -19,9 +20,25 @@ export const AuthProvider = ({ children }) => {
   const [isReady, setIsReady] = useState(false);
   const [error, setError] = useState(null);
 
-  // Check current authenticated user on mount
+  // Check current authenticated user on mount and listen to auth events
   useEffect(() => {
     checkAuthStatus();
+
+    const cancelListener = Hub.listen('auth', async (data) => {
+      const { payload } = data;
+      console.log('Hub Auth Event received:', payload.event);
+      
+      if (payload.event === 'signedOut' || payload.event === 'tokenRefresh_failure') {
+        console.log('Cognito token expired or user signed out. Triggering local signout.');
+        await AsyncStorage.removeItem('userProfile');
+        await AsyncStorage.removeItem('createAccount');
+        setUser(null);
+      }
+    });
+
+    return () => {
+      cancelListener();
+    };
   }, []);
 
   const checkAuthStatus = async () => {
@@ -38,13 +55,36 @@ export const AuthProvider = ({ children }) => {
       }
       
       let attributes = {};
+      let isAuthError = false;
       try {
         attributes = await fetchUserAttributes();
       } catch (cognitoError) {
-        console.log("Cognito session not found on mount:", cognitoError.message);
+        console.log("Cognito session check failed on mount:", cognitoError.name, cognitoError.message);
+        
+        // If Cognito explicitly says user is not authenticated or not authorized,
+        // it means the session is invalid or revoked on the server.
+        if (
+          cognitoError.name === 'UserUnAuthenticatedException' || 
+          cognitoError.name === 'NotAuthorizedException' ||
+          cognitoError.name === 'UserNotFoundException' ||
+          cognitoError.message?.includes('UserUnAuthenticated') ||
+          cognitoError.message?.includes('NotAuthorizedException') ||
+          cognitoError.message?.includes('requires a signed-in state')
+        ) {
+          isAuthError = true;
+        }
       }
       
-      if (profileData || createAccount === "true" || Object.keys(attributes).length > 0) {
+      if (isAuthError) {
+        console.log("Session revoked/expired. Automatically signing out...");
+        try {
+          await signOut();
+        } catch (e) {}
+        await AsyncStorage.removeItem('userProfile');
+        await AsyncStorage.removeItem('createAccount');
+        setUser(null);
+        setError("Session expired. Please log in again.");
+      } else if (profileData || createAccount === "true" || Object.keys(attributes).length > 0) {
         setUser({ ...attributes, ...profile, isGuest: createAccount === "true" });
       } else {
         setUser(null);

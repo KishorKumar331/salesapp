@@ -2,7 +2,7 @@ import { useAuth } from "@/components/auth/AuthManager";
 import { Ionicons } from "@expo/vector-icons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Amplify } from "aws-amplify";
-import { signIn, signOut } from "aws-amplify/auth";
+import { signIn, signOut, fetchUserAttributes } from "aws-amplify/auth";
 import { LinearGradient } from "expo-linear-gradient";
 import { router } from "expo-router";
 import { useRef, useState } from "react";
@@ -84,13 +84,28 @@ const OnBoardingPage = () => {
 
       if (isSignedIn) {
         console.log("User successfully signed into Cognito. Calling DB API...");
-        let apiUrl = 'https://sg76vqy4vi.execute-api.ap-south-1.amazonaws.com/profile/Auth?';
+        
+        let userEmail = "";
+        try {
+          const attributes = await fetchUserAttributes();
+          userEmail = attributes.email;
+          console.log("Fetched Cognito attributes. Email:", userEmail);
+        } catch (attrError) {
+          console.error("Failed to fetch Cognito user attributes:", attrError);
+        }
 
-        if (isValidEmail(loginInput)) {
-          console.log("Detected Email input");
-          apiUrl += `Email=${encodeURIComponent(loginInput)}`;
+        // Fallback to loginInput if fetchUserAttributes failed or didn't return email
+        if (!userEmail && isValidEmail(loginInput)) {
+          userEmail = loginInput.trim();
+        }
+
+        let apiUrl = 'https://sg76vqy4vi.execute-api.ap-south-1.amazonaws.com/profile/Auth?';
+        if (userEmail) {
+          apiUrl += `Email=${encodeURIComponent(userEmail)}`;
         } else if (isValidPhone(loginInput)) {
           apiUrl += `Phone=${encodeURIComponent(loginInput)}`;
+        } else {
+          apiUrl += `Email=${encodeURIComponent(loginInput.trim())}`;
         }
 
         const response = await fetch(apiUrl, {
