@@ -1,14 +1,12 @@
 import Navbar from "@/components/Navbar";
 import { useAuth } from "@/components/auth/AuthManager";
 import { Ionicons } from "@expo/vector-icons";
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { signOut } from 'aws-amplify/auth';
 import { useRouter } from "expo-router";
 import { Alert, Image, ScrollView, Text, TouchableOpacity, View } from "react-native";
 
 export default function ProfileScreen() {
   const router = useRouter();
-  const { user: userProfile } = useAuth();
+  const { user: userProfile, signOut } = useAuth();
 
   const handleLogout = () => {
     Alert.alert(
@@ -24,7 +22,6 @@ export default function ProfileScreen() {
           onPress: async () => {
             try {
               await signOut();
-              await AsyncStorage.removeItem('userProfile');
               router.replace("/(auth)");
             } catch (error) {
               console.error('Error signing out:', error);

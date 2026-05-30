@@ -110,6 +110,9 @@ const OnBoardingPage = () => {
             setShowLoginModal(false);
             router.replace('/(auth)/unauthorized');
           } else {
+            try {
+              await AsyncStorage.removeItem('createAccount');
+            } catch (e) {}
             await AsyncStorage.setItem('userProfile', JSON.stringify(result));
 
             // Update the AuthManager state
@@ -152,6 +155,7 @@ const OnBoardingPage = () => {
   const handleGetStarted = async () => {
     try {
       await AsyncStorage.setItem("createAccount", "true");
+      setUser({ isGuest: true });
       router.replace("/(tabs)");
     } catch (error) {
       console.error("Error setting auth status:", error);

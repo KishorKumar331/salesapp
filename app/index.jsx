@@ -7,7 +7,8 @@ export default function Index() {
     const checkAuthAndRedirect = async () => {
       try {
         const userProfile = await AsyncStorage.getItem("userProfile");
-        if (userProfile !== null && userProfile !== undefined) {
+        const createAccount = await AsyncStorage.getItem("createAccount");
+        if ((userProfile !== null && userProfile !== undefined) || createAccount === "true") {
           router.replace("/(tabs)");
         } else {
           router.replace("/(auth)");

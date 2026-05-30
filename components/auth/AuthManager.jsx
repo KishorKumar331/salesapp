@@ -27,17 +27,28 @@ export const AuthProvider = ({ children }) => {
   const checkAuthStatus = async () => {
     try {
       setLoading(true);
-      const attributes = await fetchUserAttributes();
       
-      // Also get profile from AsyncStorage
       const profileData = await AsyncStorage.getItem("userProfile");
+      const createAccount = await AsyncStorage.getItem("createAccount");
+      
       let profile = {};
       if (profileData) {
         const parsed = JSON.parse(profileData);
         profile = Array.isArray(parsed) ? parsed[0] : parsed;
       }
       
-      setUser({ ...attributes, ...profile });
+      let attributes = {};
+      try {
+        attributes = await fetchUserAttributes();
+      } catch (cognitoError) {
+        console.log("Cognito session not found on mount:", cognitoError.message);
+      }
+      
+      if (profileData || createAccount === "true" || Object.keys(attributes).length > 0) {
+        setUser({ ...attributes, ...profile, isGuest: createAccount === "true" });
+      } else {
+        setUser(null);
+      }
       setError(null);
     } catch (error) {
       // User is not signed in
@@ -155,8 +166,13 @@ export const AuthProvider = ({ children }) => {
   const signOutUser = async () => {
     try {
       setLoading(true);
-      await signOut();
+      try {
+        await signOut();
+      } catch (e) {
+        console.log("Amplify signOut failed:", e.message);
+      }
       await AsyncStorage.removeItem('userProfile');
+      await AsyncStorage.removeItem('createAccount');
       setUser(null);
       setError(null);
       return { success: true };
