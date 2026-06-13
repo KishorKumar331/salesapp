@@ -99,7 +99,7 @@ const OnBoardingPage = () => {
           userEmail = loginInput.trim();
         }
 
-        let apiUrl = 'https://sg76vqy4vi.execute-api.ap-south-1.amazonaws.com/profile/Auth?';
+        let apiUrl = 'https://zlp6ym88u0.execute-api.ap-south-1.amazonaws.com/prod/Auth?';
         if (userEmail) {
           apiUrl += `Email=${encodeURIComponent(userEmail)}`;
         } else if (isValidPhone(loginInput)) {
