@@ -225,6 +225,60 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const checkSession = async (emailToRevalidate, isSilent = false) => {
+    try {
+      let email = emailToRevalidate;
+      if (!email && user?.Email) {
+        email = user.Email;
+      }
+      if (!email) {
+        try {
+          const attributes = await fetchUserAttributes();
+          email = attributes.email;
+        } catch (e) {
+          console.log("Could not fetch user attributes for revalidation:", e);
+        }
+      }
+
+      if (!email) {
+        console.log("No email available for session check");
+        return null;
+      }
+
+      const apiUrl = `https://zlp6ym88u0.execute-api.ap-south-1.amazonaws.com/prod/Auth?Email=${encodeURIComponent(email)}`;
+      console.log('checkSession: Calling profile API:', apiUrl);
+
+      const response = await fetch(apiUrl, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        const profile = Array.isArray(result) ? result[0] : result;
+        if (profile && Object.keys(profile).length > 0) {
+          await AsyncStorage.setItem('userProfile', JSON.stringify(result));
+          setUser(prevUser => {
+            const updatedUser = {
+              ...prevUser,
+              ...profile,
+            };
+            console.log('checkSession: User state updated with:', updatedUser);
+            return updatedUser;
+          });
+          return profile;
+        }
+      } else {
+        console.log('checkSession: Profile API failed with status:', response.status);
+      }
+    } catch (err) {
+      console.error("checkSession error in AuthManager:", err);
+    }
+    return null;
+  };
+
   const clearError = () => {
     setError(null);
   };
@@ -243,6 +297,7 @@ export const AuthProvider = ({ children }) => {
     signOut: signOutUser,
     clearError,
     checkAuthStatus,
+    checkSession,
   };
 
   return (

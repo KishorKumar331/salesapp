@@ -1,5 +1,6 @@
 
 import { AuthProvider, useAuth } from "@/components/auth/AuthManager";
+import RestrictedAccessScreen from "@/components/auth/RestrictedAccessScreen";
 import {
   triggerLocalTestNotification,
   usePushNotifications,
@@ -54,7 +55,7 @@ async function registerDeviceWithBackend({ userId, pushToken }) {
 /* ==================== ROOT ==================== */
 
 function RootLayoutContent() {
-  const { isReady, isAuthenticated, user, loading: authLoading } = useAuth();
+  const { isReady, isAuthenticated, user, loading: authLoading, signOut, checkSession } = useAuth();
   const { devicePushToken } = usePushNotifications();
   const registrationRef = useRef({ userId: null, token: null });
   const localTestRef = useRef(false);
@@ -103,6 +104,19 @@ function RootLayoutContent() {
   }, [devicePushToken]);
 
   if (!isReady || authLoading) return null;
+
+  const isRestricted = isAuthenticated && user?.access_restricted && user?.payment_url;
+
+  if (isRestricted) {
+    return (
+      <RestrictedAccessScreen
+        paymentUrl={user.payment_url}
+        onLogout={signOut}
+        userEmail={user.Email || user.email}
+        checkSession={checkSession}
+      />
+    );
+  }
 
   return (
     <Stack>
