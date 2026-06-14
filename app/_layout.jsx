@@ -15,7 +15,7 @@ import "../global.css";
 import amplifyconfig from './src/amplifyconfiguration.json';
 
 Amplify.configure(amplifyconfig);
-
+// commentr
 /* ==================== CONFIG ==================== */
 Amplify.configure(awsExports);
 
