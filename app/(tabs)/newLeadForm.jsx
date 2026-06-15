@@ -35,6 +35,10 @@ const DestinationList = [
   "Nepal",
   "Bhutan",
   "Sri Lanka",
+  "kashmir",
+  "kerala",
+  "Himachal",
+  "Andaman",
 ];
 
 export default function NewLeadForm() {
@@ -94,13 +98,13 @@ export default function NewLeadForm() {
           : data["Client-TravelDate"],
         "travelEndDate": data["Client-TravelDate"]?.date
           ? calculateEndDate(
-              data["Client-TravelDate"].date,
-              parseInt(data["Client-Days"]) || 0
-            )
+            data["Client-TravelDate"].date,
+            parseInt(data["Client-Days"]) || 0
+          )
           : calculateEndDate(
-              data["Client-TravelDate"],
-              parseInt(data["Client-Days"]) || 0
-            ),
+            data["Client-TravelDate"],
+            parseInt(data["Client-Days"]) || 0
+          ),
 
         leadSource: data.LeadSource || "MobileApp",
         leadRating: data.LeadRating || "Warm",
@@ -138,7 +142,7 @@ export default function NewLeadForm() {
         // Construct the lead data to pass to the Quotation screen
         // The API might return the created ID, so we merge it
         const completeLeadData = { ...leadData, ...responseData };
-        
+
         Alert.alert("Success", "Lead created! Proceeding to Quotation...", [
           {
             text: "OK",
@@ -146,7 +150,7 @@ export default function NewLeadForm() {
               reset();
               setSelectedDestinations([]);
               setIsMultiDestination(false);
-              
+
               // Proceed to quotation generation flow
               router.push({
                 pathname: "/(tabs)/QuotationScreen",
@@ -158,7 +162,7 @@ export default function NewLeadForm() {
       } else {
         Alert.alert(
           "Error",
-          (responseData.message || responseData.error || JSON.stringify(responseData) || "Failed to create lead") + 
+          (responseData.message || responseData.error || JSON.stringify(responseData) || "Failed to create lead") +
           (`\n\nSent company: ${user?.user?.company}`),
           [{ text: "OK" }]
         );
@@ -246,7 +250,7 @@ export default function NewLeadForm() {
               }}
               render={({ field: { onChange, value } }) => (
                 <View style={{ flexDirection: "row", alignItems: "center" }}>
-                
+
                   <TextInput
                     style={[
                       styles.inputWithPrefix,

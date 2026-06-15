@@ -4,6 +4,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Feather } from '@expo/vector-icons';
 import * as Linking from 'expo-linking';
+import { router } from 'expo-router';
 
 const RestrictedAccessScreen = ({ paymentUrl, onLogout, userEmail, checkSession }) => {
   const insets = useSafeAreaInsets();
@@ -83,59 +84,75 @@ const RestrictedAccessScreen = ({ paymentUrl, onLogout, userEmail, checkSession 
     return () => clearTimeout(timer);
   }, [timeLeft, handleRedirect]);
 
+  const lastCheckTimeRef = useRef(0);
+
+  const performCheck = useCallback(async () => {
+    const now = Date.now();
+    if (now - lastCheckTimeRef.current < 4500) {
+      console.log("Check throttled (less than 4.5 seconds since last check)");
+      return;
+    }
+    lastCheckTimeRef.current = now;
+
+    if (isCheckingRef.current) return;
+    isCheckingRef.current = true;
+    try {
+      const profile = await checkSession(userEmail, true);
+      if (profile) {
+        const isAccessRestricted = profile.access_restricted;
+        const hasPaymentUrl = profile.payment_url;
+        if (!isAccessRestricted && !hasPaymentUrl) {
+          router.replace("/(tabs)");
+        }
+      }
+    } catch (err) {
+      console.error("Error during profile status check:", err);
+    } finally {
+      isCheckingRef.current = false;
+    }
+  }, [checkSession, userEmail]);
+
   // Session check interval
   useEffect(() => {
     if (!hasStartedPayment || !checkSession || !userEmail) return;
 
-    // Trigger immediate check
-    const performCheck = async () => {
-      if (isCheckingRef.current) return;
-      isCheckingRef.current = true;
-      try {
-        await checkSession(userEmail, true);
-      } catch (err) {
-        console.error("Error during profile status check:", err);
-      } finally {
-        isCheckingRef.current = false;
-      }
-    };
-
     performCheck();
 
-    const interval = setInterval(performCheck, 5000);
+    const interval = setInterval(performCheck, 1000);
     return () => clearInterval(interval);
-  }, [hasStartedPayment, checkSession, userEmail]);
+  }, [hasStartedPayment, checkSession, userEmail, performCheck]);
 
   const handlePayNow = () => {
     handleRedirect();
+    performCheck();
   };
 
   return (
-    <View 
-      style={{ 
-        paddingTop: insets.top, 
+    <View
+      style={{
+        paddingTop: insets.top,
         paddingBottom: insets.bottom,
-      }} 
+      }}
       className="flex-1 bg-slate-950 justify-center px-6 relative"
     >
       {/* Background Glows */}
       <View className="absolute top-0 left-0 right-0 bottom-0 overflow-hidden">
-        <View 
-          className="absolute -top-32 -left-32 w-72 h-72 rounded-full bg-purple-900/20" 
-          style={{ transform: [{ scale: 1.5 }] }} 
+        <View
+          className="absolute -top-32 -left-32 w-72 h-72 rounded-full bg-purple-900/20"
+          style={{ transform: [{ scale: 1.5 }] }}
         />
-        <View 
-          className="absolute -bottom-32 -right-32 w-72 h-72 rounded-full bg-indigo-900/20" 
-          style={{ transform: [{ scale: 1.5 }] }} 
+        <View
+          className="absolute -bottom-32 -right-32 w-72 h-72 rounded-full bg-indigo-900/20"
+          style={{ transform: [{ scale: 1.5 }] }}
         />
       </View>
 
       {/* Main Content Card */}
       <View className="bg-slate-900/50 border border-slate-800 rounded-[2.5rem] p-8 items-center shadow-2xl relative">
-        
+
         {/* Lock badge with pulsating glow and bounce */}
         <View className="relative mb-6 justify-center items-center">
-          <Animated.View 
+          <Animated.View
             className="absolute w-24 h-24 bg-purple-500/20 rounded-full"
             style={{ transform: [{ scale: pulseAnim }] }}
           />
@@ -199,7 +216,7 @@ const RestrictedAccessScreen = ({ paymentUrl, onLogout, userEmail, checkSession 
             className="flex-row items-center justify-center gap-2 p-4.5 py-4"
           >
             <Text className="text-white font-black text-xs uppercase tracking-[0.2em]">
-              Pay & Unlock Now
+              Continue to Payment
             </Text>
             <Feather name="arrow-right" size={16} color="white" />
           </LinearGradient>

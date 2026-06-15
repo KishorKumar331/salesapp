@@ -1,10 +1,9 @@
-import React, { useState } from 'react';
-import { View, Text, TextInput, StyleSheet, Switch } from 'react-native';
-import { useFormContext, Controller } from 'react-hook-form';
-import { Ionicons } from '@expo/vector-icons';
-import DatePicker from '@/components/ui/DatePicker';
 import CustomPicker from '@/components/ui/CustomPicker';
+import DatePicker from '@/components/ui/DatePicker';
 import MultiSelectDestinations from '@/components/ui/MultiSelectDestinations';
+import { Ionicons } from '@expo/vector-icons';
+import { Controller, useFormContext } from 'react-hook-form';
+import { StyleSheet, Switch, Text, TextInput, View } from 'react-native';
 
 
 const DestinationList = [
@@ -25,7 +24,11 @@ const DestinationList = [
   "South Korea",
   "Nepal",
   "Bhutan",
-  "Sri Lanka"
+  "Sri Lanka",
+  "Kashmir",
+  "Kerala",
+  "Himachal",
+  "Andaman"
 ];
 
 const DepartureCityList = [
@@ -93,61 +96,61 @@ const BasicDetails = () => {
       </FormField>
       <View style={{ flexDirection: 'row', gap: 12 }}>
 
-      <View style={{ flex: 1 }}>
+        <View style={{ flex: 1 }}>
 
-        <FormField label="Contact Number" required error={errors["Client-Contact"]}>
-          <Controller
-            control={control}
-            name="Client-Contact"
-            rules={{
-              required: "Contact is required",
-              minLength: { value: 10, message: "Enter 10 digits" },
-            }}
-            render={({ field: { onChange, value } }) => (
-              <View style={{ flexDirection: "row", alignItems: "center" }}>
+          <FormField label="Contact Number" required error={errors["Client-Contact"]}>
+            <Controller
+              control={control}
+              name="Client-Contact"
+              rules={{
+                required: "Contact is required",
+                minLength: { value: 10, message: "Enter 10 digits" },
+              }}
+              render={({ field: { onChange, value } }) => (
+                <View style={{ flexDirection: "row", alignItems: "center" }}>
+                  <TextInput
+                    style={[
+                      styles.inputWithPrefix,
+                      errors["Client-Contact"] && styles.errorInput,
+                    ]}
+                    placeholder="Enter 10-digit number"
+                    keyboardType="phone-pad"
+                    maxLength={10}
+                    value={value}
+                    onChangeText={onChange}
+                    placeholderTextColor="#9ca3af"
+                  />
+                </View>
+              )}
+            />
+          </FormField>
+        </View>
+        <View style={{ flex: 1 }}>
+
+          <FormField label="Email Address" error={errors["Client-Email"]}>
+            <Controller
+              control={control}
+              name="Client-Email"
+              rules={{
+                pattern: {
+                  value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
+                  message: "Enter a valid email address",
+                },
+              }}
+              render={({ field: { onChange, value } }) => (
                 <TextInput
-                  style={[
-                    styles.inputWithPrefix,
-                    errors["Client-Contact"] && styles.errorInput,
-                  ]}
-                  placeholder="Enter 10-digit number"
-                  keyboardType="phone-pad"
-                  maxLength={10}
+                  style={[styles.input, errors["Client-Email"] && styles.errorInput]}
+                  placeholder="Enter email address"
+                  keyboardType="email-address"
+                  autoCapitalize="none"
                   value={value}
                   onChangeText={onChange}
                   placeholderTextColor="#9ca3af"
                 />
-              </View>
-            )}
-          />
-        </FormField>
-      </View>
-      <View style={{ flex: 1 }}>
-
-        <FormField label="Email Address" error={errors["Client-Email"]}>
-          <Controller
-            control={control}
-            name="Client-Email"
-            rules={{
-              pattern: {
-                value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
-                message: "Enter a valid email address",
-              },
-            }}
-            render={({ field: { onChange, value } }) => (
-              <TextInput
-                style={[styles.input, errors["Client-Email"] && styles.errorInput]}
-                placeholder="Enter email address"
-                keyboardType="email-address"
-                autoCapitalize="none"
-                value={value}
-                onChangeText={onChange}
-                placeholderTextColor="#9ca3af"
-              />
-            )}
-          />
-        </FormField>
-      </View>
+              )}
+            />
+          </FormField>
+        </View>
       </View>
 
       <FormField label="Travel Date" required error={errors.TravelDate}>
