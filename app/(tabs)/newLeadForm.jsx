@@ -39,6 +39,7 @@ const DestinationList = [
   "kerala",
   "Himachal",
   "Andaman",
+  'Ladakh'
 ];
 
 export default function NewLeadForm() {

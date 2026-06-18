@@ -28,7 +28,8 @@ const DestinationList = [
   "Kashmir",
   "Kerala",
   "Himachal",
-  "Andaman"
+  "Andaman",
+  "Ladakh"
 ];
 
 const DepartureCityList = [
