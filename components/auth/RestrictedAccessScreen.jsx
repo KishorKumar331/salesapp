@@ -1,15 +1,18 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { View, Text, Pressable, Animated, Easing } from 'react-native';
+import { View, Text, Pressable, Animated, Easing, Modal, ActivityIndicator } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Feather } from '@expo/vector-icons';
 import * as Linking from 'expo-linking';
 import { router } from 'expo-router';
+import { WebView } from 'react-native-webview';
 
 const RestrictedAccessScreen = ({ paymentUrl, onLogout, userEmail, checkSession }) => {
   const insets = useSafeAreaInsets();
   const [timeLeft, setTimeLeft] = useState(5);
   const [hasStartedPayment, setHasStartedPayment] = useState(false);
+  const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [isWebViewLoading, setIsWebViewLoading] = useState(false);
 
   // Animated bounce for the lock icon container
   const bounceAnim = useRef(new Animated.Value(0)).current;
@@ -54,23 +57,15 @@ const RestrictedAccessScreen = ({ paymentUrl, onLogout, userEmail, checkSession 
     ).start();
   }, [bounceAnim, pulseAnim]);
 
-  const handleRedirect = useCallback(async () => {
+  const openPaymentModal = useCallback(() => {
     if (!paymentUrl) return;
-    try {
-      const supported = await Linking.canOpenURL(paymentUrl);
-      if (supported) {
-        await Linking.openURL(paymentUrl);
-        setHasStartedPayment(true);
-      } else {
-        console.warn("Cannot open payment URL: " + paymentUrl);
-        // Fallback: try to open directly anyway
-        await Linking.openURL(paymentUrl);
-        setHasStartedPayment(true);
-      }
-    } catch (err) {
-      console.error("Failed to open payment URL:", err);
-    }
+    setShowPaymentModal(true);
+    setHasStartedPayment(true);
   }, [paymentUrl]);
+
+  const handleRedirect = useCallback(async () => {
+    openPaymentModal();
+  }, [openPaymentModal]);
 
   // Countdown timer for auto-redirect
   useEffect(() => {
@@ -88,8 +83,8 @@ const RestrictedAccessScreen = ({ paymentUrl, onLogout, userEmail, checkSession 
 
   const performCheck = useCallback(async () => {
     const now = Date.now();
-    if (now - lastCheckTimeRef.current < 4500) {
-      console.log("Check throttled (less than 4.5 seconds since last check)");
+    if (now - lastCheckTimeRef.current < 2000) {
+      console.log("Check throttled (less than 2 seconds since last check)");
       return;
     }
     lastCheckTimeRef.current = now;
@@ -97,11 +92,14 @@ const RestrictedAccessScreen = ({ paymentUrl, onLogout, userEmail, checkSession 
     if (isCheckingRef.current) return;
     isCheckingRef.current = true;
     try {
-      const profile = await checkSession(userEmail, true);
+      const emailToUse = userEmail || 'info@winterfellholidays.com';
+      console.log(`performCheck: calling checkSession for ${emailToUse}`);
+      const profile = await checkSession(emailToUse, true);
       if (profile) {
         const isAccessRestricted = profile.access_restricted;
         const hasPaymentUrl = profile.payment_url;
         if (!isAccessRestricted && !hasPaymentUrl) {
+          setShowPaymentModal(false);
           router.replace("/(tabs)");
         }
       }
@@ -114,16 +112,16 @@ const RestrictedAccessScreen = ({ paymentUrl, onLogout, userEmail, checkSession 
 
   // Session check interval
   useEffect(() => {
-    if (!hasStartedPayment || !checkSession || !userEmail) return;
+    if (!hasStartedPayment || !checkSession) return;
 
     performCheck();
 
-    const interval = setInterval(performCheck, 1000);
+    const interval = setInterval(performCheck, 2000);
     return () => clearInterval(interval);
-  }, [hasStartedPayment, checkSession, userEmail, performCheck]);
+  }, [hasStartedPayment, checkSession, performCheck]);
 
   const handlePayNow = () => {
-    handleRedirect();
+    openPaymentModal();
     performCheck();
   };
 
@@ -233,6 +231,58 @@ const RestrictedAccessScreen = ({ paymentUrl, onLogout, userEmail, checkSession 
           </Text>
         </Pressable>
       </View>
+
+      {/* Payment WebView Modal */}
+      <Modal
+        visible={showPaymentModal}
+        animationType="slide"
+        onRequestClose={() => setShowPaymentModal(false)}
+      >
+        <View className="flex-1 bg-slate-950">
+          {/* Header */}
+          <View
+            style={{ paddingTop: insets.top + 10 }}
+            className="flex-row items-center justify-between px-4 pb-4 border-b border-slate-800 bg-slate-900"
+          >
+            <Pressable
+              onPress={() => setShowPaymentModal(false)}
+              className="p-2 rounded-full active:bg-slate-800"
+            >
+              <Feather name="x" size={24} color="white" />
+            </Pressable>
+
+            <View className="flex-row items-center gap-2">
+              <Feather name="shield" size={16} color="#a855f7" />
+              <Text className="text-white font-bold text-sm">Secure Checkout</Text>
+            </View>
+
+            {/* Empty view for symmetrical alignment */}
+            <View className="w-10" />
+          </View>
+
+          {/* WebView wrapper */}
+          <View className="flex-1 relative bg-slate-950">
+            {paymentUrl ? (
+              <WebView
+                source={{ uri: paymentUrl }}
+                onLoadStart={() => setIsWebViewLoading(true)}
+                onLoadEnd={() => setIsWebViewLoading(false)}
+                className="flex-1"
+                style={{ backgroundColor: '#020617' }}
+              />
+            ) : null}
+
+            {isWebViewLoading && (
+              <View className="absolute inset-0 items-center justify-center bg-slate-950/90">
+                <ActivityIndicator size="large" color="#a855f7" />
+                <Text className="text-slate-400 text-xs font-semibold mt-3">
+                  Loading secure checkout...
+                </Text>
+              </View>
+            )}
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 };
