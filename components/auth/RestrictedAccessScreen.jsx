@@ -1,18 +1,15 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { View, Text, Pressable, Animated, Easing, Modal, ActivityIndicator } from 'react-native';
+import { View, Text, Pressable, Animated, Easing } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Feather } from '@expo/vector-icons';
 import * as Linking from 'expo-linking';
 import { router } from 'expo-router';
-import { WebView } from 'react-native-webview';
 
 const RestrictedAccessScreen = ({ paymentUrl, onLogout, userEmail, checkSession }) => {
   const insets = useSafeAreaInsets();
   const [timeLeft, setTimeLeft] = useState(5);
   const [hasStartedPayment, setHasStartedPayment] = useState(false);
-  const [showPaymentModal, setShowPaymentModal] = useState(false);
-  const [isWebViewLoading, setIsWebViewLoading] = useState(false);
 
   // Animated bounce for the lock icon container
   const bounceAnim = useRef(new Animated.Value(0)).current;
@@ -59,8 +56,8 @@ const RestrictedAccessScreen = ({ paymentUrl, onLogout, userEmail, checkSession 
 
   const openPaymentModal = useCallback(() => {
     if (!paymentUrl) return;
-    setShowPaymentModal(true);
     setHasStartedPayment(true);
+    Linking.openURL(paymentUrl);
   }, [paymentUrl]);
 
   const handleRedirect = useCallback(async () => {
@@ -232,57 +229,6 @@ const RestrictedAccessScreen = ({ paymentUrl, onLogout, userEmail, checkSession 
         </Pressable>
       </View>
 
-      {/* Payment WebView Modal */}
-      <Modal
-        visible={showPaymentModal}
-        animationType="slide"
-        onRequestClose={() => setShowPaymentModal(false)}
-      >
-        <View className="flex-1 bg-slate-950">
-          {/* Header */}
-          <View
-            style={{ paddingTop: insets.top + 10 }}
-            className="flex-row items-center justify-between px-4 pb-4 border-b border-slate-800 bg-slate-900"
-          >
-            <Pressable
-              onPress={() => setShowPaymentModal(false)}
-              className="p-2 rounded-full active:bg-slate-800"
-            >
-              <Feather name="x" size={24} color="white" />
-            </Pressable>
-
-            <View className="flex-row items-center gap-2">
-              <Feather name="shield" size={16} color="#a855f7" />
-              <Text className="text-white font-bold text-sm">Secure Checkout</Text>
-            </View>
-
-            {/* Empty view for symmetrical alignment */}
-            <View className="w-10" />
-          </View>
-
-          {/* WebView wrapper */}
-          <View className="flex-1 relative bg-slate-950">
-            {paymentUrl ? (
-              <WebView
-                source={{ uri: paymentUrl }}
-                onLoadStart={() => setIsWebViewLoading(true)}
-                onLoadEnd={() => setIsWebViewLoading(false)}
-                className="flex-1"
-                style={{ backgroundColor: '#020617' }}
-              />
-            ) : null}
-
-            {isWebViewLoading && (
-              <View className="absolute inset-0 items-center justify-center bg-slate-950/90">
-                <ActivityIndicator size="large" color="#a855f7" />
-                <Text className="text-slate-400 text-xs font-semibold mt-3">
-                  Loading secure checkout...
-                </Text>
-              </View>
-            )}
-          </View>
-        </View>
-      </Modal>
     </View>
   );
 };
