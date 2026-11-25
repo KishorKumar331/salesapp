@@ -165,7 +165,7 @@ const DocumentModal: React.FC<DocumentModalProps> = ({ visible, onClose }) => {
             <View className="bg-white/20 rounded-full p-2 mr-3">
               <Ionicons name="folder" size={20} color="white" />
             </View>
-            <Text className="text-white text-xl font-bold">Quick Quotes</Text>
+            <Text className="text-white text-xl font-bold">Trip Quotes</Text>
           </View>
           <TouchableOpacity
             onPress={onClose}

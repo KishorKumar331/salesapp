@@ -6,7 +6,7 @@ import { signIn, signOut, fetchUserAttributes } from "aws-amplify/auth";
 import { LinearGradient } from "expo-linear-gradient";
 import { router } from "expo-router";
 import { useRef, useState } from "react";
-import { ActivityIndicator, Alert, Dimensions, Modal, Platform, Pressable, ScrollView, Text, TextInput, ToastAndroid, View } from "react-native";
+import { ActivityIndicator, Alert, Dimensions, Image, Modal, Platform, Pressable, ScrollView, Text, TextInput, ToastAndroid, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import awsExports from "../../aws-exports";
 
@@ -187,7 +187,12 @@ const OnBoardingPage = () => {
         style={{ paddingTop: insets.top + 16, }}
       >
         <View className="flex-row items-center justify-between">
-          <Text className="text-xl font-semibold text-white">Quick Quotes</Text>
+          <Image
+            source={require("../../assets/images/logo.png")}
+            style={{ width: 96, height: 48 }}
+            resizeMode="contain"
+            accessibilityLabel="TripQuotes"
+          />
           <View className="flex-row gap-2">
             <Pressable onPress={() => setShowLoginModal(true)} className="px-4 py-2 rounded-full bg-white/20">
               <Text className="text-white font-medium">Login</Text>

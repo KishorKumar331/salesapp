@@ -340,7 +340,7 @@ export default function InvoiceListModal({
         {/* Header */}
         <View className="bg-purple-600 p-4 pt-12 rounded-b-3xl">
           <View className="flex-row items-center justify-between">
-            <Text className="text-white text-xl font-bold">Quick Quotes</Text>
+            <Text className="text-white text-xl font-bold">Trip Quotes</Text>
             <TouchableOpacity onPress={onClose} className="bg-white/20 p-2 rounded-full">
               <Ionicons name="close" size={20} color="white" />
             </TouchableOpacity>

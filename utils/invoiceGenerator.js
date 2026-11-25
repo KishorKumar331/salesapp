@@ -171,7 +171,7 @@ const generateInvoiceHtml = (invoiceData, isDomestic = true) => {
       <div class="booking-confirmation">
         <header class="header">
           <div class="logo">
-            <img src="https://journeyrouters.com/logo.png" alt="Quick Quotes" />
+            <img src="https://journeyrouters.com/logo.png" alt="Trip Quotes" />
           </div>
           <h1>INVOICE</h1>
         </header>
@@ -185,7 +185,7 @@ const generateInvoiceHtml = (invoiceData, isDomestic = true) => {
             <p><strong>Phone:</strong> ${invoiceData?.CustomerDetails?.Contact || 'N/A'}</p>
           </div>
           <div class="gst-details">
-            <p><strong>Quick Quotes Pvt. Ltd.</strong></p>
+            <p><strong>Trip Quotes Pvt. Ltd.</strong></p>
             <p>GST: 07AAGCJ5934M1Z3</p>
             <p>Khasra 275, 2nd Floor, Westend Marg, Saiduajlab,<br>
             Saiyad Ul Ajaib Extension, Saket,<br>
@@ -240,7 +240,7 @@ const generateInvoiceHtml = (invoiceData, isDomestic = true) => {
 
         <div class="bank-details">
           <h3>Bank Details</h3>
-          <p><strong>Account Name:</strong> JR Quick Quotes PVT LTD</p>
+          <p><strong>Account Name:</strong> JR Trip Quotes PVT LTD</p>
           <p><strong>Account Number:</strong> 50200105053921</p>
           <p><strong>Bank Name:</strong> HDFC Bank</p>
           <p><strong>Branch:</strong> Saket, New Delhi</p>
@@ -257,7 +257,7 @@ const generateInvoiceHtml = (invoiceData, isDomestic = true) => {
         </div>
 
         <div class="footer">
-          <p>Thank you for choosing Quick Quotes for your travel needs.</p>
+          <p>Thank you for choosing Trip Quotes for your travel needs.</p>
           <p>For any queries, please contact us at sales@journeyrouters.com or call +91 99993 88977</p>
         </div>
       </div>
